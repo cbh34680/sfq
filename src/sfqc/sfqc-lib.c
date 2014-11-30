@@ -358,12 +358,12 @@ EXIT_LABEL:
 		return irc;
 	}
 
-/*
 	if (p->filesize_limit == 0)
 	{
-		p->filesize_limit = 512;
+		p->filesize_limit = (256 * 1024 * 1024);
 	}
 
+/*
 	p->filesize_limit *= (1024 * 1024);
 
 	if (p->payloadsize_limit)

@@ -67,7 +67,7 @@ FIRE_CATCH_LABEL__:
 
 /* */
 #ifndef SFQ_DEFAULT_QUEUE_DIR
-	#define SFQ_DEFAULT_QUEUE_DIR	"/tmp"
+	#define SFQ_DEFAULT_QUEUE_DIR	"/var/tmp"
 #endif
 
 #ifndef SFQ_DEFAULT_QUEUE_NAME

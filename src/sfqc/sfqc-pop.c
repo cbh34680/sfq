@@ -2,7 +2,7 @@
 
 int main(int argc, char** argv)
 {
-	int irc = SFQ_RC_UNKNOWN;
+	int irc = 0;
 	char* message = NULL;
 	int jumppos = 0;
 
@@ -34,6 +34,7 @@ SFQ_MAIN_INITIALIZE
 		goto EXIT_LABEL;
 	}
 
+#ifdef SFQ_DEBUG_BUILD
 	irc = sfq_alloc_print_value(&val, &pval);
 	if (irc != SFQ_RC_SUCCESS)
 	{
@@ -43,11 +44,34 @@ SFQ_MAIN_INITIALIZE
 	}
 
 	printf("%s\n%s\n%s\n%s\n", pval.execpath, pval.execargs, pval.metadata, pval.payload);
+#else
+	if (val.payload && val.payload_size)
+	{
+		int wrt = 0;
+
+/*
+		fprintf(stderr, "type=%u size=%zu\n", val.payload_type, val.payload_size);
+*/
+		if (val.payload_type & SFQ_PLT_CHARARRAY)
+		{
+			if (val.payload_type & SFQ_PLT_NULLTERM)
+			{
+				puts((char*)val.payload);
+				wrt = 1;
+			}
+		}
+
+		if (! wrt)
+		{
+			fwrite(val.payload, val.payload_size, 1, stdout);
+		}
+	}
+#endif
 
 EXIT_LABEL:
 
-	sfq_free_value(&pval);
 	sfq_free_value(&val);
+	sfq_free_value(&pval);
 	sfqc_free_init_option(&opt);
 
 	if (message)

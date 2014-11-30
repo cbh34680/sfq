@@ -49,7 +49,9 @@ SFQ_MAIN_INITIALIZE
 	{
 		int wrt = 0;
 
-fprintf(stderr, "type=%u size=%zu\n", val.payload_type, val.payload_size);
+/*
+		fprintf(stderr, "type=%u size=%zu\n", val.payload_type, val.payload_size);
+*/
 		if (val.payload_type & SFQ_PLT_CHARARRAY)
 		{
 			if (val.payload_type & SFQ_PLT_NULLTERM)
