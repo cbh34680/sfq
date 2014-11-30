@@ -139,7 +139,7 @@ SFQ_LIB_INITIALIZE
 	fp = fopen(om->quefile, file_mode);
 	if (! fp)
 	{
-		SFQ_FAIL(ES_FILEOPEN, "fopen");
+		SFQ_FAIL(ES_FILEOPEN, "file open error '%s'", om->quefile);
 	}
 
 /* create response */

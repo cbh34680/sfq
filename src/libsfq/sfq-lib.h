@@ -34,7 +34,7 @@
 #define SFQ_LIB_INITIALIZE \
 	int fire_line__  = -1; \
 	int fire_rc__ = SFQ_RC_UNKNOWN; \
-	char* fire_reason__ = NULL;
+	char fire_reason__[128] = "";
 
 
 #define SFQ_LIB_CHECKPOINT \
@@ -48,7 +48,7 @@ SFQ_FAIL_CATCH_LABEL__:
 
 
 #define SFQ_LIB_FINALIZE \
-	if (fire_reason__) { \
+	if (fire_reason__[0]) { \
 		fprintf(stderr, "%s(%d): RC=%d [%s]\n", __FILE__, fire_line__, fire_rc__, fire_reason__); \
 	}
 
@@ -59,10 +59,14 @@ SFQ_FAIL_CATCH_LABEL__:
 	goto SFQ_FAIL_CATCH_LABEL__;
 
 
-#define SFQ_FAIL(fire_rc, fire_reason) \
+/*
+"fmt, ##__VA_ARGS__" のようにすることで可変長引数部がゼロ個のとき、最後のカンマを除去してくれる
+(GCC独自拡張)
+*/
+#define SFQ_FAIL(fire_rc, fmt, ...) \
 	fire_line__ = __LINE__; \
 	fire_rc__ = SFQ_RC_ ## fire_rc; \
-	fire_reason__ = fire_reason; \
+	snprintf(fire_reason__, sizeof(fire_reason__), fmt, ##__VA_ARGS__); \
 	goto SFQ_FAIL_CATCH_LABEL__;
 
 
