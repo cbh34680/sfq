@@ -101,9 +101,13 @@ LIBFUNC_INITIALIZE
 			{
 				FIRE(SFQ_RC_EA_OVERLIMIT, "execargs_size");
 			}
-			if (execargs_size >= sysmax)
+
+			if (sysmax > 0)
 			{
-				FIRE(SFQ_RC_EA_OVERLIMIT, "execargs_size");
+				if (execargs_size >= (size_t)sysmax)
+				{
+					FIRE(SFQ_RC_EA_OVERLIMIT, "execargs_size");
+				}
 			}
 
 			ioeb->execargs = val->execargs;

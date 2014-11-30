@@ -5,21 +5,25 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <stdbool.h>
-#include <inttypes.h>
 #include <limits.h>
-#include <dirent.h>
-#include <unistd.h>
 #include <time.h>
 #include <sys/stat.h>        /* For mode constants */
-#include <alloca.h>
 #include <assert.h>
-
 #include <errno.h>
 #include <fcntl.h>           /* For O_* constants */
-#include <semaphore.h>
 #include <signal.h>
-#include <wait.h>
+
+#ifdef WIN32
+	#include "win32-dummy-build.h"
+#else
+	#include <stdbool.h>
+	#include <inttypes.h>
+	#include <dirent.h>
+	#include <unistd.h>
+	#include <alloca.h>
+	#include <semaphore.h>
+	#include <wait.h>
+#endif
 
 #include "sfq.h"
 
@@ -52,18 +56,22 @@ FIRE_CATCH_LABEL__:
 	goto FIRE_CATCH_LABEL__;
 
 
-/* gnu only */
-#define sfq_stradup(org) \
-	({ \
-		char* dst = NULL; \
-		if (org) { \
-			dst = alloca(strlen( (org) ) + 1); \
-			if (dst) { \
-				strcpy(dst, org); \
+#ifdef WIN32
+	#define sfq_stradup(org)	NULL
+#else
+	/* gnu only */
+	#define sfq_stradup(org) \
+		({ \
+			char* dst = NULL; \
+			if (org) { \
+				dst = alloca(strlen( (org) ) + 1); \
+				if (dst) { \
+					strcpy(dst, org); \
+				} \
 			} \
-		} \
-		dst; \
-	})
+			dst; \
+		})
+#endif
 
 /* */
 #ifndef SFQ_DEFAULT_QUEUE_DIR
