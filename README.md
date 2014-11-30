@@ -49,5 +49,5 @@ for example
 
 ## License
 * MIT  
-    * see LICENSE
+    * see MIT-LICENSE.txt
 
