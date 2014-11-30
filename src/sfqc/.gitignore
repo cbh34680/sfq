@@ -9,3 +9,11 @@
 /stdafx.h
 /Release
 /Debug
+sfqc-clear
+sfqc-info
+sfqc-init
+sfqc-list
+sfqc-pop
+sfqc-pushb
+sfqc-pushc
+sfqc-shift
