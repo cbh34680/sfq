@@ -5,16 +5,19 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <inttypes.h>
 #include <limits.h>
-#include <dirent.h>
-#include <unistd.h>
 #include <time.h>
 #include <sys/stat.h>
-#include <alloca.h>
 #include <assert.h>
 
-#include <mcheck.h>
+#ifdef WIN32
+	#include "win32-dummy-build.h"
+#else
+	#include <inttypes.h>
+	#include <dirent.h>
+	#include <unistd.h>
+	#include <alloca.h>
+#endif
 
 #include "sfq.h"
 

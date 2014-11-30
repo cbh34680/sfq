@@ -63,6 +63,9 @@ typedef int			mode_t;
 
 #define fseeko(a, b, c)		(99)
 
+#define getopt(a, b, c)		(99)
+#define optarg			NULL
+
 
 #ifdef __cplusplus
 }

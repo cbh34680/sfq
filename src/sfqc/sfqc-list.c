@@ -63,7 +63,7 @@ SFQ_MAIN_INITIALIZE
 		goto EXIT_LABEL;
 	}
 
-	printf("\nlist count = %" PRIu64 "\n", cnt);
+	printf("\nlist count = %zu\n", cnt);
 
 EXIT_LABEL:
 
