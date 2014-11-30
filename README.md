@@ -19,6 +19,7 @@ Simple File-based Queue
 * export PATH="** sfq-dir **/bin:${PATH}"
 
 [Run) Queue Type-1]
+
 Queue is static. you can add data (by sfqc-pushc command) and you can get data (by sfqc-shift command)
 
 for example
@@ -32,6 +33,7 @@ for example
 * 8) sfqc-clear (clear all records)
 
 [Run) Queue Type-2]
+
 Queue is dynamic. you can add data (by command) but data is automatically retrieved
 
 for example
