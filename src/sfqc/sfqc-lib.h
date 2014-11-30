@@ -26,14 +26,14 @@
 #define DEBUG_PRINT_BAR		"========================="
 
 	#define SFQ_MAIN_INITIALIZE \
-{ \
-	fprintf(stderr, DEBUG_PRINT_BAR " DEBUG BUILD (%s) " DEBUG_PRINT_BAR "\n\n", argv[0]); \
-	setvbuf(stdout, NULL, _IONBF, 0); \
-}
+		{ \
+			fprintf(stderr, DEBUG_PRINT_BAR " DEBUG BUILD (%s) " DEBUG_PRINT_BAR "\n\n", argv[0]); \
+			setvbuf(stdout, NULL, _IONBF, 0); \
+		}
 
 	#define SFQ_MAIN_FINALIZE \
-{ \
-}
+		{ \
+		}
 
 #else
 	#define SFQ_MAIN_INITIALIZE
