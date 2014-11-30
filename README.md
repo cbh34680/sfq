@@ -20,6 +20,7 @@ Simple File-based Queue
 
 [Run) Queue Type-1]
 Queue is static. you can add data (by sfqc-pushc command) and you can get data (by sfqc-shift command)
+
 for example
 * 1) sfqc-init ("noname" directory is made in "/var/tmp")
 * 2) sfqc-pushc -t aaa
@@ -32,6 +33,7 @@ for example
 
 [Run) Queue Type-2]
 Queue is dynamic. you can add data (by command) but data is automatically retrieved
+
 for example
 * 1) rm -rf /var/tmp/noname (delete the queue that was made before)
 * 2) sfqc-init -P 1
