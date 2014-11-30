@@ -44,3 +44,8 @@ for example
 *
 *
 *
+
+## License
+* MIT  
+    * see LICENSE
+
