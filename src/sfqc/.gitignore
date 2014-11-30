@@ -1,0 +1,11 @@
+*.so
+*.o
+/targetver.h
+/ReadMe.txt
+/sfqc.cpp
+/sfqc.vcxproj
+/sfqc.vcxproj.filters
+/stdafx.cpp
+/stdafx.h
+/Release
+/Debug
