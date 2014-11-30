@@ -35,7 +35,7 @@ EXIT_LABEL:
 
 	if (message)
 	{
-		fprintf(stderr, "%s:%d:%s\n", __FILE__, jumppos, message);
+		fprintf(stderr, "%s(%d): %s\n", __FILE__, jumppos, message);
 	}
 
 	sfqc_free_init_option(&opt);

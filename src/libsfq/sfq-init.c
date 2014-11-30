@@ -3,7 +3,7 @@
 int sfq_init(const char* querootdir, const char* quename,
 	size_t filesize_limit, size_t payloadsize_limit, ushort max_proc_num)
 {
-LIBFUNC_INITIALIZE
+SFQ_LIB_INITIALIZE
 
 	struct sfq_queue_object* qo = NULL;
 	struct sfq_process_info* procs = NULL;
@@ -33,7 +33,7 @@ LIBFUNC_INITIALIZE
 		{
 			if (max_proc_num > sysmax)
 			{
-				FIRE(SFQ_RC_EA_OVERLIMIT, "max_proc_num");
+				SFQ_FAIL(EA_OVERLIMIT, "max_proc_num");
 			}
 		}
 
@@ -43,7 +43,7 @@ LIBFUNC_INITIALIZE
 		procs = alloca(procs_size);
 		if (! procs)
 		{
-			FIRE(SFQ_RC_ES_MEMALLOC, "ALLOC(procs)");
+			SFQ_FAIL(ES_MEMALLOC, "ALLOC(procs)");
 		}
 
 		bzero(procs, procs_size);
@@ -59,14 +59,14 @@ LIBFUNC_INITIALIZE
 	{
 	/* 最小ファイルサイズは sfq_file_header + pid_table + sfq_e_header + payload(1 byte) */
 
-		FIRE(SFQ_RC_EA_FSIZESMALL, "specified filesize-limit too small");
+		SFQ_FAIL(EA_FSIZESMALL, "specified filesize-limit too small");
 	}
 
 /* open queue-file */
 	qo = sfq_create_queue(querootdir, quename);
 	if (! qo)
 	{
-		FIRE(SFQ_RC_EA_OPENFILE, "sfq_create_queue");
+		SFQ_FAIL(EA_OPENFILE, "sfq_create_queue");
 	}
 
 /* initialize queue-header */
@@ -97,7 +97,7 @@ LIBFUNC_INITIALIZE
 	iosize = fwrite(&qfh, qfh_size, 1, qo->fp);
 	if (iosize != 1)
 	{
-		FIRE(SFQ_RC_ES_FILEIO, "FILE-WRITE(qfh)");
+		SFQ_FAIL(ES_FILEIO, "FILE-WRITE(qfh)");
 	}
 
 	if (procs_size)
@@ -106,7 +106,7 @@ LIBFUNC_INITIALIZE
 		iosize = fwrite(procs, procs_size, 1, qo->fp);
 		if (iosize != 1)
 		{
-			FIRE(SFQ_RC_ES_FILEIO, "FILE-WRITE(procs)");
+			SFQ_FAIL(ES_FILEIO, "FILE-WRITE(procs)");
 		}
 	}
 
@@ -114,13 +114,13 @@ LIBFUNC_INITIALIZE
 	sfq_print_qf_header(&qfh);
 #endif
 
-LIBFUNC_COMMIT
+SFQ_LIB_CHECKPOINT
 
 	sfq_close_queue(qo);
 	qo = NULL;
 
-LIBFUNC_FINALIZE
+SFQ_LIB_FINALIZE
 
-	return LIBFUNC_RC();
+	return SFQ_LIB_RC();
 }
 

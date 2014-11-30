@@ -1,37 +1,5 @@
 #include "sfqc-lib.h"
 
-#if 0
-static bool is_dir(const char* path)
-{
-	struct stat buf;
-
-	if (stat(path, &buf) == 0)
-	{
-		if (S_ISDIR(buf.st_mode))
-		{
-			return true;
-		}
-	}
-
-	return false;
-}
-
-static bool is_file(const char* path)
-{
-	struct stat buf;
-
-	if (stat(path, &buf) == 0)
-	{
-		if (S_ISREG(buf.st_mode))
-		{
-			return true;
-		}
-	}
-
-	return false;
-}
-#endif
-
 sfq_byte* sfqc_readstdin(size_t* readsize)
 {
 	sfq_byte* mem = NULL;
@@ -175,9 +143,11 @@ int sfqc_can_push(const struct sfqc_init_option* p)
 
 int sfqc_get_init_option(int argc, char** argv, const char* optstring, struct sfqc_init_option* p)
 {
-	int opt = 0;
 	int irc = SFQ_RC_UNKNOWN;
-	char errstr[32] = "";
+	int opt = 0;
+
+	int jumppos = -1;
+	char message[128] = "";
 
 	assert(p);
 
@@ -190,7 +160,8 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, struct sf
 		{
 			case '?':
 			{
-				snprintf(errstr, sizeof(errstr), "%c:unknown option", optopt);
+				snprintf(message, sizeof(message), "'%c': unknown option", optopt);
+				jumppos = __LINE__;
 				goto EXIT_LABEL;
 
 				break;
@@ -201,7 +172,8 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, struct sf
 				char* c = strdup(optarg);
 				if (! c)
 				{
-					snprintf(errstr, sizeof(errstr), "%c:mem alloc", opt);
+					snprintf(message, sizeof(message), "'%c': mem alloc", opt);
+					jumppos = __LINE__;
 					goto EXIT_LABEL;
 				}
 				p->quename = c;
@@ -214,7 +186,8 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, struct sf
 				char* c = strdup(optarg);
 				if (! c)
 				{
-					snprintf(errstr, sizeof(errstr), "%c:mem alloc", opt);
+					snprintf(message, sizeof(message), "'%c': mem alloc", opt);
+					jumppos = __LINE__;
 					goto EXIT_LABEL;
 				}
 				p->querootdir = c;
@@ -228,7 +201,8 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, struct sf
 				unsigned long ul = strtoul(optarg, &e, 0);
 				if (*e)
 				{
-					snprintf(errstr, sizeof(errstr), "%c:ignore [%s]", opt, e);
+					snprintf(message, sizeof(message), "'%c': ignore [%s]", opt, e);
+					jumppos = __LINE__;
 					goto EXIT_LABEL;
 				}
 				p->filesize_limit = ul;
@@ -242,7 +216,8 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, struct sf
 				unsigned long ul = strtoul(optarg, &e, 0);
 				if (*e)
 				{
-					snprintf(errstr, sizeof(errstr), "%c:ignore [%s]", opt, e);
+					snprintf(message, sizeof(message), "'%c': ignore [%s]", opt, e);
+					jumppos = __LINE__;
 					goto EXIT_LABEL;
 				}
 				p->payloadsize_limit = ul;
@@ -256,12 +231,13 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, struct sf
 				unsigned long ul = strtoul(optarg, &e, 0);
 				if (*e)
 				{
-					snprintf(errstr, sizeof(errstr), "%c:ignore [%s]", opt, e);
+					snprintf(message, sizeof(message), "'%c': ignore [%s]", opt, e);
+					jumppos = __LINE__;
 					goto EXIT_LABEL;
 				}
 				if (ul >= USHRT_MAX)
 				{
-					snprintf(errstr, sizeof(errstr), "%c:size over (%u)", opt, USHRT_MAX);
+					snprintf(message, sizeof(message), "'%c': size over (%u)", opt, USHRT_MAX);
 				}
 				p->max_proc_num = (ushort)ul;
 
@@ -273,7 +249,8 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, struct sf
 				char* c = strdup(optarg);
 				if (! c)
 				{
-					snprintf(errstr, sizeof(errstr), "%c:mem alloc", opt);
+					snprintf(message, sizeof(message), "'%c': mem alloc", opt);
+					jumppos = __LINE__;
 					goto EXIT_LABEL;
 				}
 				p->execpath = c;
@@ -286,7 +263,8 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, struct sf
 				char* c = strdup(optarg);
 				if (! c)
 				{
-					snprintf(errstr, sizeof(errstr), "%c:mem alloc", opt);
+					snprintf(message, sizeof(message), "'%c': mem alloc", opt);
+					jumppos = __LINE__;
 					goto EXIT_LABEL;
 				}
 				p->execargs = c;
@@ -299,7 +277,8 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, struct sf
 				char* c = strdup(optarg);
 				if (! c)
 				{
-					snprintf(errstr, sizeof(errstr), "%c:mem alloc", opt);
+					snprintf(message, sizeof(message), "'%c': mem alloc", opt);
+					jumppos = __LINE__;
 					goto EXIT_LABEL;
 				}
 				p->textdata = c;
@@ -312,7 +291,8 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, struct sf
 				char* c = strdup(optarg);
 				if (! c)
 				{
-					snprintf(errstr, sizeof(errstr), "%c:mem alloc", opt);
+					snprintf(message, sizeof(message), "'%c': mem alloc", opt);
+					jumppos = __LINE__;
 					goto EXIT_LABEL;
 				}
 				p->inputfile = c;
@@ -325,7 +305,8 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, struct sf
 				char* c = strdup(optarg);
 				if (! c)
 				{
-					snprintf(errstr, sizeof(errstr), "%c:mem alloc", opt);
+					snprintf(message, sizeof(message), "'%c': mem alloc", opt);
+					jumppos = __LINE__;
 					goto EXIT_LABEL;
 				}
 				p->metadata = c;
@@ -334,7 +315,8 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, struct sf
 			}
 			default:
 			{
-				snprintf(errstr, sizeof(errstr), "%c:unknown route", opt);
+				snprintf(message, sizeof(message), "'%c': unknown route", opt);
+				jumppos = __LINE__;
 				goto EXIT_LABEL;
 
 				break;
@@ -348,9 +330,9 @@ EXIT_LABEL:
 
 	if (irc != SFQ_RC_SUCCESS)
 	{
-		if (errstr[0])
+		if (message[0])
 		{
-			fprintf(stderr, "%s:%d:%s\n", __FILE__, __LINE__, errstr);
+			fprintf(stderr, "%s(%d): %s\n", __FILE__, jumppos, message);
 		}
 
 		sfqc_free_init_option(p);

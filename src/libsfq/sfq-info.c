@@ -2,7 +2,7 @@
 
 int sfq_info(const char* querootdir, const char* quename)
 {
-LIBFUNC_INITIALIZE
+SFQ_LIB_INITIALIZE
 
 	struct sfq_queue_object* qo = NULL;
 	struct sfq_process_info* procs = NULL;
@@ -18,7 +18,7 @@ LIBFUNC_INITIALIZE
 	qo = sfq_open_queue(querootdir, quename, "rb");
 	if (! qo)
 	{
-		FIRE(SFQ_RC_EA_OPENFILE, "sfq_open_queue");
+		SFQ_FAIL(EA_OPENFILE, "sfq_open_queue");
 	}
 
 	sfq_print_sizes();
@@ -27,7 +27,7 @@ LIBFUNC_INITIALIZE
 	b = sfq_readqfh(qo->fp, &qfh, &procs);
 	if (! b)
 	{
-		FIRE(SFQ_RC_EA_READQFH, "sfq_readqfh");
+		SFQ_FAIL(EA_READQFH, "sfq_readqfh");
 	}
 
 #ifndef SFQ_DEBUG_BUILD
@@ -42,7 +42,7 @@ LIBFUNC_INITIALIZE
 	}
 #endif
 
-LIBFUNC_COMMIT
+SFQ_LIB_CHECKPOINT
 
 	sfq_close_queue(qo);
 	qo = NULL;
@@ -50,8 +50,8 @@ LIBFUNC_COMMIT
 	free(procs);
 	procs = NULL;
 
-LIBFUNC_FINALIZE
+SFQ_LIB_FINALIZE
 
-	return LIBFUNC_RC();
+	return SFQ_LIB_RC();
 }
 

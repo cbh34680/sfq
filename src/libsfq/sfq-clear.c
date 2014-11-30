@@ -2,7 +2,7 @@
 
 int sfq_clear(const char* querootdir, const char* quename)
 {
-LIBFUNC_INITIALIZE
+SFQ_LIB_INITIALIZE
 
 	struct sfq_queue_object* qo = NULL;
 
@@ -17,14 +17,14 @@ LIBFUNC_INITIALIZE
 	qo = sfq_open_queue(querootdir, quename, "rb+");
 	if (! qo)
 	{
-		FIRE(SFQ_RC_EA_OPENFILE, "sfq_open_queue");
+		SFQ_FAIL(EA_OPENFILE, "sfq_open_queue");
 	}
 
 /* read file-header */
 	b = sfq_readqfh(qo->fp, &qfh, NULL);
 	if (! b)
 	{
-		FIRE(SFQ_RC_EA_READQFH, "sfq_readqfh");
+		SFQ_FAIL(EA_READQFH, "sfq_readqfh");
 	}
 
 	qfh.last_qhd2 = qfh.last_qhd1;
@@ -40,20 +40,20 @@ LIBFUNC_INITIALIZE
 	b = sfq_seek_set_and_write(qo->fp, 0, &qfh, sizeof(qfh));
 	if (! b)
 	{
-		FIRE(SFQ_RC_EA_SEEKSETIO, "sfq_seek_set_and_write(qfh)");
+		SFQ_FAIL(EA_SEEKSETIO, "sfq_seek_set_and_write(qfh)");
 	}
 
 #ifdef SFQ_DEBUG_BUILD
 	sfq_print_q_header(&qfh.qh);
 #endif
 
-LIBFUNC_COMMIT
+SFQ_LIB_CHECKPOINT
 
 	sfq_close_queue(qo);
 	qo = NULL;
 
-LIBFUNC_FINALIZE
+SFQ_LIB_FINALIZE
 
-	return LIBFUNC_RC();
+	return SFQ_LIB_RC();
 }
 

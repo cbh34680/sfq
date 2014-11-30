@@ -2,7 +2,7 @@
 
 struct sfq_queue_object* sfq_create_queue(const char* querootdir, const char* quename)
 {
-LIBFUNC_INITIALIZE
+SFQ_LIB_INITIALIZE
 
 	struct sfq_queue_object* qo = NULL;
 	struct sfq_open_names* chk_om = NULL;
@@ -14,7 +14,7 @@ LIBFUNC_INITIALIZE
 	chk_om = sfq_alloc_open_names(querootdir, quename);
 	if (! chk_om)
 	{
-		FIRE(SFQ_RC_EA_CREATENAMES, "sfq_alloc_open_names");
+		SFQ_FAIL(EA_CREATENAMES, "sfq_alloc_open_names");
 	}
 
 /* queue-dir not exists */
@@ -22,7 +22,7 @@ LIBFUNC_INITIALIZE
 	if (irc != 0)
 	{
 		/* already exists */
-		FIRE(SFQ_RC_EA_PATHNOTEXIST, "queue-dir not exists");
+		SFQ_FAIL(EA_PATHNOTEXIST, "queue-dir not exists");
 	}
 
 /* queue file, already exists */
@@ -30,7 +30,7 @@ LIBFUNC_INITIALIZE
 	if (irc == 0)
 	{
 		/* already exists */
-		FIRE(SFQ_RC_EA_EXISTQUEUE, "queue-directory exists");
+		SFQ_FAIL(EA_EXISTQUEUE, "queue-directory exists");
 	}
 
 /* delete old lock */
@@ -39,7 +39,7 @@ LIBFUNC_INITIALIZE
 	{
 		if (errno != ENOENT)
 		{
-			FIRE(SFQ_RC_ES_UNLINK, "sem_unlink");
+			SFQ_FAIL(ES_UNLINK, "sem_unlink");
 		}
 	}
 
@@ -47,25 +47,25 @@ LIBFUNC_INITIALIZE
 	irc = mkdir(chk_om->quedir, 0700);
 	if (irc != 0)
 	{
-		FIRE(SFQ_RS_ES_MKDIR, "quedir");
+		SFQ_FAIL(ES_MKDIR, "quedir");
 	}
 
 	irc = mkdir(chk_om->quelogdir, 0700);
 	if (irc != 0)
 	{
-		FIRE(SFQ_RS_ES_MKDIR, "quelogdir");
+		SFQ_FAIL(ES_MKDIR, "quelogdir");
 	}
 
 	irc = mkdir(chk_om->queproclogdir, 0700);
 	if (irc != 0)
 	{
-		FIRE(SFQ_RS_ES_MKDIR, "queproclogdir");
+		SFQ_FAIL(ES_MKDIR, "queproclogdir");
 	}
 
 	irc = mkdir(chk_om->queexeclogdir, 0700);
 	if (irc != 0)
 	{
-		FIRE(SFQ_RS_ES_MKDIR, "queexeclogdir");
+		SFQ_FAIL(ES_MKDIR, "queexeclogdir");
 	}
 
 	sfq_free_open_names(chk_om);
@@ -75,12 +75,12 @@ LIBFUNC_INITIALIZE
 	qo = sfq_open_queue(querootdir, quename, "wb");
 	if (! qo)
 	{
-		FIRE(SFQ_RC_EA_OPENFILE, "sfq_open_queue");
+		SFQ_FAIL(EA_OPENFILE, "sfq_open_queue");
 	}
 
-LIBFUNC_COMMIT
+SFQ_LIB_CHECKPOINT
 
-	if (LIBFUNC_IS_ROLLBACK())
+	if (SFQ_LIB_IS_FAIL())
 	{
 		sfq_free_open_names(chk_om);
 		chk_om = NULL;
@@ -89,14 +89,14 @@ LIBFUNC_COMMIT
 		qo = NULL;
 	}
 
-LIBFUNC_FINALIZE
+SFQ_LIB_FINALIZE
 
 	return qo;
 }
 
 struct sfq_queue_object* sfq_open_queue(const char* querootdir, const char* quename, const char* file_mode)
 {
-LIBFUNC_INITIALIZE
+SFQ_LIB_INITIALIZE
 
 	struct sfq_queue_object* qo = NULL;
 
@@ -110,28 +110,28 @@ LIBFUNC_INITIALIZE
 /* check argument */
 	if (! file_mode)
 	{
-		FIRE(SFQ_RC_EA_FUNCARG, "arg(file_mode) is null");
+		SFQ_FAIL(EA_FUNCARG, "arg(file_mode) is null");
 	}
 
 /* create names */
 	om = sfq_alloc_open_names(querootdir, quename);
 	if (! om)
 	{
-		FIRE(SFQ_RC_EA_CREATENAMES, "sfq_alloc_open_names");
+		SFQ_FAIL(EA_CREATENAMES, "sfq_alloc_open_names");
 	}
 
 /* open semaphore */
 	semobj = sem_open(om->semname, O_CREAT, 0600, 1);
 	if (semobj == SEM_FAILED)
 	{
-		FIRE(SFQ_RS_ES_SEMOPEN, "sem_open");
+		SFQ_FAIL(ES_SEMOPEN, "sem_open");
 	}
 
 /* lock */
 	irc = sem_wait(semobj);
 	if (irc == -1)
 	{
-		FIRE(SFQ_RS_ES_SEMIO, "sem_wait");
+		SFQ_FAIL(ES_SEMIO, "sem_wait");
 	}
 	locked = true;
 
@@ -139,14 +139,14 @@ LIBFUNC_INITIALIZE
 	fp = fopen(om->quefile, file_mode);
 	if (! fp)
 	{
-		FIRE(SFQ_RC_ES_FILEOPEN, "fopen");
+		SFQ_FAIL(ES_FILEOPEN, "fopen");
 	}
 
 /* create response */
 	qo = malloc(sizeof(*qo));
 	if (! qo)
 	{
-		FIRE(SFQ_RC_ES_MEMALLOC, "malloc(locked_file)");
+		SFQ_FAIL(ES_MEMALLOC, "malloc(locked_file)");
 	}
 
 	qo->om = om;
@@ -169,9 +169,9 @@ LIBFUNC_INITIALIZE
 */
 #endif
 
-LIBFUNC_COMMIT
+SFQ_LIB_CHECKPOINT
 
-	if (LIBFUNC_IS_ROLLBACK())
+	if (SFQ_LIB_IS_FAIL())
 	{
 		if (fp)
 		{
@@ -196,7 +196,7 @@ LIBFUNC_COMMIT
 		qo = NULL;
 	}
 
-LIBFUNC_FINALIZE
+SFQ_LIB_FINALIZE
 
 	return qo;
 }
@@ -223,7 +223,7 @@ void sfq_close_queue(struct sfq_queue_object* qo)
 
 bool sfq_readqfh(FILE* fp, struct sfq_file_header* qfh, struct sfq_process_info** pprocs)
 {
-LIBFUNC_INITIALIZE
+SFQ_LIB_INITIALIZE
 
 	struct sfq_process_info* procs = NULL;
 	size_t procs_size = 0;
@@ -234,19 +234,19 @@ LIBFUNC_INITIALIZE
 	iosize = fread(qfh, sizeof(*qfh), 1, fp);
 	if (iosize != 1)
 	{
-		FIRE(SFQ_RC_ES_FILEIO, "fread(qfh)");
+		SFQ_FAIL(ES_FILEIO, "fread(qfh)");
 	}
 
 /* check magic string */
 	if (strncmp(qfh->magicstr, SFQ_MAGICSTR, strlen(SFQ_MAGICSTR)) != 0)
 	{
-		FIRE(SFQ_RC_EA_ILLEGALVER, "magicstr");
+		SFQ_FAIL(EA_ILLEGALVER, "magicstr");
 	}
 
 /* check data version */
 	if (qfh->qfh_size != sizeof(*qfh))
 	{
-		FIRE(SFQ_RC_EA_ILLEGALVER, "qfh_size");
+		SFQ_FAIL(EA_ILLEGALVER, "qfh_size");
 	}
 
 #ifdef SFQ_DEBUG_BUILD
@@ -263,13 +263,13 @@ LIBFUNC_INITIALIZE
 
 			if (! procs)
 			{
-				FIRE(SFQ_RC_ES_MEMALLOC, "ALLOC(procs)");
+				SFQ_FAIL(ES_MEMALLOC, "ALLOC(procs)");
 			}
 
 			iosize = fread(procs, procs_size, 1, fp);
 			if (iosize != 1)
 			{
-				FIRE(SFQ_RC_ES_FILEIO, "FILE-READ(procs)");
+				SFQ_FAIL(ES_FILEIO, "FILE-READ(procs)");
 			}
 
 #ifdef SFQ_DEBUG_BUILD
@@ -280,16 +280,16 @@ LIBFUNC_INITIALIZE
 		}
 	}
 
-LIBFUNC_COMMIT
+SFQ_LIB_CHECKPOINT
 
-	if (LIBFUNC_IS_ROLLBACK())
+	if (SFQ_LIB_IS_FAIL())
 	{
 		free(procs);
 	}
 
-LIBFUNC_FINALIZE
+SFQ_LIB_FINALIZE
 
-	return LIBFUNC_IS_SUCCESS();
+	return SFQ_LIB_IS_SUCCESS();
 }
 
 /*
@@ -303,7 +303,7 @@ LIBFUNC_FINALIZE
  */
 bool sfq_writeelm(FILE* fp, off_t seek_pos, struct sfq_ioelm_buff* ioeb)
 {
-LIBFUNC_INITIALIZE
+SFQ_LIB_INITIALIZE
 
 	bool b = false;
 	size_t iosize = 0;
@@ -311,7 +311,7 @@ LIBFUNC_INITIALIZE
 	b = sfq_seek_set_and_write(fp, seek_pos, &ioeb->eh, sizeof(ioeb->eh));
 	if (! b)
 	{
-		FIRE(SFQ_RC_EA_SEEKSETIO, "sfq_seek_set_and_write");
+		SFQ_FAIL(EA_SEEKSETIO, "sfq_seek_set_and_write");
 	}
 
 	if (ioeb->eh.payload_size)
@@ -322,7 +322,7 @@ LIBFUNC_INITIALIZE
 		iosize = fwrite(ioeb->payload, ioeb->eh.payload_size, 1, fp);
 		if (iosize != 1)
 		{
-			FIRE(SFQ_RC_ES_FILEIO, "FILE-WRITE(payload)");
+			SFQ_FAIL(ES_FILEIO, "FILE-WRITE(payload)");
 		}
 	}
 
@@ -334,7 +334,7 @@ LIBFUNC_INITIALIZE
 		iosize = fwrite(ioeb->execpath, ioeb->eh.execpath_size, 1, fp);
 		if (iosize != 1)
 		{
-			FIRE(SFQ_RC_ES_FILEIO, "FILE-WRITE(execpath)");
+			SFQ_FAIL(ES_FILEIO, "FILE-WRITE(execpath)");
 		}
 	}
 
@@ -346,7 +346,7 @@ LIBFUNC_INITIALIZE
 		iosize = fwrite(ioeb->execargs, ioeb->eh.execargs_size, 1, fp);
 		if (iosize != 1)
 		{
-			FIRE(SFQ_RC_ES_FILEIO, "FILE-WRITE(execargs)");
+			SFQ_FAIL(ES_FILEIO, "FILE-WRITE(execargs)");
 		}
 	}
 
@@ -358,20 +358,20 @@ LIBFUNC_INITIALIZE
 		iosize = fwrite(ioeb->metadata, ioeb->eh.metadata_size, 1, fp);
 		if (iosize != 1)
 		{
-			FIRE(SFQ_RC_ES_FILEIO, "FILE-WRITE(metadata)");
+			SFQ_FAIL(ES_FILEIO, "FILE-WRITE(metadata)");
 		}
 	}
 
-LIBFUNC_COMMIT
+SFQ_LIB_CHECKPOINT
 
-LIBFUNC_FINALIZE
+SFQ_LIB_FINALIZE
 
-	return LIBFUNC_IS_SUCCESS();
+	return SFQ_LIB_IS_SUCCESS();
 }
 
 bool sfq_readelm(FILE* fp, off_t seek_pos, struct sfq_ioelm_buff* ioeb)
 {
-LIBFUNC_INITIALIZE
+SFQ_LIB_INITIALIZE
 
 	bool b = false;
 	size_t iosize = 0;
@@ -393,12 +393,12 @@ LIBFUNC_INITIALIZE
 	b = sfq_seek_set_and_read(fp, seek_pos, &ioeb->eh, eh_size);
 	if (! b)
 	{
-		FIRE(SFQ_RC_EA_SEEKSETIO, "sfq_seek_set_and_read(eh)");
+		SFQ_FAIL(EA_SEEKSETIO, "sfq_seek_set_and_read(eh)");
 	}
 
 	if (ioeb->eh.eh_size != eh_size)
 	{
-		FIRE(SFQ_RC_EA_ILLEGALVER, "ioeb->eh.eh_size != eh_size");
+		SFQ_FAIL(EA_ILLEGALVER, "ioeb->eh.eh_size != eh_size");
 	}
 
 	if (ioeb->eh.payload_size)
@@ -407,13 +407,13 @@ LIBFUNC_INITIALIZE
 		payload = malloc(ioeb->eh.payload_size);
 		if (! payload)
 		{
-			FIRE(SFQ_RC_ES_MEMALLOC, "ALLOC(payload_size)");
+			SFQ_FAIL(ES_MEMALLOC, "ALLOC(payload_size)");
 		}
 
 		iosize = fread(payload, ioeb->eh.payload_size, 1, fp);
 		if (iosize != 1)
 		{
-			FIRE(SFQ_RC_ES_FILEIO, "FILE-READ(payload)");
+			SFQ_FAIL(ES_FILEIO, "FILE-READ(payload)");
 		}
 	}
 
@@ -423,13 +423,13 @@ LIBFUNC_INITIALIZE
 		execpath = malloc(ioeb->eh.execpath_size);
 		if (! execpath)
 		{
-			FIRE(SFQ_RC_ES_MEMALLOC, "ALLOC(execpath)");
+			SFQ_FAIL(ES_MEMALLOC, "ALLOC(execpath)");
 		}
 
 		iosize = fread(execpath, ioeb->eh.execpath_size, 1, fp);
 		if (iosize != 1)
 		{
-			FIRE(SFQ_RC_ES_FILEIO, "FILE-READ(execpath)");
+			SFQ_FAIL(ES_FILEIO, "FILE-READ(execpath)");
 		}
 	}
 
@@ -439,13 +439,13 @@ LIBFUNC_INITIALIZE
 		execargs = malloc(ioeb->eh.execargs_size);
 		if (! execargs)
 		{
-			FIRE(SFQ_RC_ES_MEMALLOC, "ALLOC(execargs)");
+			SFQ_FAIL(ES_MEMALLOC, "ALLOC(execargs)");
 		}
 
 		iosize = fread(execargs, ioeb->eh.execargs_size, 1, fp);
 		if (iosize != 1)
 		{
-			FIRE(SFQ_RC_ES_FILEIO, "FILE-READ(execargs)");
+			SFQ_FAIL(ES_FILEIO, "FILE-READ(execargs)");
 		}
 	}
 
@@ -455,13 +455,13 @@ LIBFUNC_INITIALIZE
 		metadata = malloc(ioeb->eh.metadata_size);
 		if (! metadata)
 		{
-			FIRE(SFQ_RC_ES_MEMALLOC, "ALLOC(metadata)");
+			SFQ_FAIL(ES_MEMALLOC, "ALLOC(metadata)");
 		}
 
 		iosize = fread(metadata, ioeb->eh.metadata_size, 1, fp);
 		if (iosize != 1)
 		{
-			FIRE(SFQ_RC_ES_FILEIO, "FILE-READ(metadata)");
+			SFQ_FAIL(ES_FILEIO, "FILE-READ(metadata)");
 		}
 	}
 
@@ -470,9 +470,9 @@ LIBFUNC_INITIALIZE
 	ioeb->metadata = metadata;
 	ioeb->payload = payload;
 
-LIBFUNC_COMMIT
+SFQ_LIB_CHECKPOINT
 
-	if (LIBFUNC_IS_ROLLBACK())
+	if (SFQ_LIB_IS_FAIL())
 	{
 		free(execpath);
 		free(execargs);
@@ -480,9 +480,9 @@ LIBFUNC_COMMIT
 		free(payload);
 	}
 
-LIBFUNC_FINALIZE
+SFQ_LIB_FINALIZE
 
-	return LIBFUNC_IS_SUCCESS();
+	return SFQ_LIB_IS_SUCCESS();
 }
 
 bool sfq_seek_set_and_read(FILE* fp, off_t set_pos, void* mem, size_t mem_size)

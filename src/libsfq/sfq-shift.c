@@ -2,7 +2,7 @@
 
 int sfq_shift(const char* querootdir, const char* quename, struct sfq_value* val)
 {
-LIBFUNC_INITIALIZE
+SFQ_LIB_INITIALIZE
 
 	struct sfq_queue_object* qo = NULL;
 
@@ -22,21 +22,21 @@ LIBFUNC_INITIALIZE
 /* */
 	if (! val)
 	{
-		FIRE(SFQ_RC_EA_FUNCARG, "val is null");
+		SFQ_FAIL(EA_FUNCARG, "val is null");
 	}
 
 /* open queue-file */
 	qo = sfq_open_queue(querootdir, quename, "rb+");
 	if (! qo)
 	{
-		FIRE(SFQ_RC_EA_OPENFILE, "sfq_open_queue");
+		SFQ_FAIL(EA_OPENFILE, "sfq_open_queue");
 	}
 
 /* read file-header */
 	b = sfq_readqfh(qo->fp, &qfh, NULL);
 	if (! b)
 	{
-		FIRE(SFQ_RC_EA_READQFH, "sfq_readqfh");
+		SFQ_FAIL(EA_READQFH, "sfq_readqfh");
 	}
 
 	qfh.last_qhd2 = qfh.last_qhd1;
@@ -45,12 +45,12 @@ LIBFUNC_INITIALIZE
 /* check empty */
 	if (qfh.qh.dval.elm_num == 0)
 	{
-		FIRE(SFQ_RC_NO_ELEMENT, "no element/shift");
+		SFQ_FAIL_SILENT(NO_ELEMENT);
 	}
 
 	if (qfh.qh.dval.elm_next_shift_pos == 0)
 	{
-		FIRE(SFQ_RC_EA_ASSERT, "qfh.qh.dval.elm_next_shift_pos == 0");
+		SFQ_FAIL(EA_ASSERT, "qfh.qh.dval.elm_next_shift_pos == 0");
 	}
 
 	elm_pos = qfh.qh.dval.elm_next_shift_pos;
@@ -59,7 +59,7 @@ LIBFUNC_INITIALIZE
 	b = sfq_readelm(qo->fp, elm_pos, &ioeb);
 	if (! b)
 	{
-		FIRE(SFQ_RC_EA_RWELEMENT, "sfq_readelm");
+		SFQ_FAIL(EA_RWELEMENT, "sfq_readelm");
 	}
 
 /* update queue file header */
@@ -79,7 +79,7 @@ LIBFUNC_INITIALIZE
 		b = sfq_seek_set_and_read(qo->fp, ioeb.eh.next_elmpos, &next_eh, eh_size);
 		if (! b)
 		{
-			FIRE(SFQ_RC_EA_SEEKSETIO, "sfq_seek_set_and_read(next_eh)");
+			SFQ_FAIL(EA_SEEKSETIO, "sfq_seek_set_and_read(next_eh)");
 		}
 
 		/* 次の要素の prev_elmpos に 0 を設定し、リンクを切る */
@@ -88,7 +88,7 @@ LIBFUNC_INITIALIZE
 		b = sfq_seek_set_and_write(qo->fp, ioeb.eh.next_elmpos, &next_eh, eh_size);
 		if (! b)
 		{
-			FIRE(SFQ_RC_EA_SEEKSETIO, "sfq_seek_set_and_write(next_eh)");
+			SFQ_FAIL(EA_SEEKSETIO, "sfq_seek_set_and_write(next_eh)");
 		}
 
 /* update next shift pos */
@@ -103,7 +103,7 @@ LIBFUNC_INITIALIZE
 	b = sfq_seek_set_and_write(qo->fp, 0, &qfh, sizeof(qfh));
 	if (! b)
 	{
-		FIRE(SFQ_RC_EA_SEEKSETIO, "sfq_seek_set_and_write(qfh)");
+		SFQ_FAIL(EA_SEEKSETIO, "sfq_seek_set_and_write(qfh)");
 	}
 
 #ifdef SFQ_DEBUG_BUILD
@@ -114,21 +114,21 @@ LIBFUNC_INITIALIZE
 	b = sfq_copy_ioeb2val(&ioeb, val);
 	if (! b)
 	{
-		FIRE(SFQ_RC_EA_COPYVALUE, "sfq_copy_ioeb2val");
+		SFQ_FAIL(EA_COPYVALUE, "sfq_copy_ioeb2val");
 	}
 
-LIBFUNC_COMMIT
+SFQ_LIB_CHECKPOINT
 
 	sfq_close_queue(qo);
 	qo = NULL;
 
-	if (LIBFUNC_IS_ROLLBACK())
+	if (SFQ_LIB_IS_FAIL())
 	{
 		sfq_free_ioelm_buff(&ioeb);
 	}
 
-LIBFUNC_FINALIZE
+SFQ_LIB_FINALIZE
 
-	return LIBFUNC_RC();
+	return SFQ_LIB_RC();
 }
 

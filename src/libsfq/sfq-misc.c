@@ -41,7 +41,7 @@ int sfq_push_bin(const char* querootdir, const char* quename, const char* execpa
 
 bool sfq_copy_val2ioeb(const struct sfq_value* val, struct sfq_ioelm_buff* ioeb)
 {
-LIBFUNC_INITIALIZE
+SFQ_LIB_INITIALIZE
 
 	size_t eh_size = 0;
 	size_t add_all = 0;
@@ -49,12 +49,12 @@ LIBFUNC_INITIALIZE
 
 	if (! ioeb)
 	{
-		FIRE(SFQ_RC_EA_FUNCARG, "ioeb");
+		SFQ_FAIL(EA_FUNCARG, "ioeb");
 	}
 
 	if (! val)
 	{
-		FIRE(SFQ_RC_EA_FUNCARG, "val");
+		SFQ_FAIL(EA_FUNCARG, "val");
 	}
 
 /* initialize */
@@ -77,11 +77,11 @@ LIBFUNC_INITIALIZE
 
 			if (execpath_size >= USHRT_MAX)
 			{
-				FIRE(SFQ_RC_EA_OVERLIMIT, "execpath_size");
+				SFQ_FAIL(EA_OVERLIMIT, "execpath_size");
 			}
 			if (execpath_size >= PATH_MAX)
 			{
-				FIRE(SFQ_RC_EA_OVERLIMIT, "execpath_size");
+				SFQ_FAIL(EA_OVERLIMIT, "execpath_size");
 			}
 
 			ioeb->execpath = val->execpath;
@@ -99,14 +99,14 @@ LIBFUNC_INITIALIZE
 
 			if (execargs_size >= UINT_MAX)
 			{
-				FIRE(SFQ_RC_EA_OVERLIMIT, "execargs_size");
+				SFQ_FAIL(EA_OVERLIMIT, "execargs_size");
 			}
 
 			if (sysmax > 0)
 			{
 				if (execargs_size >= (size_t)sysmax)
 				{
-					FIRE(SFQ_RC_EA_OVERLIMIT, "execargs_size");
+					SFQ_FAIL(EA_OVERLIMIT, "execargs_size");
 				}
 			}
 
@@ -124,7 +124,7 @@ LIBFUNC_INITIALIZE
 
 			if (metadata_size >= USHRT_MAX)
 			{
-				FIRE(SFQ_RC_EA_OVERLIMIT, "metadata_size");
+				SFQ_FAIL(EA_OVERLIMIT, "metadata_size");
 			}
 
 			ioeb->metadata = val->metadata;
@@ -153,11 +153,11 @@ LIBFUNC_INITIALIZE
 	ioeb->eh.elmsize_ = add_all + elmmargin_;
 	ioeb->eh.elmmargin_ = elmmargin_;
 
-LIBFUNC_COMMIT
+SFQ_LIB_CHECKPOINT
 
-LIBFUNC_FINALIZE
+SFQ_LIB_FINALIZE
 
-	return LIBFUNC_IS_SUCCESS();
+	return SFQ_LIB_IS_SUCCESS();
 }
 
 bool sfq_copy_ioeb2val(const struct sfq_ioelm_buff* ioeb, struct sfq_value* val)
@@ -205,7 +205,7 @@ void sfq_free_value(struct sfq_value* val)
 
 int sfq_alloc_print_value(const struct sfq_value* val, struct sfq_value* dst)
 {
-LIBFUNC_INITIALIZE
+SFQ_LIB_INITIALIZE
 
 	const char* na = "N/A";
 
@@ -217,12 +217,12 @@ LIBFUNC_INITIALIZE
 /* */
 	if (! val)
 	{
-		FIRE(SFQ_RC_EA_FUNCARG, "val");
+		SFQ_FAIL(EA_FUNCARG, "val");
 	}
 
 	if (! dst)
 	{
-		FIRE(SFQ_RC_EA_FUNCARG, "dst");
+		SFQ_FAIL(EA_FUNCARG, "dst");
 	}
 
 	bzero(dst, sizeof(*dst));
@@ -230,19 +230,19 @@ LIBFUNC_INITIALIZE
 	execpath = strdup(val->execpath ? val->execpath : na);
 	if (! execpath)
 	{
-		FIRE(SFQ_RS_ES_STRDUP, "execpath");
+		SFQ_FAIL(ES_STRDUP, "execpath");
 	}
 
 	execargs = strdup(val->execargs ? val->execargs : na);
 	if (! execargs)
 	{
-		FIRE(SFQ_RS_ES_STRDUP, "execargs");
+		SFQ_FAIL(ES_STRDUP, "execargs");
 	}
 
 	metadata = strdup(val->metadata ? val->metadata : na);
 	if (! metadata)
 	{
-		FIRE(SFQ_RS_ES_STRDUP, "metadata");
+		SFQ_FAIL(ES_STRDUP, "metadata");
 	}
 
 	if (val->payload)
@@ -275,7 +275,7 @@ LIBFUNC_INITIALIZE
 
 	if (! payload)
 	{
-		FIRE(SFQ_RS_ES_STRDUP, "payload");
+		SFQ_FAIL(ES_STRDUP, "payload");
 	}
 
 	dst->id = val->id;
@@ -288,9 +288,9 @@ LIBFUNC_INITIALIZE
 	dst->metadata = metadata;
 	dst->payload = (sfq_byte*)payload;
 
-LIBFUNC_COMMIT
+SFQ_LIB_CHECKPOINT
 
-	if (LIBFUNC_IS_ROLLBACK())
+	if (SFQ_LIB_IS_FAIL())
 	{
 		free(execpath);
 		free(execargs);
@@ -298,14 +298,14 @@ LIBFUNC_COMMIT
 		free(payload);
 	}
 
-LIBFUNC_FINALIZE
+SFQ_LIB_FINALIZE
 
-	return LIBFUNC_RC();
+	return SFQ_LIB_RC();
 }
 
 struct sfq_open_names* sfq_alloc_open_names(const char* querootdir, const char* quename)
 {
-LIBFUNC_INITIALIZE
+SFQ_LIB_INITIALIZE
 
 	struct sfq_open_names* om = NULL;
 
@@ -350,14 +350,14 @@ LIBFUNC_INITIALIZE
 	quename_len = strlen(quename);
 	if (quename_len == 0)
 	{
-		FIRE(SFQ_RC_EA_FUNCARG, "quename_len == 0");
+		SFQ_FAIL(EA_FUNCARG, "quename_len == 0");
 	}
 
 /* save rootdir realpath */
 	om_querootdir = realpath(querootdir, NULL);
 	if (! om_querootdir)
 	{
-		FIRE(SFQ_RS_ES_REALPATH, "om_realpath");
+		SFQ_FAIL(ES_REALPATH, "om_realpath");
 	}
 
 /*
@@ -368,7 +368,7 @@ om_querootdir を使うこと
 	om_querootdir_len = strlen(om_querootdir);
 	if (om_querootdir_len == 0)
 	{
-		FIRE(SFQ_RC_EA_FUNCARG, "om_querootdir_len == 0");
+		SFQ_FAIL(EA_FUNCARG, "om_querootdir_len == 0");
 	}
 
 /* quedir */
@@ -377,13 +377,13 @@ om_querootdir を使うこと
 	quedir_size = quedir_len + 1;
 	if (quedir_size >= PATH_MAX)
 	{
-		FIRE(SFQ_RC_EA_OVERLIMIT, "quedir_size");
+		SFQ_FAIL(EA_OVERLIMIT, "quedir_size");
 	}
 
 	quedir = malloc(quedir_size);
 	if (! quedir)
 	{
-		FIRE(SFQ_RC_ES_MEMALLOC, "quedir");
+		SFQ_FAIL(ES_MEMALLOC, "quedir");
 	}
 	snprintf(quedir, quedir_size, "%s/%s", om_querootdir, quename);
 
@@ -393,13 +393,13 @@ om_querootdir を使うこと
 	quefile_size = quefile_len + 1;
 	if (quefile_size >= PATH_MAX)
 	{
-		FIRE(SFQ_RC_EA_OVERLIMIT, "quefile_size");
+		SFQ_FAIL(EA_OVERLIMIT, "quefile_size");
 	}
 
 	quefile = malloc(quefile_size);
 	if (! quefile)
 	{
-		FIRE(SFQ_RC_ES_MEMALLOC, "quefile");
+		SFQ_FAIL(ES_MEMALLOC, "quefile");
 	}
 	snprintf(quefile, quefile_size, "%s/%s", quedir, SFQ_QUEUE_FILENAME);
 
@@ -409,13 +409,13 @@ om_querootdir を使うこと
 	quelogdir_size = quelogdir_len + 1;
 	if (quelogdir_size >= PATH_MAX)
 	{
-		FIRE(SFQ_RC_EA_OVERLIMIT, "quelogdir_size");
+		SFQ_FAIL(EA_OVERLIMIT, "quelogdir_size");
 	}
 
 	quelogdir = malloc(quelogdir_size);
 	if (! quelogdir)
 	{
-		FIRE(SFQ_RC_ES_MEMALLOC, "quelogdir");
+		SFQ_FAIL(ES_MEMALLOC, "quelogdir");
 	}
 	snprintf(quelogdir, quelogdir_size, "%s/%s", quedir, SFQ_QUEUE_LOGDIRNAME);
 
@@ -424,13 +424,13 @@ om_querootdir を使うこと
 	queproclogdir_size = quelogdir_len + 1 + strlen(SFQ_QUEUE_PROC_LOGDIRNAME) + 1;
 	if (queproclogdir_size >= PATH_MAX)
 	{
-		FIRE(SFQ_RC_EA_OVERLIMIT, "queproclogdir_size");
+		SFQ_FAIL(EA_OVERLIMIT, "queproclogdir_size");
 	}
 
 	queproclogdir = malloc(queproclogdir_size);
 	if (! queproclogdir)
 	{
-		FIRE(SFQ_RC_ES_MEMALLOC, "queproclogdir");
+		SFQ_FAIL(ES_MEMALLOC, "queproclogdir");
 	}
 	snprintf(queproclogdir, queproclogdir_size, "%s/%s", quelogdir, SFQ_QUEUE_PROC_LOGDIRNAME);
 
@@ -439,13 +439,13 @@ om_querootdir を使うこと
 	queexeclogdir_size = quelogdir_len + 1 + strlen(SFQ_QUEUE_EXEC_LOGDIRNAME) + 1;
 	if (queexeclogdir_size >= PATH_MAX)
 	{
-		FIRE(SFQ_RC_EA_OVERLIMIT, "queexeclogdir_size");
+		SFQ_FAIL(EA_OVERLIMIT, "queexeclogdir_size");
 	}
 
 	queexeclogdir = malloc(queexeclogdir_size);
 	if (! queexeclogdir)
 	{
-		FIRE(SFQ_RC_ES_MEMALLOC, "queexeclogdir");
+		SFQ_FAIL(ES_MEMALLOC, "queexeclogdir");
 	}
 	snprintf(queexeclogdir, queexeclogdir_size, "%s/%s", quelogdir, SFQ_QUEUE_EXEC_LOGDIRNAME);
 
@@ -454,7 +454,7 @@ om_querootdir を使うこと
 	semname = strdup(quefile);
 	if (! semname)
 	{
-		FIRE(SFQ_RC_ES_MEMALLOC, "semname");
+		SFQ_FAIL(ES_MEMALLOC, "semname");
 	}
 
 	if (quefile_len > 1)
@@ -474,14 +474,14 @@ om_querootdir を使うこと
 	om_quename = strdup(quename);
 	if (! om_quename)
 	{
-		FIRE(SFQ_RS_ES_STRDUP, "om_quename");
+		SFQ_FAIL(ES_STRDUP, "om_quename");
 	}
 
 /* */
 	om = malloc(sizeof(*om));
 	if (! om)
 	{
-		FIRE(SFQ_RC_ES_MEMALLOC, "om");
+		SFQ_FAIL(ES_MEMALLOC, "om");
 	}
 
 	om->querootdir = om_querootdir;
@@ -493,9 +493,9 @@ om_querootdir を使うこと
 	om->queexeclogdir = queexeclogdir;
 	om->semname = semname;
 
-LIBFUNC_COMMIT
+SFQ_LIB_CHECKPOINT
 
-	if (LIBFUNC_IS_ROLLBACK())
+	if (SFQ_LIB_IS_FAIL())
 	{
 		free(om_querootdir);
 		om_querootdir = NULL;
@@ -525,7 +525,7 @@ LIBFUNC_COMMIT
 		om = NULL;
 	}
 
-LIBFUNC_FINALIZE
+SFQ_LIB_FINALIZE
 
 	return om;
 }

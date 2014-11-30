@@ -2,7 +2,7 @@
 
 int sfq_push(const char* querootdir, const char* quename, const struct sfq_value* val)
 {
-LIBFUNC_INITIALIZE
+SFQ_LIB_INITIALIZE
 
 	struct sfq_queue_object* qo = NULL;
 	struct sfq_process_info* procs = NULL;
@@ -32,21 +32,21 @@ LIBFUNC_INITIALIZE
 /* check argument */
 	if (! val)
 	{
-		FIRE(SFQ_RC_EA_FUNCARG, "val is null");
+		SFQ_FAIL(EA_FUNCARG, "val is null");
 	}
 
 /* open queue-file */
 	qo = sfq_open_queue(querootdir, quename, "rb+");
 	if (! qo)
 	{
-		FIRE(SFQ_RC_EA_OPENFILE, "open_locked_file");
+		SFQ_FAIL(EA_OPENFILE, "open_locked_file");
 	}
 
 /* read file-header */
 	b = sfq_readqfh(qo->fp, &qfh, &procs);
 	if (! b)
 	{
-		FIRE(SFQ_RC_EA_READQFH, "sfq_readqfh");
+		SFQ_FAIL(EA_READQFH, "sfq_readqfh");
 	}
 
 	qfh.last_qhd2 = qfh.last_qhd1;
@@ -56,7 +56,7 @@ LIBFUNC_INITIALIZE
 	b = sfq_copy_val2ioeb(val, &ioeb);
 	if (! b)
 	{
-		FIRE(SFQ_RC_EA_COPYVALUE, "sfq_copy_val2ioeb");
+		SFQ_FAIL(EA_COPYVALUE, "sfq_copy_val2ioeb");
 	}
 
 /* check payload-size limit */
@@ -64,7 +64,7 @@ LIBFUNC_INITIALIZE
 	{
 		if (val->payload_size > qfh.qh.sval.payloadsize_limit)
 		{
-			FIRE(SFQ_RC_EA_OVERLIMIT, "val->payload_size > qfh.qh.sval.payloadsize_limit");
+			SFQ_FAIL(EA_OVERLIMIT, "val->payload_size > qfh.qh.sval.payloadsize_limit");
 		}
 	}
 
@@ -82,7 +82,7 @@ LIBFUNC_INITIALIZE
 
 		if (qfh.qh.dval.elm_num != 0)
 		{
-			FIRE(SFQ_RC_EA_ASSERT, "qfh.qh.dval.elm_num != 0");
+			SFQ_FAIL(EA_ASSERT, "qfh.qh.dval.elm_num != 0");
 		}
 
 		// GO NEXT
@@ -99,7 +99,7 @@ LIBFUNC_INITIALIZE
 
 		if (qfh.qh.dval.elm_num == 0)
 		{
-			FIRE(SFQ_RC_EA_ASSERT, "qfh.qh.dval.elm_num == 0");
+			SFQ_FAIL(EA_ASSERT, "qfh.qh.dval.elm_num == 0");
 		}
 
 		IfPush_next_elmpos = qfh.qh.dval.elm_new_push_pos + ioeb.eh.elmsize_;
@@ -119,7 +119,7 @@ LIBFUNC_INITIALIZE
 		}
 		else
 		{
-			FIRE(SFQ_RC_NO_SPACE, "no space/shift");
+			SFQ_FAIL_SILENT(NO_SPACE);
 		}
 	}
 
@@ -176,7 +176,7 @@ LIBFUNC_INITIALIZE
 		}
 		else
 		{
-			FIRE(SFQ_RC_NO_SPACE, "no space/segment");
+			SFQ_FAIL_SILENT(NO_SPACE);
 		}
 	}
 
@@ -188,7 +188,7 @@ LIBFUNC_INITIALIZE
 	b = sfq_writeelm(qo->fp, elm_pos, &ioeb);
 	if (! b)
 	{
-		FIRE(SFQ_RC_EA_RWELEMENT, "sfq_writeelm");
+		SFQ_FAIL(EA_RWELEMENT, "sfq_writeelm");
 	}
 
 	if (qfh.qh.dval.elm_num == 0)
@@ -207,7 +207,7 @@ LIBFUNC_INITIALIZE
 		b = sfq_seek_set_and_read(qo->fp, ioeb.eh.prev_elmpos, &prev_eh, eh_size);
 		if (! b)
 		{
-			FIRE(SFQ_RC_EA_SEEKSETIO, "sfq_seek_set_and_read(prev_eh)");
+			SFQ_FAIL(EA_SEEKSETIO, "sfq_seek_set_and_read(prev_eh)");
 		}
 
 		prev_eh.next_elmpos = elm_pos;
@@ -215,7 +215,7 @@ LIBFUNC_INITIALIZE
 		b = sfq_seek_set_and_write(qo->fp, ioeb.eh.prev_elmpos, &prev_eh, eh_size);
 		if (! b)
 		{
-			FIRE(SFQ_RC_EA_SEEKSETIO, "sfq_seek_set_and_write(prev_eh)");
+			SFQ_FAIL(EA_SEEKSETIO, "sfq_seek_set_and_write(prev_eh)");
 		}
 	}
 
@@ -232,7 +232,7 @@ LIBFUNC_INITIALIZE
 	b = sfq_seek_set_and_write(qo->fp, 0, &qfh, sizeof(qfh));
 	if (! b)
 	{
-		FIRE(SFQ_RC_EA_SEEKSETIO, "sfq_seek_set_and_write(qfh)");
+		SFQ_FAIL(EA_SEEKSETIO, "sfq_seek_set_and_write(qfh)");
 	}
 
 #ifdef SFQ_DEBUG_BUILD
@@ -266,7 +266,7 @@ LIBFUNC_INITIALIZE
 			iosize = fwrite(procs, procs_size, 1, qo->fp);
 			if (iosize != 1)
 			{
-				FIRE(SFQ_RC_ES_FILEIO, "fwrite(procs)");
+				SFQ_FAIL(ES_FILEIO, "fwrite(procs)");
 			}
 
 #ifdef SFQ_DEBUG_BUILD
@@ -275,7 +275,7 @@ LIBFUNC_INITIALIZE
 		}
 	}
 
-LIBFUNC_COMMIT
+SFQ_LIB_CHECKPOINT
 
 	sfq_close_queue(qo);
 	qo = NULL;
@@ -288,8 +288,8 @@ LIBFUNC_COMMIT
 		sfq_go_exec(querootdir, quename, slotno);
 	}
 
-LIBFUNC_FINALIZE
+SFQ_LIB_FINALIZE
 
-	return LIBFUNC_RC();
+	return SFQ_LIB_RC();
 }
 

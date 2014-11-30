@@ -88,7 +88,7 @@ EXIT_LABEL:
 
 	if (message)
 	{
-		fprintf(stderr, "%s:%d:%s\n", __FILE__, jumppos, message);
+		fprintf(stderr, "%s(%d): %s\n", __FILE__, jumppos, message);
 	}
 
 SFQ_MAIN_FINALIZE

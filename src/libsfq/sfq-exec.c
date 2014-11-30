@@ -19,7 +19,7 @@ static void default_reopen(const char* logdir);
 
 static void execapp(const char* execpath, char* execargs)
 {
-LIBFUNC_INITIALIZE
+SFQ_LIB_INITIALIZE
 
 	int argc = 0;
 	char** argv = NULL;
@@ -50,7 +50,7 @@ LIBFUNC_INITIALIZE
 	argv = alloca(argv_size);
 	if (! argv)
 	{
-		FIRE(SFQ_RC_ES_MEMALLOC, "argv");
+		SFQ_FAIL(ES_MEMALLOC, "argv");
 	}
 
 	bzero(argv, argv_size);
@@ -86,7 +86,7 @@ LIBFUNC_INITIALIZE
 				argv[i] = sfq_stradup(token);
 				if (! argv[i])
 				{
-					FIRE(SFQ_RC_ES_MEMALLOC, "argv_i");
+					SFQ_FAIL(ES_MEMALLOC, "argv_i");
 				}
 			}
 		}
@@ -96,14 +96,14 @@ LIBFUNC_INITIALIZE
 
 	execvp(argv[0], argv);
 
-LIBFUNC_COMMIT
+SFQ_LIB_CHECKPOINT
 
-LIBFUNC_FINALIZE
+SFQ_LIB_FINALIZE
 }
 
 static int child_write_dup_exec_exit(const char* quename, struct sfq_value* val)
 {
-LIBFUNC_INITIALIZE
+SFQ_LIB_INITIALIZE
 
 	int irc = 0;
 
@@ -126,7 +126,7 @@ payload は pipe 経由で送信
 			execpath = sfq_stradup(val->execpath);
 			if (! execpath)
 			{
-				FIRE(SFQ_RC_ES_MEMALLOC, "execpath");
+				SFQ_FAIL(ES_MEMALLOC, "execpath");
 			}
 		}
 	}
@@ -138,7 +138,7 @@ payload は pipe 経由で送信
 			execargs = sfq_stradup(val->execargs);
 			if (! execargs)
 			{
-				FIRE(SFQ_RC_ES_MEMALLOC, "execargs");
+				SFQ_FAIL(ES_MEMALLOC, "execargs");
 			}
 		}
 	}
@@ -151,7 +151,7 @@ payload は pipe 経由で送信
 		pipefd = alloca(sizeof(int) * 2);
 		if (! pipefd)
 		{
-			FIRE(SFQ_RC_ES_MEMALLOC, "pipefd");
+			SFQ_FAIL(ES_MEMALLOC, "pipefd");
 		}
 
 		pipefd[0] = pipefd[1] = 0;
@@ -159,14 +159,14 @@ payload は pipe 経由で送信
 
 		if (irc == -1)
 		{
-			FIRE(SFQ_RS_ES_PIPE, "pipefd");
+			SFQ_FAIL(ES_PIPE, "pipefd");
 		}
 
 		wn = atomic_write(pipefd[WRITE], (char*)val->payload, val->payload_size);
 
 		if (wn != val->payload_size)
 		{
-			FIRE(SFQ_RS_ES_WRITE, "atomic_write pipefd[WRITE]");
+			SFQ_FAIL(ES_WRITE, "atomic_write pipefd[WRITE]");
 		}
 
 		close(pipefd[WRITE]);
@@ -175,7 +175,7 @@ payload は pipe 経由で送信
 
 		if (irc == -1)
 		{
-			FIRE(SFQ_RS_ES_DUP, "pipefd[READ] -> STDIN_FILENO");
+			SFQ_FAIL(ES_DUP, "pipefd[READ] -> STDIN_FILENO");
 		}
 	}
 
@@ -208,9 +208,9 @@ payload は pipe 経由で送信
 /*
 exec() が成功すればここには来ない
 */
-	FIRE(SFQ_RC_EC_EXECFAIL, "execapp");
+	SFQ_FAIL(EC_EXECFAIL, "execapp");
 
-LIBFUNC_COMMIT
+SFQ_LIB_CHECKPOINT
 
 	if (pipefd)
 	{
@@ -218,9 +218,9 @@ LIBFUNC_COMMIT
 		close(pipefd[WRITE]);
 	}
 
-LIBFUNC_FINALIZE
+SFQ_LIB_FINALIZE
 
-	return LIBFUNC_RC();
+	return SFQ_LIB_RC();
 }
 
 static int pipe_fork_write_dup_exec_wait(const char* querootdir, const char* quename,
@@ -290,7 +290,7 @@ exec() が成功すればここには来ない
 
 static void foreach_element(const char* querootdir, const char* quename, int slotno)
 {
-LIBFUNC_INITIALIZE
+SFQ_LIB_INITIALIZE
 
 	bool b = false;
 	int irc = 0;
@@ -299,7 +299,7 @@ LIBFUNC_INITIALIZE
 	b = update_procstatus(querootdir, quename, slotno, SFQ_PIS_LOOPSTART, 0);
 	if (! b)
 	{
-		FIRE(SFQ_RC_EA_UPDSTATUS, "loop start");
+		SFQ_FAIL(EA_UPDSTATUS, "loop start");
 	}
 
 	do
@@ -357,11 +357,11 @@ LIBFUNC_INITIALIZE
 	}
 	while (irc == SFQ_RC_SUCCESS);
 
-LIBFUNC_COMMIT
+SFQ_LIB_CHECKPOINT
 
 	update_procstatus(querootdir, quename, slotno, SFQ_PIS_DONE, 0);
 
-LIBFUNC_FINALIZE
+SFQ_LIB_FINALIZE
 }
 
 bool sfq_go_exec(const char* querootdir, const char* quename, int slotno)
@@ -423,7 +423,7 @@ static size_t atomic_write(int fd, char *buf, int count)
 static bool update_procstatus(const char* querootdir, const char* quename,
 	int slotno, sfq_uchar procstatus, int to_status)
 {
-LIBFUNC_INITIALIZE
+SFQ_LIB_INITIALIZE
 
 	struct sfq_queue_object* qo = NULL;
 	struct sfq_process_info* procs = NULL;
@@ -441,19 +441,19 @@ LIBFUNC_INITIALIZE
 	qo = sfq_open_queue(querootdir, quename, "rb+");
 	if (! qo)
 	{
-		FIRE(SFQ_RC_EA_OPENFILE, "sfq_open_queue");
+		SFQ_FAIL(EA_OPENFILE, "sfq_open_queue");
 	}
 
 /* read file-header */
 	b = sfq_readqfh(qo->fp, &qfh, &procs);
 	if (! b)
 	{
-		FIRE(SFQ_RC_EA_READQFH, "sfq_readqfh");
+		SFQ_FAIL(EA_READQFH, "sfq_readqfh");
 	}
 
 	if (qfh.qh.sval.max_proc_num <= slotno)
 	{
-		FIRE(SFQ_RC_EA_FUNCARG, "qfh.qh.sval.max_proc_num <= i");
+		SFQ_FAIL(EA_FUNCARG, "qfh.qh.sval.max_proc_num <= i");
 	}
 
 	procs_size = qfh.qh.sval.max_proc_num * sizeof(struct sfq_process_info);
@@ -500,10 +500,10 @@ LIBFUNC_INITIALIZE
 	b = sfq_seek_set_and_write(qo->fp, qfh.qh.sval.procseg_start_pos, procs, procs_size);
 	if (! b)
 	{
-		FIRE(SFQ_RC_EA_SEEKSETIO, "sfq_seek_set_and_write");
+		SFQ_FAIL(EA_SEEKSETIO, "sfq_seek_set_and_write");
 	}
 
-LIBFUNC_COMMIT
+SFQ_LIB_CHECKPOINT
 
 	sfq_close_queue(qo);
 	qo = NULL;
@@ -511,9 +511,9 @@ LIBFUNC_COMMIT
 	free(procs);
 	procs = NULL;
 
-LIBFUNC_FINALIZE
+SFQ_LIB_FINALIZE
 
-	return LIBFUNC_IS_SUCCESS();
+	return SFQ_LIB_IS_SUCCESS();
 }
 
 #if STDIO_REOPEN_LOGFILE

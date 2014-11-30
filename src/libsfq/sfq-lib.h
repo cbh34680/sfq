@@ -1,6 +1,10 @@
 #ifndef SFQ_LIB_H_INCLUDE_ONCE_
 #define SFQ_LIB_H_INCLUDE_ONCE_
 
+/*
+#pragma GCC diagnostic ignored "-Wunused-label"
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -27,33 +31,39 @@
 
 #include "sfq.h"
 
-#define LIBFUNC_INITIALIZE \
+#define SFQ_LIB_INITIALIZE \
 	int fire_line__  = -1; \
 	int fire_rc__ = SFQ_RC_UNKNOWN; \
 	char* fire_reason__ = NULL;
 
 
-#define LIBFUNC_COMMIT \
+#define SFQ_LIB_CHECKPOINT \
 	fire_rc__ = SFQ_RC_SUCCESS; \
-FIRE_CATCH_LABEL__:
+SFQ_FAIL_CATCH_LABEL__:
 
 
-#define LIBFUNC_IS_ROLLBACK()	(fire_rc__ != SFQ_RC_SUCCESS)
-#define LIBFUNC_IS_SUCCESS()	(fire_rc__ == SFQ_RC_SUCCESS)
-#define LIBFUNC_RC()		(fire_rc__)
+#define SFQ_LIB_IS_FAIL()	(fire_rc__ != SFQ_RC_SUCCESS)
+#define SFQ_LIB_IS_SUCCESS()	(fire_rc__ == SFQ_RC_SUCCESS)
+#define SFQ_LIB_RC()		(fire_rc__)
 
 
-#define LIBFUNC_FINALIZE \
+#define SFQ_LIB_FINALIZE \
 	if (fire_reason__) { \
 		fprintf(stderr, "%s(%d): RC=%d [%s]\n", __FILE__, fire_line__, fire_rc__, fire_reason__); \
 	}
 
 
-#define FIRE(fire_rc, fire_reason) \
+#define SFQ_FAIL_SILENT(fire_rc) \
 	fire_line__ = __LINE__; \
-	fire_rc__ = fire_rc; \
+	fire_rc__ = SFQ_RC_ ## fire_rc; \
+	goto SFQ_FAIL_CATCH_LABEL__;
+
+
+#define SFQ_FAIL(fire_rc, fire_reason) \
+	fire_line__ = __LINE__; \
+	fire_rc__ = SFQ_RC_ ## fire_rc; \
 	fire_reason__ = fire_reason; \
-	goto FIRE_CATCH_LABEL__;
+	goto SFQ_FAIL_CATCH_LABEL__;
 
 
 #ifdef WIN32

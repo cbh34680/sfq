@@ -29,7 +29,7 @@ SFQ_MAIN_INITIALIZE
 	irc = sfq_shift(opt.querootdir, opt.quename, &val);
 	if (irc != SFQ_RC_SUCCESS)
 	{
-		message = "sfq_shift";
+		message = (irc == SFQ_RC_NO_ELEMENT) ? "element does not exist" : "sfq_pop";
 		jumppos = __LINE__;
 		goto EXIT_LABEL;
 	}
@@ -76,7 +76,7 @@ EXIT_LABEL:
 
 	if (message)
 	{
-		fprintf(stderr, "%s:%d:%s\n", __FILE__, jumppos, message);
+		fprintf(stderr, "%s(%d): %s\n", __FILE__, jumppos, message);
 	}
 
 SFQ_MAIN_FINALIZE

@@ -2,7 +2,7 @@
 
 int sfq_map(const char* querootdir, const char* quename, sfq_map_callback callback, void* userdata)
 {
-LIBFUNC_INITIALIZE
+SFQ_LIB_INITIALIZE
 
 	struct sfq_queue_object* qo = NULL;
 
@@ -22,25 +22,25 @@ LIBFUNC_INITIALIZE
 	qo = sfq_open_queue(querootdir, quename, "rb");
 	if (! qo)
 	{
-		FIRE(SFQ_RC_EA_OPENFILE, "open_locked_file");
+		SFQ_FAIL(EA_OPENFILE, "open_locked_file");
 	}
 
 /* read file-header */
 	b = sfq_readqfh(qo->fp, &qfh, NULL);
 	if (! b)
 	{
-		FIRE(SFQ_RC_EA_READQFH, "sfq_readqfh");
+		SFQ_FAIL(EA_READQFH, "sfq_readqfh");
 	}
 
 /* check empty */
 	if (qfh.qh.dval.elm_num == 0)
 	{
-		FIRE(SFQ_RC_NO_ELEMENT, "queue is empty");
+		SFQ_FAIL_SILENT(NO_ELEMENT);
 	}
 
 	if (qfh.qh.dval.elm_next_shift_pos == 0)
 	{
-		FIRE(SFQ_RC_EA_ASSERT, "qfh.qh.dval.elm_next_shift_pos == 0");
+		SFQ_FAIL(EA_ASSERT, "qfh.qh.dval.elm_next_shift_pos == 0");
 	}
 
 	elm_pos = qfh.qh.dval.elm_next_shift_pos;
@@ -55,7 +55,7 @@ LIBFUNC_INITIALIZE
 		b = sfq_readelm(qo->fp, pos, &ioeb);
 		if (! b)
 		{
-			FIRE(SFQ_RC_EA_RWELEMENT, "sfq_readelm");
+			SFQ_FAIL(EA_RWELEMENT, "sfq_readelm");
 		}
 
 #ifdef SFQ_DEBUG_BUILD
@@ -71,7 +71,7 @@ LIBFUNC_INITIALIZE
 		b = sfq_copy_ioeb2val(&ioeb, &val);
 		if (! b)
 		{
-			FIRE(SFQ_RC_EA_COPYVALUE, "sfq_copy_ioeb2val");
+			SFQ_FAIL(EA_COPYVALUE, "sfq_copy_ioeb2val");
 		}
 
 		callback(num, &val, userdata);
@@ -79,18 +79,18 @@ LIBFUNC_INITIALIZE
 		sfq_free_ioelm_buff(&ioeb);
 	}
 
-LIBFUNC_COMMIT
+SFQ_LIB_CHECKPOINT
 
 	sfq_close_queue(qo);
 	qo = NULL;
 
-	if (LIBFUNC_IS_ROLLBACK())
+	if (SFQ_LIB_IS_FAIL())
 	{
 		sfq_free_ioelm_buff(&ioeb);
 	}
 
-LIBFUNC_FINALIZE
+SFQ_LIB_FINALIZE
 
-	return LIBFUNC_RC();
+	return SFQ_LIB_RC();
 }
 
