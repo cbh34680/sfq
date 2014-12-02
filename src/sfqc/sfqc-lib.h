@@ -54,6 +54,9 @@ struct sfqc_init_option
 	char* textdata;			/* t */
 	char* metadata;			/* m */
 	char* inputfile;		/* f */
+
+	char* soutpath;			/* o */
+	char* serrpath;			/* e */
 };
 
 extern int sfqc_get_init_option(int argc, char** argv, const char* optstring, struct sfqc_init_option* p);

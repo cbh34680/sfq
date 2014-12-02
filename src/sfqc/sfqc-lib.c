@@ -117,6 +117,8 @@ void sfqc_free_init_option(struct sfqc_init_option* p)
 	free(p->metadata);
 	free(p->textdata);
 	free(p->inputfile);
+	free(p->soutpath);
+	free(p->serrpath);
 
 	bzero(p, sizeof(struct sfqc_init_option));
 }
@@ -133,17 +135,17 @@ int sfqc_can_push(const struct sfqc_init_option* p)
 			}
 			else
 			{
-				return SFQ_RC_SUCCESS;
+				return 0;
 			}
 		}
 	}
 
-	return SFQ_RC_EA_FUNCARG;
+	return 1;
 }
 
 int sfqc_get_init_option(int argc, char** argv, const char* optstring, struct sfqc_init_option* p)
 {
-	int irc = SFQ_RC_UNKNOWN;
+	int irc = 1;
 	int opt = 0;
 
 	int jumppos = -1;
@@ -313,6 +315,34 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, struct sf
 
 				break;
 			}
+			case 'o':
+			{
+				/* 標準出力のリダイレクト先 */
+				char* c = strdup(optarg);
+				if (! c)
+				{
+					snprintf(message, sizeof(message), "'%c': mem alloc", opt);
+					jumppos = __LINE__;
+					goto EXIT_LABEL;
+				}
+				p->soutpath = c;
+
+				break;
+			}
+			case 'e':
+			{
+				/* 標準エラーのリダイレクト先 */
+				char* c = strdup(optarg);
+				if (! c)
+				{
+					snprintf(message, sizeof(message), "'%c': mem alloc", opt);
+					jumppos = __LINE__;
+					goto EXIT_LABEL;
+				}
+				p->serrpath = c;
+
+				break;
+			}
 			default:
 			{
 				snprintf(message, sizeof(message), "'%c': unknown route", opt);
@@ -324,11 +354,11 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, struct sf
 		}
 	}
 
-	irc = SFQ_RC_SUCCESS;
+	irc = 0;
 
 EXIT_LABEL:
 
-	if (irc != SFQ_RC_SUCCESS)
+	if (irc != 0)
 	{
 		if (message[0])
 		{

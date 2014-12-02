@@ -68,8 +68,9 @@ struct sfq_value
 
 	char* execpath;				/* 8 */
 	char* execargs;				/* 8 */
-
 	char* metadata;				/* 8 */
+	char* soutpath;				/* 8 */
+	char* serrpath;				/* 8 */
 
 	size_t payload_size;			/* 8 */
 	sfq_byte* payload;			/* 8 */
@@ -89,8 +90,8 @@ extern int sfq_alloc_print_value(const struct sfq_value* bin, struct sfq_value* 
 extern void sfq_free_value(struct sfq_value* p);
 
 /* short-cut */
-extern int sfq_push_str(const char* querootdir, const char* quename, const char* execpath, const char* execargs, const char* metadata, const char* textdata);
-extern int sfq_push_bin(const char* querootdir, const char* quename, const char* execpath, const char* execargs, const char* metadata, const sfq_byte* payload, size_t payload_size);
+extern int sfq_push_str(const char* querootdir, const char* quename, const char* execpath, const char* execargs, const char* metadata, const char* soutpath, const char* serrpath, const char* textdata);
+extern int sfq_push_bin(const char* querootdir, const char* quename, const char* execpath, const char* execargs, const char* metadata, const char* soutpath, const char* serrpath, const sfq_byte* payload, size_t payload_size);
 
 #ifdef __cplusplus
 }

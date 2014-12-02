@@ -1,18 +1,8 @@
 #include "sfq-lib.h"
 
-#ifdef SFQ_DEBUG_BUILD
-	#define STDIO_REOPEN_LOGFILE	(0)
-#else
-	#define STDIO_REOPEN_LOGFILE	(1)
-#endif
-
-static bool update_procstatus(const char* querootdir, const char* quename, int slotno,
+static bool update_procstatus(const char* querootdir, const char* quename, ushort slotno,
 	sfq_uchar procstatus, int to_status);
 static size_t atomic_write(int fd, char *buf, int count);
-
-#if STDIO_REOPEN_LOGFILE
-static void default_reopen(const char* logdir);
-#endif
 
 #define READ	(0)
 #define WRITE	(1)
@@ -101,11 +91,9 @@ SFQ_LIB_CHECKPOINT
 SFQ_LIB_FINALIZE
 }
 
-static int child_write_dup_exec_exit(const char* quename, struct sfq_value* val)
+static int child_write_dup_exec_exit(const char* quename, ushort slotno, struct sfq_value* val)
 {
 SFQ_LIB_INITIALIZE
-
-	int irc = 0;
 
 	char* execpath = "/bin/sh";
 	char* execargs = NULL;
@@ -145,6 +133,7 @@ payload は pipe 経由で送信
 
 	if (val->payload && val->payload_size)
 	{
+		int irc = 0;
 		size_t wn = 0;
 
 		/* alloc fd x 2 (READ, WRITE) */
@@ -224,9 +213,8 @@ SFQ_LIB_FINALIZE
 }
 
 static int pipe_fork_write_dup_exec_wait(const char* querootdir, const char* quename,
-	struct sfq_value* val)
+	ushort slotno, struct sfq_value* val)
 {
-	int irc = 0;
 	pid_t pid = -1;
 
 /*
@@ -242,6 +230,7 @@ wait() 後にステータスが取得できない
 	}
 	else
 	{
+
 		if (pid == 0)
 		{
 /* child */
@@ -250,12 +239,12 @@ wait() 後にステータスが取得できない
 			struct sfq_open_names* om = NULL;
 			om = sfq_alloc_open_names(querootdir, quename);
 #if STDIO_REOPEN_LOGFILE
-			default_reopen(om ? om->queexeclogdir : NULL);
+			sfq_reopen_4exec(om ? om->queexeclogdir : NULL, val->id);
 #endif
 			om_quename = sfq_stradup(om->quename);
 			sfq_free_open_names(om);
 
-			child_write_dup_exec_exit(om_quename, val);
+			child_write_dup_exec_exit(om_quename, slotno, val);
 
 			sfq_free_value(val);
 
@@ -267,6 +256,7 @@ exec() が成功すればここには来ない
 		else
 		{
 /* parent */
+			int irc = 0;
 			int status = 0;
 
 			irc = waitpid(pid, &status, 0);
@@ -288,12 +278,15 @@ exec() が成功すればここには来ない
 	return -1;
 }
 
-static void foreach_element(const char* querootdir, const char* quename, int slotno)
+static void foreach_element(const char* querootdir, const char* quename, ushort slotno)
 {
 SFQ_LIB_INITIALIZE
 
 	bool b = false;
-	int irc = 0;
+	int shift_rc = 0;
+	ulong loop = 0;
+
+printf("%d) loop start (slotno=%u ppid=%d)\n", getpid(), slotno, getppid());
 
 	/* 状態を LOOPSTART に変更 */
 	b = update_procstatus(querootdir, quename, slotno, SFQ_PIS_LOOPSTART, 0);
@@ -309,25 +302,38 @@ SFQ_LIB_INITIALIZE
 
 		bzero(&val, sizeof(val));
 
-		irc = sfq_shift(querootdir, quename, &val);
-		if (irc == SFQ_RC_NO_ELEMENT)
+		loop++;
+
+printf("%d) loop %zu shift\n", getpid(), loop);
+
+		shift_rc = sfq_shift(querootdir, quename, &val);
+		if (shift_rc == SFQ_RC_NO_ELEMENT)
 		{
 			/* no more element */
+
+printf("%d) no more element\n", getpid());
 
 			break;
 		}
 
-		if (irc == SFQ_RC_SUCCESS)
+		if (shift_rc == SFQ_RC_SUCCESS)
 		{
-			irc = pipe_fork_write_dup_exec_wait(querootdir, quename, &val);
+			int irc = 0;
+
+printf("%d) shift success\n", getpid());
+
+printf("%d) exec val.id=%zu\n", getpid(), val.id);
+			irc = pipe_fork_write_dup_exec_wait(querootdir, quename, slotno, &val);
 			if (irc == 0)
 			{
 				/* execapp() exit(== 0) */
 				to_status = SFQ_TO_SUCCESS;
+printf("%d) exec success\n", getpid());
 			}
 			else if (irc == SFQ_RC_EC_EXECFAIL)
 			{
 				to_status = SFQ_TO_CANTEXEC;
+printf("%d) exec fail\n", getpid());
 			}
 			else if (irc > 0)
 			{
@@ -336,12 +342,14 @@ SFQ_LIB_INITIALIZE
 1 - 127 のユーザが使える exit-code
 */
 				to_status = SFQ_TO_APPEXIT_NON0;
+printf("%d) exec app exit rc=%d\n", getpid(), irc);
 			}
 			else
 			{
 /* 不明 */
 				/* can not execapp() */
 				to_status = SFQ_TO_CANTEXEC;
+printf("%d) exec fail/2\n", getpid());
 			}
 		}
 		else
@@ -349,30 +357,30 @@ SFQ_LIB_INITIALIZE
 /* shift 失敗 */
 			/* shift error (<> not found) */
 			to_status = SFQ_TO_FAULT;
+
+printf("%d) shift error rc=%d\n", getpid(), shift_rc);
 		}
 
 		sfq_free_value(&val);
 
 		update_procstatus(querootdir, quename, slotno, SFQ_PIS_TAKEOUT, to_status);
 	}
-	while (irc == SFQ_RC_SUCCESS);
+	while (shift_rc == SFQ_RC_SUCCESS);
 
 SFQ_LIB_CHECKPOINT
 
 	update_procstatus(querootdir, quename, slotno, SFQ_PIS_DONE, 0);
 
+printf("%d) loop end %zu\n", getpid(), loop);
+
 SFQ_LIB_FINALIZE
 }
 
-bool sfq_go_exec(const char* querootdir, const char* quename, int slotno)
+bool sfq_go_exec(const char* querootdir, const char* quename, ushort slotno)
 {
 	pid_t pid = (pid_t)-1;
 
-#ifdef SFQ_DEBUG_BUILD
-	assert(slotno >= 0);
-#endif
-
-	// 子プロセスを wait() しない
+	/* 子プロセスを wait() しない */
 	signal(SIGCHLD, SIG_IGN);
 
 	pid = fork();
@@ -381,24 +389,27 @@ bool sfq_go_exec(const char* querootdir, const char* quename, int slotno)
 		/* fault create new-process */
 		return false;
 	}
-
-	if (pid == 0) 
-	{
-/* child process */
-		struct sfq_open_names* om = NULL;
-		om = sfq_alloc_open_names(querootdir, quename);
-#if STDIO_REOPEN_LOGFILE
-		default_reopen(om ? om->queproclogdir : NULL);
-#endif
-		sfq_free_open_names(om);
-
-		foreach_element(querootdir, quename, slotno);
-
-		exit (EXIT_SUCCESS);
-	}
 	else
 	{
+		if (pid == 0) 
+		{
+/* child process */
+
+			struct sfq_open_names* om = NULL;
+			om = sfq_alloc_open_names(querootdir, quename);
+#if STDIO_REOPEN_LOGFILE
+			sfq_reopen_4proc(om ? om->queproclogdir : NULL, slotno);
+#endif
+			sfq_free_open_names(om);
+
+			foreach_element(querootdir, quename, slotno);
+
+			exit (EXIT_SUCCESS);
+		}
+		else
+		{
 /* parent process */
+		}
 	}
 
 	return true;
@@ -421,7 +432,7 @@ static size_t atomic_write(int fd, char *buf, int count)
 }
 
 static bool update_procstatus(const char* querootdir, const char* quename,
-	int slotno, sfq_uchar procstatus, int to_status)
+	ushort slotno, sfq_uchar procstatus, int to_status)
 {
 SFQ_LIB_INITIALIZE
 
@@ -515,130 +526,4 @@ SFQ_LIB_FINALIZE
 
 	return SFQ_LIB_IS_SUCCESS();
 }
-
-#if STDIO_REOPEN_LOGFILE
-/*
-http://nion.modprobe.de/blog/archives/357-Recursive-directory-creation.html
-*/
-static bool mkdir_p(const char *arg, mode_t mode)
-{
-	char* dir = NULL;
-	char *p = NULL;
-	size_t len = 0;
-
-	struct stat stbuf;
-
-	if (stat(arg, &stbuf) == 0)
-	{
-		return true;
-	}
-
-	dir = sfq_stradup(arg);
-	if (! dir)
-	{
-		return false;
-	}
-
-	len = strlen(dir);
-	if (dir[len - 1] == '/')
-	{
-		dir[len - 1] = 0;
-	}
-
-	for(p = dir+1; *p; p++)
-	{
-		if(*p == '/')
-		{
-			*p = '\0';
-			if (mkdir(dir, mode) == -1)
-			{
-				if (errno != EEXIST)
-				{
-					return false;
-				}
-			}
-			*p = '/';
-		}
-	}
-
-	if (mkdir(dir, mode) == -1)
-	{
-		if (errno != EEXIST)
-		{
-			return false;
-		}
-	}
-
-	return true;
-}
-
-static void default_reopen(const char* logdir)
-{
-	char* soutpath = NULL;
-	char* serrpath = NULL;
-
-	if (logdir)
-	{
-		time_t now = time(NULL);
-		pid_t ppid = getppid();
-		pid_t pid = getpid();
-
-		struct tm tmbuf;
-		char dir[PATH_MAX] = "";
-
-		localtime_r(&now, &tmbuf);
-
-		/* "QLDIR/yyyy/mmdd/hh/ppid-pid.{out,err}" */
-
-		/* stdout */
-		snprintf(dir, sizeof(dir), "%s/%04d/%02d%02d/%02d/%02d/%02d",
-			logdir, tmbuf.tm_year + 1900, tmbuf.tm_mon + 1, tmbuf.tm_mday, tmbuf.tm_hour,
-			tmbuf.tm_min, tmbuf.tm_sec);
-
-		if (mkdir_p(dir, 0700))
-		{
-			/* "/proc/sys/kernel/pid_max" ... プロセス番号最大 */
-
-			/* "dir/ppid-pid.{out,err}\0" */
-			size_t alloc_size = (strlen(dir) + 1 + 20 + 1 + 20 + 1 + 3 + 1);
-
-			soutpath = alloca(alloc_size);
-			if (soutpath)
-			{
-				snprintf(soutpath, alloc_size, "%s/%d-%d.out", dir, ppid, pid);
-			}
-			serrpath = alloca(alloc_size);
-			if (serrpath)
-			{
-				snprintf(serrpath, alloc_size, "%s/%d-%d.err", dir, ppid, pid);
-			}
-		}
-	}
-
-	if (! soutpath)
-	{
-		soutpath = "/dev/null";
-	}
-
-	if (! serrpath)
-	{
-		serrpath = "/dev/null";
-	}
-
-	/* stdio */
-	freopen("/dev/null", "rb", stdin);
-
-	/* stdout */
-	if (! freopen(soutpath, "wb", stdout))
-	{
-		freopen("/dev/null", "wb", stdout);
-	}
-
-	/* stderr */
-	if (! freopen(serrpath, "wb", stderr))
-	{
-		freopen("/dev/null", "wb", stderr);
-	}
-}
-#endif
 

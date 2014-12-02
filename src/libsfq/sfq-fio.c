@@ -22,7 +22,7 @@ SFQ_LIB_INITIALIZE
 	if (irc != 0)
 	{
 		/* already exists */
-		SFQ_FAIL(EA_PATHNOTEXIST, "queue-dir not exists");
+		SFQ_FAIL(EA_PATHNOTEXIST, "dir not exist '%s'", chk_om->querootdir);
 	}
 
 /* queue file, already exists */
@@ -30,7 +30,7 @@ SFQ_LIB_INITIALIZE
 	if (irc == 0)
 	{
 		/* already exists */
-		SFQ_FAIL(EA_EXISTQUEUE, "queue-directory exists");
+		SFQ_FAIL(EA_EXISTQUEUE, "dir already exist '%s'", chk_om->quedir);
 	}
 
 /* delete old lock */
@@ -299,6 +299,8 @@ SFQ_LIB_FINALIZE
  *    - execpath (eh.execpath_size >= 0) ... nullterm string
  *    - execargs (eh.execargs_size >= 0) ... nullterm string
  *    - metadata (eh.metadata_size >= 0) ... nullterm string
+ *    - soutpath (eh.soutpath_size >= 0) ... nullterm string
+ *    - serrpath (eh.serrpath_size >= 0) ... nullterm string
  *
  */
 bool sfq_writeelm(FILE* fp, off_t seek_pos, struct sfq_ioelm_buff* ioeb)
@@ -362,6 +364,30 @@ SFQ_LIB_INITIALIZE
 		}
 	}
 
+	if (ioeb->eh.soutpath_size)
+	{
+		assert(ioeb->soutpath);
+
+	/* w: soutpath */
+		iosize = fwrite(ioeb->soutpath, ioeb->eh.soutpath_size, 1, fp);
+		if (iosize != 1)
+		{
+			SFQ_FAIL(ES_FILEIO, "FILE-WRITE(soutpath)");
+		}
+	}
+
+	if (ioeb->eh.serrpath_size)
+	{
+		assert(ioeb->serrpath);
+
+	/* w: serrpath */
+		iosize = fwrite(ioeb->serrpath, ioeb->eh.serrpath_size, 1, fp);
+		if (iosize != 1)
+		{
+			SFQ_FAIL(ES_FILEIO, "FILE-WRITE(serrpath)");
+		}
+	}
+
 SFQ_LIB_CHECKPOINT
 
 SFQ_LIB_FINALIZE
@@ -381,6 +407,8 @@ SFQ_LIB_INITIALIZE
 	char* execargs = NULL;
 	char* metadata = NULL;
 	sfq_byte* payload = NULL;
+	char* soutpath = NULL;
+	char* serrpath = NULL;
 
 /* */
 	eh_size = sizeof(ioeb->eh);
@@ -465,24 +493,73 @@ SFQ_LIB_INITIALIZE
 		}
 	}
 
+	if (ioeb->eh.soutpath_size)
+	{
+	/* r: soutpath */
+		soutpath = malloc(ioeb->eh.soutpath_size);
+		if (! soutpath)
+		{
+			SFQ_FAIL(ES_MEMALLOC, "ALLOC(soutpath)");
+		}
+
+		iosize = fread(soutpath, ioeb->eh.soutpath_size, 1, fp);
+		if (iosize != 1)
+		{
+			SFQ_FAIL(ES_FILEIO, "FILE-READ(soutpath)");
+		}
+	}
+
+	if (ioeb->eh.serrpath_size)
+	{
+	/* r: serrpath */
+		serrpath = malloc(ioeb->eh.serrpath_size);
+		if (! serrpath)
+		{
+			SFQ_FAIL(ES_MEMALLOC, "ALLOC(serrpath)");
+		}
+
+		iosize = fread(serrpath, ioeb->eh.serrpath_size, 1, fp);
+		if (iosize != 1)
+		{
+			SFQ_FAIL(ES_FILEIO, "FILE-READ(serrpath)");
+		}
+	}
+
+	ioeb->payload = payload;
 	ioeb->execpath = execpath;
 	ioeb->execargs = execargs;
 	ioeb->metadata = metadata;
-	ioeb->payload = payload;
+	ioeb->soutpath = soutpath;
+	ioeb->serrpath = serrpath;
 
 SFQ_LIB_CHECKPOINT
 
 	if (SFQ_LIB_IS_FAIL())
 	{
+		free(payload);
 		free(execpath);
 		free(execargs);
 		free(metadata);
-		free(payload);
+		free(soutpath);
+		free(serrpath);
 	}
 
 SFQ_LIB_FINALIZE
 
 	return SFQ_LIB_IS_SUCCESS();
+}
+
+void sfq_free_ioelm_buff(struct sfq_ioelm_buff* ioeb)
+{
+	if (ioeb)
+	{
+		free(ioeb->payload);
+		free(ioeb->execpath);
+		free(ioeb->execargs);
+		free(ioeb->metadata);
+		free(ioeb->soutpath);
+		free(ioeb->serrpath);
+	}
 }
 
 bool sfq_seek_set_and_read(FILE* fp, off_t set_pos, void* mem, size_t mem_size)
@@ -561,17 +638,6 @@ void sfq_qh_init_pos(struct sfq_q_header* p)
 	{
 		p->dval.elm_last_push_pos = p->dval.elm_next_shift_pos = p->dval.elm_num = 0;
 		p->dval.elm_new_push_pos = p->sval.elmseg_start_pos;
-	}
-}
-
-void sfq_free_ioelm_buff(struct sfq_ioelm_buff* ioeb)
-{
-	if (ioeb)
-	{
-		free(ioeb->execpath);
-		free(ioeb->execargs);
-		free(ioeb->metadata);
-		free(ioeb->payload);
 	}
 }
 

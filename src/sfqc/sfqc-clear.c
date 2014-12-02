@@ -15,7 +15,7 @@ SFQ_MAIN_INITIALIZE
 
 /* */
 	irc = sfqc_get_init_option(argc, argv, "D:N:", &opt);
-	if (irc != SFQ_RC_SUCCESS)
+	if (irc != 0)
 	{
 		message = "get_init_option: parse error";
 		jumppos = __LINE__;

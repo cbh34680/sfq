@@ -1,44 +1,5 @@
 #include "sfq-lib.h"
 
-int sfq_push_str(const char* querootdir, const char* quename, const char* execpath, const char* execargs, const char* metadata, const char* textdata)
-{
-	struct sfq_value val;
-
-	bzero(&val, sizeof(val));
-
-/*
-(char*) cast for show-off warning
- */
-	val.execpath = (char*)execpath;
-	val.execargs = (char*)execargs;
-	val.metadata = (char*)metadata;
-	val.payload_type = SFQ_PLT_CHARARRAY | SFQ_PLT_NULLTERM;
-	val.payload_size = (textdata ? (strlen(textdata) + 1) : 0);
-	val.payload = (sfq_byte*)textdata;
-
-	return sfq_push(querootdir, quename, &val);
-}
-
-int sfq_push_bin(const char* querootdir, const char* quename, const char* execpath, const char* execargs, const char* metadata, const sfq_byte* payload, size_t payload_size)
-{
-	struct sfq_value val;
-
-	bzero(&val, sizeof(val));
-
-/*
-(char*) cast for show-off warning
- */
-	val.execpath = (char*)execpath;
-	val.execargs = (char*)execargs;
-	val.metadata = (char*)metadata;
-	val.payload_type = SFQ_PLT_BINARY;
-	val.payload_size = payload_size;
-	val.payload = (sfq_byte*)payload;
-
-	return sfq_push(querootdir, quename, &val);
-}
-
-
 bool sfq_copy_val2ioeb(const struct sfq_value* val, struct sfq_ioelm_buff* ioeb)
 {
 SFQ_LIB_INITIALIZE
@@ -138,6 +99,48 @@ SFQ_LIB_INITIALIZE
 		ioeb->payload = val->payload;
 	}
 
+	if (val->soutpath)
+	{
+		size_t soutpath_len = strlen(val->soutpath);
+		if (soutpath_len)
+		{
+			size_t soutpath_size = soutpath_len + 1;
+
+			if (soutpath_size >= USHRT_MAX)
+			{
+				SFQ_FAIL(EA_OVERLIMIT, "soutpath_size");
+			}
+			if (soutpath_size >= PATH_MAX)
+			{
+				SFQ_FAIL(EA_OVERLIMIT, "soutpath_size");
+			}
+
+			ioeb->soutpath = val->soutpath;
+			ioeb->eh.soutpath_size = (ushort)soutpath_size;
+		}
+	}
+
+	if (val->serrpath)
+	{
+		size_t serrpath_len = strlen(val->serrpath);
+		if (serrpath_len)
+		{
+			size_t serrpath_size = serrpath_len + 1;
+
+			if (serrpath_size >= USHRT_MAX)
+			{
+				SFQ_FAIL(EA_OVERLIMIT, "serrpath_size");
+			}
+			if (serrpath_size >= PATH_MAX)
+			{
+				SFQ_FAIL(EA_OVERLIMIT, "serrpath_size");
+			}
+
+			ioeb->serrpath = val->serrpath;
+			ioeb->eh.serrpath_size = (ushort)serrpath_size;
+		}
+	}
+
 /* for debug */
 	add_all =
 	(
@@ -145,7 +148,9 @@ SFQ_LIB_INITIALIZE
 		ioeb->eh.execpath_size +
 		ioeb->eh.execargs_size +
 		ioeb->eh.metadata_size +
-		ioeb->eh.payload_size
+		ioeb->eh.payload_size  +
+		ioeb->eh.soutpath_size +
+		ioeb->eh.serrpath_size
 	);
 
 	elmmargin_ = SFQ_ALIGN_MARGIN(add_all);
@@ -185,6 +190,9 @@ bool sfq_copy_ioeb2val(const struct sfq_ioelm_buff* ioeb, struct sfq_value* val)
 	val->payload_size = ioeb->eh.payload_size;
 	val->payload = ioeb->payload;
 
+	val->soutpath = ioeb->eh.soutpath_size ? ioeb->soutpath : NULL;
+	val->serrpath = ioeb->eh.serrpath_size ? ioeb->serrpath : NULL;
+
 	return true;
 }
 
@@ -199,6 +207,8 @@ void sfq_free_value(struct sfq_value* val)
 	free(val->execargs);
 	free(val->metadata);
 	free(val->payload);
+	free(val->soutpath);
+	free(val->serrpath);
 
 	bzero(val, sizeof(*val));
 }
@@ -207,12 +217,14 @@ int sfq_alloc_print_value(const struct sfq_value* val, struct sfq_value* dst)
 {
 SFQ_LIB_INITIALIZE
 
-	const char* na = "N/A";
+	const char* NA = "N/A";
 
 	char* execpath = NULL;
 	char* execargs = NULL;
 	char* metadata = NULL;
 	char* payload = NULL;
+	char* soutpath = NULL;
+	char* serrpath = NULL;
 
 /* */
 	if (! val)
@@ -227,22 +239,34 @@ SFQ_LIB_INITIALIZE
 
 	bzero(dst, sizeof(*dst));
 
-	execpath = strdup(val->execpath ? val->execpath : na);
+	execpath = strdup(val->execpath ? val->execpath : NA);
 	if (! execpath)
 	{
 		SFQ_FAIL(ES_STRDUP, "execpath");
 	}
 
-	execargs = strdup(val->execargs ? val->execargs : na);
+	execargs = strdup(val->execargs ? val->execargs : NA);
 	if (! execargs)
 	{
 		SFQ_FAIL(ES_STRDUP, "execargs");
 	}
 
-	metadata = strdup(val->metadata ? val->metadata : na);
+	metadata = strdup(val->metadata ? val->metadata : NA);
 	if (! metadata)
 	{
 		SFQ_FAIL(ES_STRDUP, "metadata");
+	}
+
+	soutpath = strdup(val->soutpath ? val->soutpath : NA);
+	if (! soutpath)
+	{
+		SFQ_FAIL(ES_STRDUP, "soutpath");
+	}
+
+	serrpath = strdup(val->serrpath ? val->serrpath : NA);
+	if (! serrpath)
+	{
+		SFQ_FAIL(ES_STRDUP, "serrpath");
 	}
 
 	if (val->payload)
@@ -270,7 +294,7 @@ SFQ_LIB_INITIALIZE
 	}
 	else
 	{
-		payload = strdup(na);
+		payload = strdup(NA);
 	}
 
 	if (! payload)
@@ -282,11 +306,13 @@ SFQ_LIB_INITIALIZE
 	dst->pushtime = val->pushtime;
 	dst->payload_type = val->payload_type;
 	dst->payload_size = val->payload_size;
+	dst->payload = (sfq_byte*)payload;
 
 	dst->execpath = execpath;
 	dst->execargs = execargs;
 	dst->metadata = metadata;
-	dst->payload = (sfq_byte*)payload;
+	dst->soutpath = soutpath;
+	dst->serrpath = serrpath;
 
 SFQ_LIB_CHECKPOINT
 
@@ -296,6 +322,8 @@ SFQ_LIB_CHECKPOINT
 		free(execargs);
 		free(metadata);
 		free(payload);
+		free(soutpath);
+		free(serrpath);
 	}
 
 SFQ_LIB_FINALIZE
@@ -545,3 +573,53 @@ void sfq_free_open_names(struct sfq_open_names* om)
 		free(om);
 	}
 }
+
+/*
+http://nion.modprobe.de/blog/archives/357-Recursive-directory-creation.html
+*/
+bool sfq_mkdir_p(const char *arg, mode_t mode)
+{
+	char* dir = NULL;
+	char *p = NULL;
+	size_t len = 0;
+
+
+	dir = sfq_stradup(arg);
+	if (! dir)
+	{
+		return false;
+	}
+
+	len = strlen(dir);
+	if (dir[len - 1] == '/')
+	{
+		dir[len - 1] = 0;
+	}
+
+	for(p = dir+1; *p; p++)
+	{
+		if(*p == '/')
+		{
+			*p = '\0';
+			if (mkdir(dir, mode) == -1)
+			{
+				if (errno != EEXIST)
+				{
+					return false;
+				}
+			}
+			*p = '/';
+		}
+	}
+
+	if (mkdir(dir, mode) == -1)
+	{
+		if (errno != EEXIST)
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+

@@ -9,3 +9,5 @@
 /Release
 /Debug
 /*.user
+/a.out
+/a.c

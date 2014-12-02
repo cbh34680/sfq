@@ -285,11 +285,53 @@ SFQ_LIB_CHECKPOINT
 
 	if (slotno != -1)
 	{
-		sfq_go_exec(querootdir, quename, slotno);
+		sfq_go_exec(querootdir, quename, (ushort)slotno);
 	}
 
 SFQ_LIB_FINALIZE
 
 	return SFQ_LIB_RC();
+}
+
+int sfq_push_str(const char* querootdir, const char* quename, const char* execpath, const char* execargs, const char* metadata, const char* soutpath, const char* serrpath, const char* textdata)
+{
+	struct sfq_value val;
+
+	bzero(&val, sizeof(val));
+
+/*
+(char*) cast for show-off warning
+ */
+	val.execpath = (char*)execpath;
+	val.execargs = (char*)execargs;
+	val.metadata = (char*)metadata;
+	val.soutpath = (char*)soutpath;
+	val.serrpath = (char*)serrpath;
+	val.payload_type = SFQ_PLT_CHARARRAY | SFQ_PLT_NULLTERM;
+	val.payload_size = (textdata ? (strlen(textdata) + 1) : 0);
+	val.payload = (sfq_byte*)textdata;
+
+	return sfq_push(querootdir, quename, &val);
+}
+
+int sfq_push_bin(const char* querootdir, const char* quename, const char* execpath, const char* execargs, const char* metadata, const char* soutpath, const char* serrpath, const sfq_byte* payload, size_t payload_size)
+{
+	struct sfq_value val;
+
+	bzero(&val, sizeof(val));
+
+/*
+(char*) cast for show-off warning
+ */
+	val.execpath = (char*)execpath;
+	val.execargs = (char*)execargs;
+	val.metadata = (char*)metadata;
+	val.soutpath = (char*)soutpath;
+	val.serrpath = (char*)serrpath;
+	val.payload_type = SFQ_PLT_BINARY;
+	val.payload_size = payload_size;
+	val.payload = (sfq_byte*)payload;
+
+	return sfq_push(querootdir, quename, &val);
 }
 

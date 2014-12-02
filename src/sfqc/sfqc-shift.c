@@ -19,7 +19,7 @@ SFQ_MAIN_INITIALIZE
 
 /* */
 	irc = sfqc_get_init_option(argc, argv, "D:N:", &opt);
-	if (irc != SFQ_RC_SUCCESS)
+	if (irc != 0)
 	{
 		message = "get_init_option: parse error";
 		jumppos = __LINE__;
@@ -27,9 +27,9 @@ SFQ_MAIN_INITIALIZE
 	}
 
 	irc = sfq_shift(opt.querootdir, opt.quename, &val);
-	if (irc != SFQ_RC_SUCCESS)
+	if (irc != 0)
 	{
-		message = (irc == SFQ_RC_NO_ELEMENT) ? "element does not exist" : "sfq_pop";
+		message = (irc == SFQ_RC_NO_ELEMENT) ? "element does not exist in the queue" : "sfq_pop";
 		jumppos = __LINE__;
 		goto EXIT_LABEL;
 	}

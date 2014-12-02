@@ -14,7 +14,7 @@ CFLAGSL  = $(CFLAGS) -fPIC
 LDFLAGS  = -Wall -shared
 
 LIBDIRS  = -L../libsfq -L.
-LIBS     = -lsfqc -lsfq -lpthread
+LIBS     = -lsfqc -lsfq -lpthread -lm
 
 #
 all: $(TARGET)

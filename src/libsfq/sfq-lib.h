@@ -16,6 +16,7 @@
 #include <errno.h>
 #include <fcntl.h>           /* For O_* constants */
 #include <signal.h>
+#include <math.h>
 
 #ifdef WIN32
 	#include "win32-dummy-build.h"
@@ -30,6 +31,12 @@
 #endif
 
 #include "sfq.h"
+
+#ifdef SFQ_DEBUG_BUILD
+	#define STDIO_REOPEN_LOGFILE	(1)
+#else
+	#define STDIO_REOPEN_LOGFILE	(1)
+#endif
 
 #define SFQ_LIB_INITIALIZE \
 	int fire_line__  = -1; \
@@ -57,6 +64,9 @@ SFQ_FAIL_CATCH_LABEL__:
 	fire_line__ = __LINE__; \
 	fire_rc__ = SFQ_RC_ ## fire_rc; \
 	goto SFQ_FAIL_CATCH_LABEL__;
+
+
+#define SFQ_PLUSINTSTR_WIDTH(var)	( ((var) == 0) ? 1 : (((int)log10( (var) )) + 1) )
 
 
 /*
@@ -262,7 +272,7 @@ extern bool sfq_seek_set_and_write(FILE* fp, off_t pos, void* mem, size_t mem_si
 
 extern void sfq_qh_init_pos(struct sfq_q_header*);
 
-extern bool sfq_go_exec(const char* querootdir, const char* quename, int arridx);
+extern bool sfq_go_exec(const char* querootdir, const char* quename, ushort slotno);
 
 /* helper */
 struct sfq_ioelm_buff
@@ -272,6 +282,8 @@ struct sfq_ioelm_buff
 	char* execargs;
 	char* metadata;
 	sfq_byte* payload;
+	char* soutpath;
+	char* serrpath;
 };
 
 extern bool sfq_readqfh(FILE* fp, struct sfq_file_header* qfh, struct sfq_process_info** pprocs);
@@ -285,6 +297,11 @@ extern void sfq_free_ioelm_buff(struct sfq_ioelm_buff* ioeb);
 
 extern struct sfq_open_names* sfq_alloc_open_names(const char* querootdir, const char* quename);
 extern void sfq_free_open_names(struct sfq_open_names* om);
+
+extern bool sfq_mkdir_p(const char *arg, mode_t mode);
+
+extern void sfq_reopen_4proc(const char* logdir, ushort slotno);
+extern void sfq_reopen_4exec(const char* logdir, ulong id);
 
 #endif
 

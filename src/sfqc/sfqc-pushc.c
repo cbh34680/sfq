@@ -23,8 +23,8 @@ SFQ_MAIN_INITIALIZE
 	bzero(&opt, sizeof(opt));
 
 /* */
-	irc = sfqc_get_init_option(argc, argv, "D:N:f:x:a:m:t:", &opt);
-	if (irc != SFQ_RC_SUCCESS)
+	irc = sfqc_get_init_option(argc, argv, "D:N:f:x:a:m:t:o:e:", &opt);
+	if (irc != 0)
 	{
 		message = "get_init_option: parse error";
 		jumppos = __LINE__;
@@ -32,9 +32,9 @@ SFQ_MAIN_INITIALIZE
 	}
 
 	irc = sfqc_can_push(&opt);
-	if (irc != SFQ_RC_SUCCESS)
+	if (irc != 0)
 	{
-		message = "sfqc_can_push";
+		message = "value is not specified";
 		jumppos = __LINE__;
 		goto EXIT_LABEL;
 	}
@@ -69,10 +69,14 @@ SFQ_MAIN_INITIALIZE
 		opt.textdata = (char*)mem;
 	}
 
-	irc = sfq_push_str(opt.querootdir, opt.quename, opt.execpath, opt.execargs, opt.metadata, opt.textdata);
+	irc = sfq_push_str(opt.querootdir, opt.quename,
+		opt.execpath, opt.execargs, opt.metadata,
+		opt.soutpath, opt.serrpath,
+		opt.textdata);
+
 	if (irc != SFQ_RC_SUCCESS)
 	{
-		message = "sfq_push_str";
+		message = (irc == SFQ_RC_NO_SPACE) ? "no free space in the queue" : "sfq_pop";
 		jumppos = __LINE__;
 		goto EXIT_LABEL;
 	}
