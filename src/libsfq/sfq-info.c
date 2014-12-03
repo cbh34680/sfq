@@ -30,7 +30,6 @@ SFQ_LIB_INITIALIZE
 		SFQ_FAIL(EA_READQFH, "sfq_readqfh");
 	}
 
-#ifndef SFQ_DEBUG_BUILD
 /*
 デバッグのときは sfq_readqfh() で print しているので、そうでないときだけ実行する
 */
@@ -40,7 +39,6 @@ SFQ_LIB_INITIALIZE
 	{
 		sfq_print_procs(procs, qfh.qh.sval.max_proc_num);
 	}
-#endif
 
 SFQ_LIB_CHECKPOINT
 

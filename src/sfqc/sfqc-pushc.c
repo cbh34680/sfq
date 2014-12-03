@@ -23,7 +23,7 @@ SFQ_MAIN_INITIALIZE
 	bzero(&opt, sizeof(opt));
 
 /* */
-	irc = sfqc_get_init_option(argc, argv, "D:N:f:x:a:m:t:o:e:", &opt);
+	irc = sfqc_get_init_option(argc, argv, "D:N:o:e:f:x:a:m:t:", &opt);
 	if (irc != 0)
 	{
 		message = "get_init_option: parse error";
@@ -34,7 +34,7 @@ SFQ_MAIN_INITIALIZE
 	irc = sfqc_can_push(&opt);
 	if (irc != 0)
 	{
-		message = "value is not specified";
+		message = "sfqc_can_push";
 		jumppos = __LINE__;
 		goto EXIT_LABEL;
 	}

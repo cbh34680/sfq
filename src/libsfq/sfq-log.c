@@ -92,26 +92,30 @@ void sfq_output_reopen_4exec(FILE* fp, const char* arg_wpath,
 
 	if (arg_wpath)
 	{
-		if (freopen(arg_wpath, "wb", fp))
+		if (strcmp(arg_wpath, "-") == 0)
 		{
-			wpath = arg_wpath;
-		}
-	}
+			/* "-o -" "-e -" はデフォルトのログファイルとする */
 
-	if (! wpath)
-	{
-		if (logdir)
-		{
-			char* path = alloc_wpath_4exec(logdir, uuid, id, ext);
-			if (path)
+			if (logdir)
 			{
-				if (freopen(path, "wb", fp))
+				char* path = alloc_wpath_4exec(logdir, uuid, id, ext);
+				if (path)
 				{
-					wpath = sfq_stradup(path);
-
-					free(path);
-					path = NULL;
+					if (freopen(path, "wb", fp))
+					{
+						wpath = sfq_stradup(path);
+					}
 				}
+
+				free(path);
+				path = NULL;
+			}
+		}
+		else
+		{
+			if (freopen(arg_wpath, "wb", fp))
+			{
+				wpath = arg_wpath;
 			}
 		}
 	}
@@ -129,14 +133,14 @@ void sfq_output_reopen_4exec(FILE* fp, const char* arg_wpath,
 		if (path)
 		{
 			setenv(env_key, path, 0);
-
-			free(path);
-			path = NULL;
 		}
+
+		free(path);
+		path = NULL;
 	}
 }
 
-static void output_reopen_4proc(FILE* fp, const char* logdir, ushort slotno, const char* ext)
+static bool output_reopen_4proc(FILE* fp, const char* logdir, ushort slotno, const char* ext)
 {
 	char* wpath = NULL;
 	size_t wpath_size = 0;
@@ -155,34 +159,52 @@ static void output_reopen_4proc(FILE* fp, const char* logdir, ushort slotno, con
 	if (wpath)
 	{
 		snprintf(wpath, wpath_size, "%s/%u.%s", logdir, slotno, ext);
-	}
-	else
-	{
-		wpath = "/dev/null";
+
+		if (freopen(wpath, "at", fp))
+		{
+			return true;
+		}
 	}
 
-	if (! freopen(wpath, "at", fp))
-	{
-		freopen("/dev/null", "at", fp);
-	}
+	return false;
 }
 
-void sfq_reopen_4proc(const char* logdir, ushort slotno)
+void sfq_reopen_4proc(const char* logdir, ushort slotno, sfq_uchar questatus)
 {
+	bool sout_ok = false;
+	bool serr_ok = false;
+
 	/* stdio */
 	freopen("/dev/null", "rb", stdin);
 
 	if (logdir)
 	{
 		/* stdout */
-		output_reopen_4proc(stdout, logdir, slotno, "out");
+		if (questatus & SFQ_QST_STDOUT_ON)
+		{
+			if (output_reopen_4proc(stdout, logdir, slotno, "out"))
+			{
+				sout_ok = true;
+			}
+		}
 
 		/* stderr */
-		output_reopen_4proc(stderr, logdir, slotno, "err");
+		if (questatus & SFQ_QST_STDERR_ON)
+		{
+			if (output_reopen_4proc(stderr, logdir, slotno, "err"))
+			{
+				serr_ok = true;
+			}
+		}
 	}
-	else
+
+	if (! sout_ok)
 	{
 		freopen("/dev/null", "at", stdout);
+	}
+
+	if (! serr_ok)
+	{
 		freopen("/dev/null", "at", stderr);
 	}
 
@@ -193,5 +215,6 @@ void sfq_reopen_4proc(const char* logdir, ushort slotno)
 原因は不明
 */
 	setvbuf(stdout, NULL, _IONBF, 0);
+	setvbuf(stderr, NULL, _IONBF, 0);
 }
 

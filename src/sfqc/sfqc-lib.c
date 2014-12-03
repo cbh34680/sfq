@@ -132,6 +132,10 @@ int sfqc_can_push(const struct sfqc_init_option* p)
 			if (p->textdata && p->inputfile)
 			{
 				/* go next ... false ('-f' && '-t') */
+
+				fprintf(stderr, "%s(%d): '-f' and '-t' can not be specified together\n", __FILE__, __LINE__);
+
+				return 1;
 			}
 			else
 			{
@@ -139,6 +143,8 @@ int sfqc_can_push(const struct sfqc_init_option* p)
 			}
 		}
 	}
+
+	fprintf(stderr, "%s(%d): no input data\n", __FILE__, __LINE__);
 
 	return 1;
 }
@@ -201,14 +207,59 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, struct sf
 			case 'S':
 			{
 				/* ファイルサイズの最大 */
+				ulong mul = 0;
+
 				char* e = NULL;
 				unsigned long ul = strtoul(optarg, &e, 0);
 				if (*e)
 				{
-					snprintf(message, sizeof(message), "'%c': ignore [%s]", opt, e);
-					jumppos = __LINE__;
-					goto EXIT_LABEL;
+					if ((strlen(e) == 1) || ((strlen(e) == 2) && (((e[1] == 'b') || (e[1] == 'B')))))
+					{
+						switch (*e)
+						{
+							case 'k':
+							case 'K':
+							{
+								mul = (1024);
+								break;
+							}
+
+							case 'm':
+							case 'M':
+							{
+								mul = (1024 * 1024);
+								break;
+							}
+
+							case 'g':
+							case 'G':
+							{
+								mul = (1024 * 1024 * 1024);
+								break;
+							}
+						}
+					}
+
+					if (mul == 0)
+					{
+						snprintf(message, sizeof(message), "'%c': ignore [%s]", opt, e);
+						jumppos = __LINE__;
+						goto EXIT_LABEL;
+					}
+					else
+					{
+						if (ul == 0)
+						{
+							ul = 1;
+						}
+					}
 				}
+
+				if (mul)
+				{
+					ul *= mul;
+				}
+
 				p->filesize_limit = ul;
 
 				break;
@@ -216,19 +267,64 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, struct sf
 			case 'L':
 			{
 				/* 要素サイズの最大 */
+				ulong mul = 0;
+
 				char* e = NULL;
 				unsigned long ul = strtoul(optarg, &e, 0);
 				if (*e)
 				{
-					snprintf(message, sizeof(message), "'%c': ignore [%s]", opt, e);
-					jumppos = __LINE__;
-					goto EXIT_LABEL;
+					if ((strlen(e) == 1) || ((strlen(e) == 2) && (((e[1] == 'b') || (e[1] == 'B')))))
+					{
+						switch (*e)
+						{
+							case 'k':
+							case 'K':
+							{
+								mul = (1024);
+								break;
+							}
+
+							case 'm':
+							case 'M':
+							{
+								mul = (1024 * 1024);
+								break;
+							}
+
+							case 'g':
+							case 'G':
+							{
+								mul = (1024 * 1024 * 1024);
+								break;
+							}
+						}
+					}
+
+					if (mul == 0)
+					{
+						snprintf(message, sizeof(message), "'%c': ignore [%s]", opt, e);
+						jumppos = __LINE__;
+						goto EXIT_LABEL;
+					}
+					else
+					{
+						if (ul == 0)
+						{
+							ul = 1;
+						}
+					}
 				}
+
+				if (mul)
+				{
+					ul *= mul;
+				}
+
 				p->payloadsize_limit = ul;
 
 				break;
 			}
-			case 'P':
+			case 'R':
 			{
 				/* 最大プロセス数 */
 				char* e = NULL;
@@ -325,7 +421,7 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, struct sf
 			case 'o':
 			{
 				/* 標準出力のリダイレクト先 */
-				char* c = strdup(optarg);
+				char* c = strdup(optarg ? optarg : "-");
 				if (! c)
 				{
 					snprintf(message, sizeof(message), "'%c': mem alloc", opt);
@@ -340,7 +436,7 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, struct sf
 			case 'e':
 			{
 				/* 標準エラーのリダイレクト先 */
-				char* c = strdup(optarg);
+				char* c = strdup(optarg ? optarg : "-");
 				if (! c)
 				{
 					snprintf(message, sizeof(message), "'%c': mem alloc", opt);

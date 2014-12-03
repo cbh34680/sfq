@@ -6,6 +6,7 @@ int main(int argc, char** argv)
 
 	char* message = NULL;
 	int jumppos = 0;
+	sfq_uchar questatus = 0;
 
 /* */
 	struct sfqc_init_option opt;
@@ -15,7 +16,7 @@ SFQ_MAIN_INITIALIZE
 	bzero(&opt, sizeof(opt));
 
 /* */
-	irc = sfqc_get_init_option(argc, argv, "D:N:S:L:P:", &opt);
+	irc = sfqc_get_init_option(argc, argv, "D:N:S:L:R:oe", &opt);
 	if (irc != 0)
 	{
 		message = "get_init_option: parse error";
@@ -23,7 +24,33 @@ SFQ_MAIN_INITIALIZE
 		goto EXIT_LABEL;
 	}
 
-	irc = sfq_init(opt.querootdir, opt.quename, opt.filesize_limit, opt.payloadsize_limit, opt.max_proc_num);
+	if (opt.soutpath)
+	{
+		if (strcmp(opt.soutpath, "-") != 0)
+		{
+			message = "'-o' is only allowed '-'";
+			jumppos = __LINE__;
+			goto EXIT_LABEL;
+		}
+
+		questatus |= SFQ_QST_STDOUT_ON;
+	}
+
+	if (opt.serrpath)
+	{
+		if (strcmp(opt.serrpath, "-") != 0)
+		{
+			message = "'-e' is only allowed '-'";
+			jumppos = __LINE__;
+			goto EXIT_LABEL;
+		}
+
+		questatus |= SFQ_QST_STDERR_ON;
+	}
+
+	irc = sfq_init(opt.querootdir, opt.quename,
+		opt.filesize_limit, opt.payloadsize_limit, opt.max_proc_num, questatus);
+
 	if (irc != SFQ_RC_SUCCESS)
 	{
 		message = "sfq_init";

@@ -1,7 +1,7 @@
 #include "sfq-lib.h"
 
 int sfq_init(const char* querootdir, const char* quename,
-	size_t filesize_limit, size_t payloadsize_limit, ushort max_proc_num)
+	size_t filesize_limit, size_t payloadsize_limit, ushort max_proc_num, sfq_uchar questatus)
 {
 SFQ_LIB_INITIALIZE
 
@@ -85,6 +85,8 @@ SFQ_LIB_INITIALIZE
 	strcpy(qfh.qh.dval.lastoper, "INI");
 	strcpy(qfh.last_qhd1.lastoper, "---");
 	strcpy(qfh.last_qhd2.lastoper, "---");
+
+	qfh.qh.dval.questatus = questatus;
 
 	/* 各ポジションの初期化 */
 /*

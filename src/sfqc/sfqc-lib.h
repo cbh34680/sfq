@@ -46,7 +46,7 @@ struct sfqc_init_option
 	char* quename;			/* N */
 	size_t filesize_limit;		/* S */
 	size_t payloadsize_limit;	/* L */
-	ushort max_proc_num;		/* P */
+	ushort max_proc_num;		/* R */
 
 	char* execpath;			/* x */
 	char* execargs;			/* a */

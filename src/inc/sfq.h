@@ -59,7 +59,7 @@ enum
 	SFQ_RC_EC_FILENOTFOUND	= 127,
 };
 
-/* PayLoad Type */
+/* PayLoad Type: uchar */
 enum
 {
 	SFQ_PLT_NULLTERM	= 1,
@@ -67,6 +67,15 @@ enum
 	SFQ_PLT_CHARARRAY	= 4,	/* Null Term String */
 };
 
+/* Queue Status: uchar */
+enum
+{
+	SFQ_QST_STDOUT_ON	= 1,
+	SFQ_QST_STDERR_ON	= 2,
+	SFQ_QST_PAUSE_ACCEPT	= 4,
+};
+
+/* */
 struct sfq_value
 {
 	ulong id;				/* 8 */
@@ -84,10 +93,12 @@ struct sfq_value
 
 typedef void (*sfq_map_callback)(ulong order, const struct sfq_value* val, void* userdata);
 
+extern int sfq_init(const char* querootdir, const char* quename,
+	size_t filesize_limit, size_t payloadsize_limit, ushort max_process, sfq_uchar questatus);
+
 extern int sfq_push(const char* querootdir, const char* quename, struct sfq_value* val);
 extern int sfq_pop(const char* querootdir, const char* quename, struct sfq_value* val);
 extern int sfq_shift(const char* querootdir, const char* quename, struct sfq_value* val);
-extern int sfq_init(const char* querootdir, const char* quename, size_t filesize_limit, size_t payloadsize_limit, ushort max_process);
 extern int sfq_info(const char* querootdir, const char* quename);
 extern int sfq_map(const char* querootdir, const char* quename, sfq_map_callback callback, void* userdata);
 extern int sfq_clear(const char* querootdir, const char* quename);

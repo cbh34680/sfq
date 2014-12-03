@@ -202,8 +202,8 @@ struct sfq_qh_dval
 	ulong update_num;		/* 8 */
 
 	char lastoper[4];		/* 4 */
-	ushort questatus;		/* 1 */
-	sfq_byte filler[2];		/* 2 */
+	sfq_uchar questatus;		/* 1 */
+	sfq_byte filler[3];		/* 3 */
 };
 
 struct sfq_q_header
@@ -235,7 +235,7 @@ struct sfq_e_header
 /* value */
 	ushort eh_size;			/* 2 */
 	sfq_uchar payload_type;		/* 1 */
-	sfq_uchar elmmargin_;		/* 1 */
+	sfq_uchar elmmargin_;		/* 1 ... for debug, set by sfq_copy_val2ioeb() */
 	ushort execpath_size;		/* 2 ... (x) USHRT_MAX PATH_MAX */
 	ushort metadata_size;		/* 2 ... (m) USHRT_MAX */
 
@@ -268,7 +268,7 @@ extern bool sfq_seek_set_and_write(FILE* fp, off_t pos, const void* mem, size_t 
 
 extern void sfq_qh_init_pos(struct sfq_q_header*);
 
-extern bool sfq_go_exec(const char* querootdir, const char* quename, ushort slotno);
+extern bool sfq_go_exec(const char* querootdir, const char* quename, ushort slotno, sfq_uchar questatus);
 
 /* helper */
 struct sfq_ioelm_buff
@@ -300,7 +300,7 @@ extern void sfq_free_open_names(struct sfq_open_names* om);
 
 extern bool sfq_mkdir_p(const char *arg, mode_t mode);
 
-extern void sfq_reopen_4proc(const char* logdir, ushort slotno);
+extern void sfq_reopen_4proc(const char* logdir, ushort slotno, sfq_uchar questatus);
 
 extern void sfq_output_reopen_4exec(FILE* fp, const char* arg_wpath,
 	const char* logdir, const uuid_t uuid, ulong id, const char* ext, const char* env_key);

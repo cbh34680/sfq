@@ -14,6 +14,7 @@ SFQ_LIB_INITIALIZE
 	size_t iosize = 0;
 	size_t eh_size = 0;
 	off_t elm_pos = 0;
+	sfq_uchar questatus = 0;
 
 	off_t IfPush_next_elmpos = 0;
 	off_t IfPush_elm_end_pos = 0;
@@ -49,10 +50,12 @@ SFQ_LIB_INITIALIZE
 		SFQ_FAIL(EA_READQFH, "sfq_readqfh");
 	}
 
+	questatus = qfh.qh.dval.questatus;
+
 	qfh.last_qhd2 = qfh.last_qhd1;
 	qfh.last_qhd1 = qfh.qh.dval;
 
-/* create element-header */
+/* copy arguments to write-buffer */
 	b = sfq_copy_val2ioeb(val, &ioeb);
 	if (! b)
 	{
@@ -289,7 +292,7 @@ SFQ_LIB_CHECKPOINT
 
 	if (slotno != -1)
 	{
-		sfq_go_exec(querootdir, quename, (ushort)slotno);
+		sfq_go_exec(querootdir, quename, (ushort)slotno, questatus);
 	}
 
 SFQ_LIB_FINALIZE
@@ -297,7 +300,9 @@ SFQ_LIB_FINALIZE
 	return SFQ_LIB_RC();
 }
 
-int sfq_push_str(const char* querootdir, const char* quename, const char* execpath, const char* execargs, const char* metadata, const char* soutpath, const char* serrpath, uuid_t uuid, const char* textdata)
+int sfq_push_str(const char* querootdir, const char* quename, const char* execpath, const char* execargs,
+	const char* metadata, const char* soutpath, const char* serrpath, uuid_t uuid,
+	const char* textdata)
 {
 	int irc = 0;
 	struct sfq_value val;
@@ -329,7 +334,9 @@ int sfq_push_str(const char* querootdir, const char* quename, const char* execpa
 	return irc;
 }
 
-int sfq_push_bin(const char* querootdir, const char* quename, const char* execpath, const char* execargs, const char* metadata, const char* soutpath, const char* serrpath, uuid_t uuid, const sfq_byte* payload, size_t payload_size)
+int sfq_push_bin(const char* querootdir, const char* quename, const char* execpath, const char* execargs,
+	const char* metadata, const char* soutpath, const char* serrpath, uuid_t uuid,
+	const sfq_byte* payload, size_t payload_size)
 {
 	int irc = 0;
 	struct sfq_value val;
