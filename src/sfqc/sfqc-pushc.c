@@ -72,6 +72,7 @@ SFQ_MAIN_INITIALIZE
 	irc = sfq_push_str(opt.querootdir, opt.quename,
 		opt.execpath, opt.execargs, opt.metadata,
 		opt.soutpath, opt.serrpath,
+		NULL,
 		opt.textdata);
 
 	if (irc != SFQ_RC_SUCCESS)

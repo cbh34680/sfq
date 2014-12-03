@@ -6,7 +6,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <limits.h>
-#include <time.h>
 #include <sys/stat.h>
 #include <assert.h>
 

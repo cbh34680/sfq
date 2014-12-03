@@ -1,6 +1,6 @@
 #include "sfq-lib.h"
 
-int sfq_push(const char* querootdir, const char* quename, const struct sfq_value* val)
+int sfq_push(const char* querootdir, const char* quename, struct sfq_value* val)
 {
 SFQ_LIB_INITIALIZE
 
@@ -180,6 +180,8 @@ SFQ_LIB_INITIALIZE
 		}
 	}
 
+	uuid_generate_random(ioeb.eh.uuid);
+
 #ifdef SFQ_DEBUG_BUILD
 	sfq_print_e_header(&ioeb.eh);
 #endif
@@ -275,6 +277,8 @@ SFQ_LIB_INITIALIZE
 		}
 	}
 
+	uuid_copy(val->uuid, ioeb.eh.uuid);
+
 SFQ_LIB_CHECKPOINT
 
 	sfq_close_queue(qo);
@@ -293,8 +297,9 @@ SFQ_LIB_FINALIZE
 	return SFQ_LIB_RC();
 }
 
-int sfq_push_str(const char* querootdir, const char* quename, const char* execpath, const char* execargs, const char* metadata, const char* soutpath, const char* serrpath, const char* textdata)
+int sfq_push_str(const char* querootdir, const char* quename, const char* execpath, const char* execargs, const char* metadata, const char* soutpath, const char* serrpath, uuid_t uuid, const char* textdata)
 {
+	int irc = 0;
 	struct sfq_value val;
 
 	bzero(&val, sizeof(val));
@@ -311,11 +316,22 @@ int sfq_push_str(const char* querootdir, const char* quename, const char* execpa
 	val.payload_size = (textdata ? (strlen(textdata) + 1) : 0);
 	val.payload = (sfq_byte*)textdata;
 
-	return sfq_push(querootdir, quename, &val);
+	irc = sfq_push(querootdir, quename, &val);
+
+	if (uuid)
+	{
+		if (irc == SFQ_RC_SUCCESS)
+		{
+			uuid_copy(uuid, val.uuid);
+		}
+	}
+
+	return irc;
 }
 
-int sfq_push_bin(const char* querootdir, const char* quename, const char* execpath, const char* execargs, const char* metadata, const char* soutpath, const char* serrpath, const sfq_byte* payload, size_t payload_size)
+int sfq_push_bin(const char* querootdir, const char* quename, const char* execpath, const char* execargs, const char* metadata, const char* soutpath, const char* serrpath, uuid_t uuid, const sfq_byte* payload, size_t payload_size)
 {
+	int irc = 0;
 	struct sfq_value val;
 
 	bzero(&val, sizeof(val));
@@ -332,6 +348,16 @@ int sfq_push_bin(const char* querootdir, const char* quename, const char* execpa
 	val.payload_size = payload_size;
 	val.payload = (sfq_byte*)payload;
 
-	return sfq_push(querootdir, quename, &val);
+	irc = sfq_push(querootdir, quename, &val);
+
+	if (uuid)
+	{
+		if (irc == SFQ_RC_SUCCESS)
+		{
+			uuid_copy(uuid, val.uuid);
+		}
+	}
+
+	return irc;
 }
 

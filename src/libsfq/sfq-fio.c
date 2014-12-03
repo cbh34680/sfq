@@ -250,7 +250,9 @@ SFQ_LIB_INITIALIZE
 	}
 
 #ifdef SFQ_DEBUG_BUILD
+/*
 	sfq_print_qf_header(qfh);
+*/
 #endif
 
 /* read process-table */
@@ -273,7 +275,9 @@ SFQ_LIB_INITIALIZE
 			}
 
 #ifdef SFQ_DEBUG_BUILD
+/*
 			sfq_print_procs(procs, qfh->qh.sval.max_proc_num);
+*/
 #endif
 
 			(*pprocs) = procs;
@@ -303,7 +307,7 @@ SFQ_LIB_FINALIZE
  *    - serrpath (eh.serrpath_size >= 0) ... nullterm string
  *
  */
-bool sfq_writeelm(FILE* fp, off_t seek_pos, struct sfq_ioelm_buff* ioeb)
+bool sfq_writeelm(FILE* fp, off_t seek_pos, const struct sfq_ioelm_buff* ioeb)
 {
 SFQ_LIB_INITIALIZE
 
@@ -597,7 +601,7 @@ bool sfq_seek_set_and_read(FILE* fp, off_t set_pos, void* mem, size_t mem_size)
 	return true;
 }
 
-bool sfq_seek_set_and_write(FILE* fp, off_t set_pos, void* mem, size_t mem_size)
+bool sfq_seek_set_and_write(FILE* fp, off_t set_pos, const void* mem, size_t mem_size)
 {
 	off_t orc = 0;
 	size_t iosize = 0;

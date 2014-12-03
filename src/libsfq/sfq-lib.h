@@ -10,7 +10,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <limits.h>
-#include <time.h>
 #include <sys/stat.h>        /* For mode constants */
 #include <assert.h>
 #include <errno.h>
@@ -32,11 +31,7 @@
 
 #include "sfq.h"
 
-#ifdef SFQ_DEBUG_BUILD
-	#define STDIO_REOPEN_LOGFILE	(1)
-#else
-	#define STDIO_REOPEN_LOGFILE	(1)
-#endif
+#define STDIO_REOPEN_LOGFILE	(1)
 
 #define SFQ_LIB_INITIALIZE \
 	int fire_line__  = -1; \
@@ -250,6 +245,7 @@ struct sfq_e_header
 
 	ulong id;			/* 8 */
 	time_t pushtime;		/* 8 */
+	uuid_t uuid;			/* 16 */
 
 	size_t payload_size;		/* 8 */
 
@@ -268,7 +264,7 @@ extern struct sfq_queue_object* sfq_open_queue(const char* querootdir, const cha
 extern void sfq_close_queue(struct sfq_queue_object* qo);
 
 extern bool sfq_seek_set_and_read(FILE* fp, off_t pos, void* mem, size_t mem_size);
-extern bool sfq_seek_set_and_write(FILE* fp, off_t pos, void* mem, size_t mem_size);
+extern bool sfq_seek_set_and_write(FILE* fp, off_t pos, const void* mem, size_t mem_size);
 
 extern void sfq_qh_init_pos(struct sfq_q_header*);
 
@@ -286,12 +282,16 @@ struct sfq_ioelm_buff
 	char* serrpath;
 };
 
+#define SFQ_CLEAR_IOEB(ioeb_ptr) \
+	bzero( (ioeb_ptr), sizeof(struct sfq_ioelm_buff) ); \
+	uuid_clear( (ioeb_ptr)->eh.uuid );
+
 extern bool sfq_readqfh(FILE* fp, struct sfq_file_header* qfh, struct sfq_process_info** pprocs);
 
 extern bool sfq_copy_ioeb2val(const struct sfq_ioelm_buff* ioeb, struct sfq_value* val);
 extern bool sfq_copy_val2ioeb(const struct sfq_value* val, struct sfq_ioelm_buff* ioeb);
 
-extern bool sfq_writeelm(FILE* fp, off_t seek_pos, struct sfq_ioelm_buff* ioeb);
+extern bool sfq_writeelm(FILE* fp, off_t seek_pos, const struct sfq_ioelm_buff* ioeb);
 extern bool sfq_readelm(FILE* fp, off_t seek_pos, struct sfq_ioelm_buff* ioeb);
 extern void sfq_free_ioelm_buff(struct sfq_ioelm_buff* ioeb);
 
@@ -301,7 +301,9 @@ extern void sfq_free_open_names(struct sfq_open_names* om);
 extern bool sfq_mkdir_p(const char *arg, mode_t mode);
 
 extern void sfq_reopen_4proc(const char* logdir, ushort slotno);
-extern void sfq_reopen_4exec(const char* logdir, ulong id);
+
+extern void sfq_output_reopen_4exec(FILE* fp, const char* arg_wpath,
+	const char* logdir, const uuid_t uuid, ulong id, const char* ext, const char* env_key);
 
 #endif
 

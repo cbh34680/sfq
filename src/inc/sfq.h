@@ -1,6 +1,15 @@
 #ifndef SFMQ_INCLUDE_H_ONCE__
 #define SFMQ_INCLUDE_H_ONCE__
 
+/* time_t */
+#include <time.h>
+
+/* ulong, ushort ... */
+#include <sys/types.h>
+
+/* yum install libuuid-devel */
+#include <uuid/uuid.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -62,26 +71,23 @@ struct sfq_value
 {
 	ulong id;				/* 8 */
 	time_t pushtime;			/* 8 */
-
-	sfq_uchar payload_type;			/* 1 */
-	sfq_byte filler[7];			/* 7 */
-
+	uuid_t uuid;				/* 16 */
 	char* execpath;				/* 8 */
 	char* execargs;				/* 8 */
 	char* metadata;				/* 8 */
 	char* soutpath;				/* 8 */
 	char* serrpath;				/* 8 */
-
+	sfq_uchar payload_type;			/* 1 */
 	size_t payload_size;			/* 8 */
 	sfq_byte* payload;			/* 8 */
 };
 
-typedef void (*sfq_map_callback)(uint64_t order, const struct sfq_value* val, void* userdata);
+typedef void (*sfq_map_callback)(ulong order, const struct sfq_value* val, void* userdata);
 
-extern int sfq_push(const char* querootdir, const char* quename, const struct sfq_value* val);
+extern int sfq_push(const char* querootdir, const char* quename, struct sfq_value* val);
 extern int sfq_pop(const char* querootdir, const char* quename, struct sfq_value* val);
 extern int sfq_shift(const char* querootdir, const char* quename, struct sfq_value* val);
-extern int sfq_init(const char* querootdir, const char* quename, size_t filesize_limit, size_t payloadsize_limit, uint16_t max_process);
+extern int sfq_init(const char* querootdir, const char* quename, size_t filesize_limit, size_t payloadsize_limit, ushort max_process);
 extern int sfq_info(const char* querootdir, const char* quename);
 extern int sfq_map(const char* querootdir, const char* quename, sfq_map_callback callback, void* userdata);
 extern int sfq_clear(const char* querootdir, const char* quename);
@@ -90,8 +96,8 @@ extern int sfq_alloc_print_value(const struct sfq_value* bin, struct sfq_value* 
 extern void sfq_free_value(struct sfq_value* p);
 
 /* short-cut */
-extern int sfq_push_str(const char* querootdir, const char* quename, const char* execpath, const char* execargs, const char* metadata, const char* soutpath, const char* serrpath, const char* textdata);
-extern int sfq_push_bin(const char* querootdir, const char* quename, const char* execpath, const char* execargs, const char* metadata, const char* soutpath, const char* serrpath, const sfq_byte* payload, size_t payload_size);
+extern int sfq_push_str(const char* querootdir, const char* quename, const char* execpath, const char* execargs, const char* metadata, const char* soutpath, const char* serrpath, uuid_t uuid, const char* textdata);
+extern int sfq_push_bin(const char* querootdir, const char* quename, const char* execpath, const char* execargs, const char* metadata, const char* soutpath, const char* serrpath, uuid_t uuid, const sfq_byte* payload, size_t payload_size);
 
 #ifdef __cplusplus
 }

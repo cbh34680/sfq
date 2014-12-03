@@ -140,12 +140,17 @@ void sfq_print_qh_dval(const struct sfq_qh_dval* p)
 
 void sfq_print_e_header(const struct sfq_e_header* p)
 {
+	char uuid_s[36 + 1] = "";
+
+	uuid_unparse_upper(p->uuid, uuid_s);
+
 	fprintf(stderr, "# [element]\n");
 	fprintf(stderr, "# element.eh_size             = %u\n",  p->eh_size);
 	fprintf(stderr, "# element.prev_elmpos         = %zu\n", p->prev_elmpos);
 	fprintf(stderr, "# element.next_elmpos         = %zu\n", p->next_elmpos);
 	fprintf(stderr, "# element.id                  = %zu\n", p->id);
 	fprintf(stderr, "# element.pushtime            = %zu\n", p->pushtime);
+	fprintf(stderr, "# element.uuid                = %s\n",  uuid_s);
 	fprintf(stderr, "# element.payload_type        = %u\n",  p->payload_type);
 	fprintf(stderr, "#\n");
 	fprintf(stderr, "# element.execpath_size       = %u\n",  p->execpath_size);

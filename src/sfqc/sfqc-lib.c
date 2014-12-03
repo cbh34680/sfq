@@ -178,6 +178,7 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, struct sf
 					jumppos = __LINE__;
 					goto EXIT_LABEL;
 				}
+				free(p->quename);
 				p->quename = c;
 
 				break;
@@ -192,6 +193,7 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, struct sf
 					jumppos = __LINE__;
 					goto EXIT_LABEL;
 				}
+				free(p->querootdir);
 				p->querootdir = c;
 
 				break;
@@ -255,6 +257,7 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, struct sf
 					jumppos = __LINE__;
 					goto EXIT_LABEL;
 				}
+				free(p->execpath);
 				p->execpath = c;
 
 				break;
@@ -269,6 +272,7 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, struct sf
 					jumppos = __LINE__;
 					goto EXIT_LABEL;
 				}
+				free(p->execargs);
 				p->execargs = c;
 
 				break;
@@ -283,6 +287,7 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, struct sf
 					jumppos = __LINE__;
 					goto EXIT_LABEL;
 				}
+				free(p->textdata);
 				p->textdata = c;
 
 				break;
@@ -297,6 +302,7 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, struct sf
 					jumppos = __LINE__;
 					goto EXIT_LABEL;
 				}
+				free(p->inputfile);
 				p->inputfile = c;
 
 				break;
@@ -311,6 +317,7 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, struct sf
 					jumppos = __LINE__;
 					goto EXIT_LABEL;
 				}
+				free(p->metadata);
 				p->metadata = c;
 
 				break;
@@ -325,6 +332,7 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, struct sf
 					jumppos = __LINE__;
 					goto EXIT_LABEL;
 				}
+				free(p->soutpath);
 				p->soutpath = c;
 
 				break;
@@ -339,6 +347,7 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, struct sf
 					jumppos = __LINE__;
 					goto EXIT_LABEL;
 				}
+				free(p->serrpath);
 				p->serrpath = c;
 
 				break;

@@ -29,6 +29,8 @@ SFQ_LIB_INITIALIZE
 	ioeb->eh.pushtime = val->pushtime;
 	ioeb->eh.payload_type = val->payload_type;
 
+	uuid_copy(ioeb->eh.uuid, val->uuid);
+
 	if (val->execpath)
 	{
 		size_t execpath_len = strlen(val->execpath);
@@ -182,6 +184,8 @@ bool sfq_copy_ioeb2val(const struct sfq_ioelm_buff* ioeb, struct sfq_value* val)
 	val->id = ioeb->eh.id;
 	val->pushtime = ioeb->eh.pushtime;
 
+	uuid_copy(val->uuid, ioeb->eh.uuid);
+
 	val->execpath = ioeb->eh.execpath_size ? ioeb->execpath : NULL;
 	val->execargs = ioeb->eh.execargs_size ? ioeb->execargs : NULL;
 	val->metadata = ioeb->eh.metadata_size ? ioeb->metadata : NULL;
@@ -289,7 +293,7 @@ SFQ_LIB_INITIALIZE
 		}
 		else
 		{
-			payload = strdup("* BINARY *");
+			payload = strdup("BINARY");
 		}
 	}
 	else
@@ -304,6 +308,8 @@ SFQ_LIB_INITIALIZE
 
 	dst->id = val->id;
 	dst->pushtime = val->pushtime;
+	uuid_copy(dst->uuid, val->uuid);
+
 	dst->payload_type = val->payload_type;
 	dst->payload_size = val->payload_size;
 	dst->payload = (sfq_byte*)payload;

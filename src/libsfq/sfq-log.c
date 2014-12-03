@@ -1,79 +1,117 @@
 #include "sfq-lib.h"
 
-static void output_reopen_4exec(FILE* fp, const char* logdir, time_t now, ulong id, const char* ext)
+static void uuid2subdir(const uuid_t uuid, char* subdir, size_t subdir_size)
 {
+	char uuid_s[36 + 1];
+
+	/*  123456789012345678901234567890123456      12345678901234567890123456789012345678901234567  */
+	/*  _ _ _ _  _ _  _ _  _ _  _ _ _ _ _ _ */
+	/*  012345678901234567890123456789012345      1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16  */
+	/*  1 2 3 4  5 6  7 8  9 0  1 2 3 4 5 6 */
+	/* "1b4e28ba-2fa1-11d2-883f-0016d3cca427" -> "1b/4e/28/ba/2f/a1/11/d2/88/3f/00/16/d3/cc/a4/27" */
+
+	uuid_unparse(uuid, uuid_s);
+
+	snprintf(subdir, subdir_size, "%.2s/%.2s/%.2s/%.2s/%.2s/%.2s/%.2s/%.2s/%.2s/%.2s/%.2s/%.2s/%.2s/%.2s/%.2s/%.2s",
+		&uuid_s[0],  &uuid_s[2],  &uuid_s[4],  &uuid_s[6],
+		&uuid_s[9],  &uuid_s[11],
+		&uuid_s[14], &uuid_s[16],
+		&uuid_s[19], &uuid_s[21],
+		&uuid_s[24], &uuid_s[26], &uuid_s[28], &uuid_s[30], &uuid_s[32], &uuid_s[34]
+	);
+}
+
+static char* alloc_wpath_4exec(const char* logdir, const uuid_t uuid, ulong id, const char* ext)
+{
+	char subdir[47 + 1];
+
+	char* outdir = NULL;
 	char* wpath = NULL;
 
-	if (logdir)
+	size_t outdir_size = 0;
+
+	struct stat stbuf;
+
+/* */
+	uuid2subdir(uuid, subdir, sizeof(subdir));
+
+	/* "logdir/subdir\0" */
+	outdir_size = (strlen(logdir) + 1 + strlen(subdir) + 1 /* "\0" */);
+
+	outdir = alloca(outdir_size);
+	if (outdir)
 	{
-		char* outdir = NULL;
-		size_t outdir_size = 0;
-
-		struct tm tmbuf;
-		struct stat stbuf;
-
-		localtime_r(&now, &tmbuf);
-
-		outdir_size =
-		(
-			strlen(logdir)	+ /* logdir */
-			1		+ /* "/"    */
-			4		+ /* yyyy   */
-			1		+ /* "/"    */
-			4		+ /* mmdd   */
-			1		+ /* "/"    */
-			2		+ /* HH     */
-			1		+ /* "/"    */
-			2		+ /* MM     */
-			1		+ /* "/"    */
-			2		+ /* SS     */
-			1		  /* "\0"   */
-		);
-
-		outdir = alloca(outdir_size);
-		if (outdir)
+		snprintf(outdir, outdir_size, "%s/%s", logdir, subdir);
+		if (stat(outdir, &stbuf) == 0)
 		{
-			snprintf(outdir, outdir_size, "%s/%04d/%02d%02d/%02d/%02d/%02d",
-				logdir, tmbuf.tm_year + 1900, tmbuf.tm_mon + 1, tmbuf.tm_mday,
-				tmbuf.tm_hour, tmbuf.tm_min, tmbuf.tm_sec);
-
-			if (stat(outdir, &stbuf) == 0)
+			/* go next */
+		}
+		else
+		{
+			if (sfq_mkdir_p(outdir, 0700))
 			{
 				/* go next */
 			}
 			else
 			{
-				if (sfq_mkdir_p(outdir, 0700))
-				{
-					/* go next */
-				}
-				else
-				{
-					outdir = NULL;
-					outdir_size = 0;
-				}
+				outdir = NULL;
+				outdir_size = 0;
 			}
 		}
+	}
 
-		if (outdir)
+	if (outdir)
+	{
+		/* "/proc/sys/kernel/pid_max" ... プロセス番号最大 */
+
+		/* "dir/ppid-pid.{out,err}\0" */
+		size_t wpath_size =
+		(
+			strlen(outdir)			+ /* outdir */
+			1				+ /* "/"    */
+			SFQ_PLUSINTSTR_WIDTH(id)	+ /* id     */
+			1				+ /* "."    */
+			strlen(ext)			+ /* ext    */
+			1				  /* "\0"   */
+		);
+
+		wpath = malloc(wpath_size);
+		if (wpath)
 		{
-			/* "/proc/sys/kernel/pid_max" ... プロセス番号最大 */
+			snprintf(wpath, wpath_size, "%s/%zu.%s", outdir, id, ext);
+		}
+	}
 
-			/* "dir/ppid-pid.{out,err}\0" */
-			size_t wpath_size =
-			(
-				strlen(outdir)			+ /* outdir */
-				1				+ /* "/"    */
-				SFQ_PLUSINTSTR_WIDTH(id)	+ /* id     */
-				1				+ /* "."    */
-				strlen(ext)			+ /* ext    */
-				1				  /* "\0"   */
-			);
+	return wpath;
+}
 
-			wpath = alloca(wpath_size);
-			if (wpath)
+void sfq_output_reopen_4exec(FILE* fp, const char* arg_wpath,
+	const char* logdir, const uuid_t uuid, ulong id, const char* ext, const char* env_key)
+{
+	const char* wpath = NULL;
+
+	if (arg_wpath)
+	{
+		if (freopen(arg_wpath, "wb", fp))
+		{
+			wpath = arg_wpath;
+		}
+	}
+
+	if (! wpath)
+	{
+		if (logdir)
+		{
+			char* path = alloc_wpath_4exec(logdir, uuid, id, ext);
+			if (path)
 			{
-				snprintf(wpath, wpath_size, "%s/%zu.%s", outdir, id, ext);
+				if (freopen(path, "wb", fp))
+				{
+					wpath = sfq_stradup(path);
+
+					free(path);
+					path = NULL;
+				}
 			}
 		}
 	}
@@ -81,46 +119,47 @@ static void output_reopen_4exec(FILE* fp, const char* logdir, time_t now, ulong 
 	if (! wpath)
 	{
 		wpath = "/dev/null";
+
+		freopen(wpath, "wb", fp);
 	}
 
-	fflush(fp);
-
-	if (! freopen(wpath, "ab", fp))
+	if (wpath)
 	{
-		freopen("/dev/null", "ab", fp);
+		char* path = realpath(wpath, NULL);
+		if (path)
+		{
+			setenv(env_key, path, 0);
+
+			free(path);
+			path = NULL;
+		}
 	}
 }
 
 static void output_reopen_4proc(FILE* fp, const char* logdir, ushort slotno, const char* ext)
 {
 	char* wpath = NULL;
+	size_t wpath_size = 0;
 
-	if (logdir)
+	/* "dir/slotno.{out,err}\0" */
+	wpath_size = (
+		strlen(logdir)			+ /* logdir */
+		1				+ /* "/"    */
+		SFQ_PLUSINTSTR_WIDTH(slotno)	+ /* slotno */
+		1				+ /* "."    */
+		strlen(ext)			+ /* ext    */
+		1				  /* "\0"   */
+	);
+
+	wpath = alloca(wpath_size);
+	if (wpath)
 	{
-		/* "dir/slotno.{out,err}\0" */
-		size_t wpath_size =
-		(
-			strlen(logdir)			+ /* logdir */
-			1				+ /* "/"    */
-			SFQ_PLUSINTSTR_WIDTH(slotno)	+ /* slotno */
-			1				+ /* "."    */
-			strlen(ext)			+ /* ext    */
-			1				  /* "\0"   */
-		);
-
-		wpath = alloca(wpath_size);
-		if (wpath)
-		{
-			snprintf(wpath, wpath_size, "%s/%u.%s", logdir, slotno, ext);
-		}
+		snprintf(wpath, wpath_size, "%s/%u.%s", logdir, slotno, ext);
 	}
-
-	if (! wpath)
+	else
 	{
 		wpath = "/dev/null";
 	}
-
-	fflush(fp);
 
 	if (! freopen(wpath, "at", fp))
 	{
@@ -128,34 +167,30 @@ static void output_reopen_4proc(FILE* fp, const char* logdir, ushort slotno, con
 	}
 }
 
-void sfq_reopen_4exec(const char* logdir, ulong id)
-{
-	time_t now = time(NULL);
-
-	/* stdio */
-	freopen("/dev/null", "rb", stdin);
-
-	/* stdout */
-	output_reopen_4exec(stdout, logdir, now, id, "out");
-
-	/* stderr */
-	output_reopen_4exec(stderr, logdir, now, id, "err");
-}
-
 void sfq_reopen_4proc(const char* logdir, ushort slotno)
 {
 	/* stdio */
 	freopen("/dev/null", "rb", stdin);
 
-	/* stdout */
-	output_reopen_4proc(stdout, logdir, slotno, "out");
+	if (logdir)
+	{
+		/* stdout */
+		output_reopen_4proc(stdout, logdir, slotno, "out");
 
-	/* stderr */
-	output_reopen_4proc(stderr, logdir, slotno, "err");
+		/* stderr */
+		output_reopen_4proc(stderr, logdir, slotno, "err");
+	}
+	else
+	{
+		freopen("/dev/null", "at", stdout);
+		freopen("/dev/null", "at", stderr);
+	}
 
 /*
 バッファリングを無効にしないと foreach_element() の printf() が
 重複して出力されてしまう
+
+原因は不明
 */
 	setvbuf(stdout, NULL, _IONBF, 0);
 }

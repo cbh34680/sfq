@@ -27,9 +27,9 @@ SFQ_MAIN_INITIALIZE
 	}
 
 	irc = sfq_pop(opt.querootdir, opt.quename, &val);
-	if (irc != SFQ_RC_SUCCESS)
+	if (irc != 0)
 	{
-		message = (irc == SFQ_RC_NO_ELEMENT) ? "element does not exist in the queue" : "sfq_pop";
+		message = (irc == SFQ_RC_NO_ELEMENT) ? "element does not exist in the queue" : "takeout";
 		jumppos = __LINE__;
 		goto EXIT_LABEL;
 	}
@@ -43,7 +43,15 @@ SFQ_MAIN_INITIALIZE
 		goto EXIT_LABEL;
 	}
 
-	printf("%s\n%s\n%s\n%s\n", pval.execpath, pval.execargs, pval.metadata, pval.payload);
+	char uuid_s[36 + 1];
+	uuid_unparse(pval.uuid, uuid_s);
+
+	puts("=");
+	printf("%zu\n%zu\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n",
+		pval.id, pval.pushtime, uuid_s, pval.execpath, pval.execargs, pval.metadata,
+		pval.soutpath, pval.serrpath,
+		pval.payload);
+	puts("=");
 #else
 	if (val.payload && val.payload_size)
 	{

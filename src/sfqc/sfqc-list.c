@@ -5,21 +5,26 @@
 
 void print_element(ulong order, const struct sfq_value* val, void* userdata)
 {
-	struct sfq_value pval;
 	int irc = 0;
-	char dt[32];
 	struct tm tm;
+
+	char dt[32] = "";
+	char uuid_s[37] = "";
+
+	struct sfq_value pval;
 
 	bzero(&pval, sizeof(pval));
 
 	localtime_r(&val->pushtime, &tm);
 	strftime(dt, sizeof(dt), "%Y-%m-%d %H:%M:%S", &tm);
 
+	uuid_unparse_upper(val->uuid, uuid_s);
+
 	irc = sfq_alloc_print_value(val, &pval);
 	if (irc == SFQ_RC_SUCCESS)
 	{
-		printf("%lu" _T_ "%zu" _T_ "%s" _T_ "%s" _T_       "[%s]" _T_     "[%s]" _T_     "%s" _T_       "%s" _T_       "%zu" _T_          "\"%s\"" LF,
-		       order,    val->id,  dt,      pval.execpath, pval.execargs, pval.metadata, pval.soutpath, pval.serrpath, val->payload_size, (char*)pval.payload);
+		printf("%lu" _T_ "%zu" _T_ "%s" _T_ "%s" _T_ "%s" _T_       "%s" _T_       "%s" _T_       "%s" _T_       "%s" _T_       "%zu" _T_          "\"%s\"" LF,
+		       order,    pval.id,  dt,      uuid_s,  pval.execpath, pval.execargs, pval.metadata, pval.soutpath, pval.serrpath, val->payload_size, (char*)pval.payload);
 
 		sfq_free_value(&pval);
 	}

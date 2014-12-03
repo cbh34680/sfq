@@ -68,7 +68,7 @@ SFQ_LIB_INITIALIZE
 					break;
 				}
 
-				if (i >= (argc - 2))
+				if ((i + 1) >= argc)
 				{
 					break;
 				}
@@ -81,6 +81,7 @@ SFQ_LIB_INITIALIZE
 			}
 		}
 	}
+
 
 /* execvp() が成功すれば処理は戻らない */
 
@@ -100,6 +101,13 @@ SFQ_LIB_INITIALIZE
 	int* pipefd = NULL;
 
 	char env_ulong[32] = "";
+	char uuid_s[36 + 1] = "";
+
+/* */
+#ifdef SFQ_DEBUG_BUILD
+	assert(quename);
+	assert(val);
+#endif
 
 /*
 ヒープに入れたままだと exec() されたときにメモリリーク扱いになるので
@@ -109,25 +117,19 @@ payload は pipe 経由で送信
 */
 	if (val->execpath)
 	{
-		if (val->execpath[0])
+		execpath = sfq_stradup(val->execpath);
+		if (! execpath)
 		{
-			execpath = sfq_stradup(val->execpath);
-			if (! execpath)
-			{
-				SFQ_FAIL(ES_MEMALLOC, "execpath");
-			}
+			SFQ_FAIL(ES_MEMALLOC, "execpath");
 		}
 	}
 
 	if (val->execargs)
 	{
-		if (val->execargs[0])
+		execargs = sfq_stradup(val->execargs);
+		if (! execargs)
 		{
-			execargs = sfq_stradup(val->execargs);
-			if (! execargs)
-			{
-				SFQ_FAIL(ES_MEMALLOC, "execargs");
-			}
+			SFQ_FAIL(ES_MEMALLOC, "execargs");
 		}
 	}
 
@@ -168,10 +170,8 @@ payload は pipe 経由で送信
 		}
 	}
 
-	if (quename)
-	{
-		setenv("SFQ_QUENAME", quename, 0);
-	}
+	/* queue */
+	setenv("SFQ_QUENAME", quename, 0);
 
 	/* id */
 	snprintf(env_ulong, sizeof(env_ulong), "%zu", val->id);
@@ -181,12 +181,14 @@ payload は pipe 経由で送信
 	snprintf(env_ulong, sizeof(env_ulong), "%zu", val->pushtime);
 	setenv("SFQ_PUSHTIME", env_ulong, 0);
 
+	/* uuid */
+	uuid_unparse(val->uuid, uuid_s);
+	setenv("SFQ_UUID", uuid_s, 0);
+
+	/* metadata */
 	if (val->metadata)
 	{
-		if (val->metadata[0])
-		{
-			setenv("SFQ_META", val->metadata, 0);
-		}
+		setenv("SFQ_META", val->metadata, 0);
 	}
 
 	sfq_free_value(val);
@@ -210,6 +212,18 @@ SFQ_LIB_CHECKPOINT
 SFQ_LIB_FINALIZE
 
 	return SFQ_LIB_RC();
+}
+
+static void reopen_4exec(const char* logdir, const struct sfq_value* val)
+{
+/* stdio */
+	freopen("/dev/null", "rb", stdin);
+
+/* stdout */
+	sfq_output_reopen_4exec(stdout, val->soutpath, logdir, val->uuid, val->id, "out", "SFQ_SOUTPATH");
+
+/* stderr */
+	sfq_output_reopen_4exec(stderr, val->serrpath, logdir, val->uuid, val->id, "err", "SFQ_SERRPATH");
 }
 
 static int pipe_fork_write_dup_exec_wait(const char* querootdir, const char* quename,
@@ -239,7 +253,7 @@ wait() 後にステータスが取得できない
 			struct sfq_open_names* om = NULL;
 			om = sfq_alloc_open_names(querootdir, quename);
 #if STDIO_REOPEN_LOGFILE
-			sfq_reopen_4exec(om ? om->queexeclogdir : NULL, val->id);
+			reopen_4exec(om ? om->queexeclogdir : NULL, val);
 #endif
 			om_quename = sfq_stradup(om->quename);
 			sfq_free_open_names(om);
