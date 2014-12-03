@@ -17,5 +17,5 @@
 /sfqc-pushb
 /sfqc-pushc
 /sfqc-shift
-/a.c
-/a.out
+*.out
+/?.c
