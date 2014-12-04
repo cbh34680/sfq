@@ -1,19 +1,19 @@
 #include "sfq-lib.h"
 
 int sfq_init(const char* querootdir, const char* quename,
-	size_t filesize_limit, size_t payloadsize_limit, ushort max_proc_num, sfq_uchar questatus)
+	size_t filesize_limit, size_t payloadsize_limit, ushort procs_num, questate_t questate)
 {
 SFQ_LIB_INITIALIZE
 
 	struct sfq_queue_object* qo = NULL;
 	struct sfq_process_info* procs = NULL;
 
-	size_t iosize = 0;
 	ushort qfh_size = 0;
 	size_t eh_size = 0;
 	size_t pi_size = 0;
 	size_t procs_size = 0;
 	size_t elmseg_start_pos = 0;
+	bool b = false;
 
 	struct sfq_file_header qfh;
 
@@ -22,23 +22,32 @@ SFQ_LIB_INITIALIZE
 	eh_size = sizeof(struct sfq_e_header);
 	pi_size = sizeof(struct sfq_process_info);
 
+/*
+queue header の初期値を設定
+*/
 	bzero(&qfh, qfh_size);
+
+	strcpy(qfh.magicstr, SFQ_MAGICSTR);
+	qfh.qfh_size = qfh_size;
+	qfh.qh.dval.questate = questate;
+	strcpy(qfh.last_qhd1.lastoper, "---");
+	strcpy(qfh.last_qhd2.lastoper, "---");
 
 /* check max process num */
 
-	if (max_proc_num)
+	if (procs_num)
 	{
 		long sysmax = sysconf(_SC_CHILD_MAX);
 		if (sysmax > 0)
 		{
-			if (max_proc_num > sysmax)
+			if (procs_num > sysmax)
 			{
-				SFQ_FAIL(EA_OVERLIMIT, "max_proc_num");
+				SFQ_FAIL(EA_OVERLIMIT, "procs_num");
 			}
 		}
 
 /* calc procs-start offset */
-		procs_size = pi_size * max_proc_num;
+		procs_size = pi_size * procs_num;
 
 		procs = alloca(procs_size);
 		if (! procs)
@@ -72,44 +81,24 @@ SFQ_LIB_INITIALIZE
 /* initialize queue-header */
 
 	/* 静的属性値の設定 */
-	strcpy(qfh.magicstr, SFQ_MAGICSTR);
-	qfh.qfh_size = qfh_size;
-
 	qfh.qh.sval.elmseg_start_pos = elmseg_start_pos;
 	qfh.qh.sval.elmseg_end_pos = (filesize_limit - 1);
 	qfh.qh.sval.filesize_limit = filesize_limit;
 	qfh.qh.sval.payloadsize_limit = payloadsize_limit;
-	qfh.qh.sval.max_proc_num = max_proc_num;
+	qfh.qh.sval.procs_num = procs_num;
 
-	/* 動的属性値の初期化 */
-	strcpy(qfh.qh.dval.lastoper, "INI");
-	strcpy(qfh.last_qhd1.lastoper, "---");
-	strcpy(qfh.last_qhd2.lastoper, "---");
-
-	qfh.qh.dval.questatus = questatus;
-
-	/* 各ポジションの初期化 */
 /*
-静的属性値の値を使っているので sfq_qh_init_pos() の位置は動かさないこと
+各ポジションの初期化
+
+静的属性値の値から算出しているので sfq_qh_init_pos() の位置は動かさないこと
 */
 	sfq_qh_init_pos(&qfh.qh);
 
 /* write queue-header */
-	/* w: sfq_file_header */
-	iosize = fwrite(&qfh, qfh_size, 1, qo->fp);
-	if (iosize != 1)
+	b = sfq_writeqfh(qo, &qfh, procs, "INI");
+	if (! b)
 	{
-		SFQ_FAIL(ES_FILEIO, "FILE-WRITE(qfh)");
-	}
-
-	if (procs_size)
-	{
-	/* w: pid_table */
-		iosize = fwrite(procs, procs_size, 1, qo->fp);
-		if (iosize != 1)
-		{
-			SFQ_FAIL(ES_FILEIO, "FILE-WRITE(procs)");
-		}
+		SFQ_FAIL(EA_WRITEQFH, "sfq_writeqfh");
 	}
 
 #ifdef SFQ_DEBUG_BUILD
@@ -118,10 +107,10 @@ SFQ_LIB_INITIALIZE
 
 SFQ_LIB_CHECKPOINT
 
+SFQ_LIB_FINALIZE
+
 	sfq_close_queue(qo);
 	qo = NULL;
-
-SFQ_LIB_FINALIZE
 
 	return SFQ_LIB_RC();
 }

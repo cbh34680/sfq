@@ -102,27 +102,6 @@ EXIT_LABEL:
 	return mem;
 }
 
-/* プログラム引数の解析 */
-void sfqc_free_init_option(struct sfqc_init_option* p)
-{
-	if (! p)
-	{
-		return;
-	}
-
-	free(p->querootdir);
-	free(p->quename);
-	free(p->execpath);
-	free(p->execargs);
-	free(p->metadata);
-	free(p->textdata);
-	free(p->inputfile);
-	free(p->soutpath);
-	free(p->serrpath);
-
-	bzero(p, sizeof(struct sfqc_init_option));
-}
-
 int sfqc_can_push(const struct sfqc_init_option* p)
 {
 	if (p)
@@ -149,7 +128,28 @@ int sfqc_can_push(const struct sfqc_init_option* p)
 	return 1;
 }
 
-int sfqc_get_init_option(int argc, char** argv, const char* optstring, struct sfqc_init_option* p)
+/* プログラム引数の解析 */
+void sfqc_free_init_option(struct sfqc_init_option* p)
+{
+	if (! p)
+	{
+		return;
+	}
+
+	free(p->querootdir);
+	free(p->quename);
+	free(p->execpath);
+	free(p->execargs);
+	free(p->metadata);
+	free(p->textdata);
+	free(p->inputfile);
+	free(p->soutpath);
+	free(p->serrpath);
+
+	bzero(p, sizeof(struct sfqc_init_option));
+}
+
+int sfqc_get_init_option(int argc, char** argv, const char* optstring, int use_rest, struct sfqc_init_option* p)
 {
 	int irc = 1;
 	int opt = 0;
@@ -339,7 +339,7 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, struct sf
 				{
 					snprintf(message, sizeof(message), "'%c': size over (%u)", opt, USHRT_MAX);
 				}
-				p->max_proc_num = (ushort)ul;
+				p->procs_num = (ushort)ul;
 
 				break;
 			}
@@ -477,24 +477,29 @@ EXIT_LABEL:
 
 	if (p->filesize_limit == 0)
 	{
+		/* default 256MB */
 		p->filesize_limit = (256 * 1024 * 1024);
 	}
 
-/*
-	p->filesize_limit *= (1024 * 1024);
-
-	if (p->payloadsize_limit)
+	if (use_rest)
 	{
-		p->payloadsize_limit *= (1024 * 1024);
+		p->commands = (const char**)&argv[optind];
+		p->command_num = argc - optind;
 	}
-*/
-
-/*
-	while (optind < argc)
+	else
 	{
-		fprintf(stdout, "[%s] を処理します\n" , argv[optind++]);
+		int i = 0;
+
+		for (i=optind; i<argc; i++)
+		{
+			fprintf(stderr, "%s(%d): [%s] ignore argument\n" , __FILE__, __LINE__, argv[i]);
+		}
+
+		if (argc != optind)
+		{
+			fprintf(stderr, "\n");
+		}
 	}
-*/
 
 	return irc;
 }

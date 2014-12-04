@@ -17,5 +17,6 @@
 /sfqc-pushb
 /sfqc-pushc
 /sfqc-shift
+/sfqc-sets
 *.out
 /?.c

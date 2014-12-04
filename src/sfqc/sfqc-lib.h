@@ -46,7 +46,7 @@ struct sfqc_init_option
 	char* quename;			/* N */
 	size_t filesize_limit;		/* S */
 	size_t payloadsize_limit;	/* L */
-	ushort max_proc_num;		/* R */
+	ushort procs_num;		/* R */
 
 	char* execpath;			/* x */
 	char* execargs;			/* a */
@@ -56,9 +56,14 @@ struct sfqc_init_option
 
 	char* soutpath;			/* o */
 	char* serrpath;			/* e */
+
+	const char** commands;
+	int command_num;
 };
 
-extern int sfqc_get_init_option(int argc, char** argv, const char* optstring, struct sfqc_init_option* p);
+extern int sfqc_get_init_option(int argc, char** argv, const char* optstring,
+	int use_rest, struct sfqc_init_option* p);
+
 extern void sfqc_free_init_option(struct sfqc_init_option* p);
 
 extern sfq_byte* sfqc_readstdin(size_t* readsize);

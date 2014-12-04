@@ -169,7 +169,7 @@ static bool output_reopen_4proc(FILE* fp, const char* logdir, ushort slotno, con
 	return false;
 }
 
-void sfq_reopen_4proc(const char* logdir, ushort slotno, sfq_uchar questatus)
+void sfq_reopen_4proc(const char* logdir, ushort slotno, questate_t questate)
 {
 	bool sout_ok = false;
 	bool serr_ok = false;
@@ -180,7 +180,7 @@ void sfq_reopen_4proc(const char* logdir, ushort slotno, sfq_uchar questatus)
 	if (logdir)
 	{
 		/* stdout */
-		if (questatus & SFQ_QST_STDOUT_ON)
+		if (questate & SFQ_QST_STDOUT_ON)
 		{
 			if (output_reopen_4proc(stdout, logdir, slotno, "out"))
 			{
@@ -189,7 +189,7 @@ void sfq_reopen_4proc(const char* logdir, ushort slotno, sfq_uchar questatus)
 		}
 
 		/* stderr */
-		if (questatus & SFQ_QST_STDERR_ON)
+		if (questate & SFQ_QST_STDERR_ON)
 		{
 			if (output_reopen_4proc(stderr, logdir, slotno, "err"))
 			{

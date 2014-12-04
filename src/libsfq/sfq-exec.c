@@ -1,7 +1,7 @@
 #include "sfq-lib.h"
 
-static bool update_procstatus(const char* om_querootdir, const char* om_quename, ushort slotno,
-	sfq_uchar procstatus, int to_status);
+static bool update_procstate(const char* om_querootdir, const char* om_quename, ushort slotno,
+	sfq_uchar procstate, int TO_state, questate_t* questate_ptr);
 static size_t atomic_write(int fd, char *buf, int count);
 
 #define READ	(0)
@@ -283,13 +283,16 @@ exec() が成功すればここには来ない
 	return -1;
 }
 
-static void foreach_element(const char* om_querootdir, const char* om_quename, ushort slotno, const char* om_queexeclogdir)
+static void foreach_element(const char* om_querootdir, const char* om_quename,
+	ushort slotno, const char* om_queexeclogdir)
 {
 SFQ_LIB_INITIALIZE
 
 	bool b = false;
-	int shift_rc = 0;
+	int shift_rc = SFQ_RC_SUCCESS;
 	ulong loop = 0;
+
+	questate_t questate = 0;
 
 	pid_t pid = getpid();
 	pid_t ppid = getppid();
@@ -304,29 +307,33 @@ fprintf(stderr, "# execlog = %s\n", om_queexeclogdir);
 fprintf(stderr, "#\n");
 
 	/* 状態を LOOPSTART に変更 */
-	b = update_procstatus(om_querootdir, om_quename, slotno, SFQ_PIS_LOOPSTART, 0);
+	b = update_procstate(om_querootdir, om_quename, slotno,
+		SFQ_PIS_LOOPSTART, 0, &questate);
+
 	if (! b)
 	{
 		SFQ_FAIL(EA_UPDSTATUS, "loop start");
 	}
 
-	do
+fprintf(stderr, "%d) before loop questate=%u\n", pid, questate);
+
+	while ((shift_rc == SFQ_RC_SUCCESS) && (questate & SFQ_QST_EXEC_ON))
 	{
 		struct sfq_value val;
-		int to_status = SFQ_TO_NONE;
+		int TO_state = SFQ_TOS_NONE;
 
 		bzero(&val, sizeof(val));
 
 		loop++;
 
-fprintf(stderr, "%d) loop %zu shift\n", getpid(), loop);
+fprintf(stderr, "%d) loop %zu shift\n", pid, loop);
 
 		shift_rc = sfq_shift(om_querootdir, om_quename, &val);
 		if (shift_rc == SFQ_RC_NO_ELEMENT)
 		{
 			/* no more element */
 
-fprintf(stderr, "%d) no more element\n", getpid());
+fprintf(stderr, "%d) no more element\n", pid);
 
 			break;
 		}
@@ -338,21 +345,21 @@ fprintf(stderr, "%d) no more element\n", getpid());
 
 			uuid_unparse(val.uuid, uuid_s);
 
-fprintf(stderr, "%d) shift success (id=%zu pushtime=%zu uuid=%s)\n", getpid(), val.id, val.pushtime, uuid_s);
+fprintf(stderr, "%d) shift success (id=%zu pushtime=%zu uuid=%s)\n", pid, val.id, val.pushtime, uuid_s);
 
-fprintf(stderr, "%d) exec id=%zu\n", getpid(), val.id);
+fprintf(stderr, "%d) exec id=%zu\n", pid, val.id);
 
 			irc = pipe_fork_write_dup_exec_wait(om_querootdir, om_quename, slotno, om_queexeclogdir, &val);
 			if (irc == 0)
 			{
 				/* execapp() exit(== 0) */
-				to_status = SFQ_TO_SUCCESS;
-fprintf(stderr, "%d) exec success\n", getpid());
+				TO_state = SFQ_TOS_SUCCESS;
+fprintf(stderr, "%d) exec success\n", pid);
 			}
 			else if (irc == SFQ_RC_EC_EXECFAIL)
 			{
-				to_status = SFQ_TO_CANTEXEC;
-fprintf(stderr, "%d) exec fail\n", getpid());
+				TO_state = SFQ_TOS_CANTEXEC;
+fprintf(stderr, "%d) exec fail\n", pid);
 			}
 			else if (irc > 0)
 			{
@@ -360,43 +367,55 @@ fprintf(stderr, "%d) exec fail\n", getpid());
 /*
 1 - 127 のユーザが使える exit-code
 */
-				to_status = SFQ_TO_APPEXIT_NON0;
-fprintf(stderr, "%d) exec app exit rc=%d\n", getpid(), irc);
+				TO_state = SFQ_TOS_APPEXIT_NON0;
+fprintf(stderr, "%d) exec app exit rc=%d\n", pid, irc);
 			}
 			else
 			{
 /* 不明 */
 				/* can not execapp() */
-				to_status = SFQ_TO_CANTEXEC;
-fprintf(stderr, "%d) exec fail/2\n", getpid());
+				TO_state = SFQ_TOS_CANTEXEC;
+fprintf(stderr, "%d) exec fail/2\n", pid);
 			}
 		}
 		else
 		{
 /* shift 失敗 */
 			/* shift error (<> not found) */
-			to_status = SFQ_TO_FAULT;
+			TO_state = SFQ_TOS_FAULT;
 
-fprintf(stderr, "%d) shift error rc=%d\n", getpid(), shift_rc);
+fprintf(stderr, "%d) shift error rc=%d\n", pid, shift_rc);
 		}
 
 		sfq_free_value(&val);
 
-		update_procstatus(om_querootdir, om_quename, slotno, SFQ_PIS_TAKEOUT, to_status);
+/* update to_*** */
+		b = update_procstate(om_querootdir, om_quename, slotno,
+			SFQ_PIS_TAKEOUT, TO_state, &questate);
+
+		if (! b)
+		{
+			SFQ_FAIL(EA_UPDSTATUS, "loop increment");
+		}
+
+fprintf(stderr, "%d) next loop questate=%u\n", pid, questate);
 	}
-	while (shift_rc == SFQ_RC_SUCCESS);
 
 SFQ_LIB_CHECKPOINT
 
-	update_procstatus(om_querootdir, om_quename, slotno, SFQ_PIS_DONE, 0);
+/*
+ここでの update_procstate() の失敗は無視するしかないが
+スロットが埋まったままになってしまうので、解除手段の検討が必要かも
+*/
+	update_procstate(om_querootdir, om_quename, slotno, SFQ_PIS_DONE, 0, NULL);
 
-fprintf(stderr, "%d) loop end %zu\n", getpid(), loop);
+fprintf(stderr, "%d) loop end %zu\n", pid, loop);
 fprintf(stderr, "\n");
 
 SFQ_LIB_FINALIZE
 }
 
-bool sfq_go_exec(const char* querootdir, const char* quename, ushort slotno, sfq_uchar questatus)
+bool sfq_go_exec(const char* querootdir, const char* quename, ushort slotno, questate_t questate)
 {
 	pid_t pid = (pid_t)-1;
 
@@ -441,7 +460,7 @@ bool sfq_go_exec(const char* querootdir, const char* quename, ushort slotno, sfq
 			om = NULL;
 
 			/* */
-			sfq_reopen_4proc(om_queproclogdir, slotno, questatus);
+			sfq_reopen_4proc(om_queproclogdir, slotno, questate);
 			foreach_element(om_querootdir, om_quename, slotno, om_queexeclogdir);
 
 			exit (EXIT_SUCCESS);
@@ -471,8 +490,8 @@ static size_t atomic_write(int fd, char *buf, int count)
 	return (got < 0 ? got : count - need);
 }
 
-static bool update_procstatus(const char* om_querootdir, const char* om_quename,
-	ushort slotno, sfq_uchar procstatus, int to_status)
+static bool update_procstate(const char* om_querootdir, const char* om_quename,
+	ushort slotno, sfq_uchar procstate, int TO_state, questate_t* questate_ptr)
 {
 SFQ_LIB_INITIALIZE
 
@@ -482,6 +501,7 @@ SFQ_LIB_INITIALIZE
 
 	bool b = false;
 	size_t procs_size = 0;
+	size_t pi_size = 0;
 
 	struct sfq_file_header qfh;
 
@@ -489,51 +509,49 @@ SFQ_LIB_INITIALIZE
 	bzero(&qfh, sizeof(qfh));
 
 /* open queue-file */
-	qo = sfq_open_queue(om_querootdir, om_quename, "rb+");
+	qo = sfq_open_queue_rw(om_querootdir, om_quename);
 	if (! qo)
 	{
 		SFQ_FAIL(EA_OPENFILE, "sfq_open_queue");
 	}
 
 /* read file-header */
-	b = sfq_readqfh(qo->fp, &qfh, &procs);
+	b = sfq_readqfh(qo, &qfh, &procs);
 	if (! b)
 	{
 		SFQ_FAIL(EA_READQFH, "sfq_readqfh");
 	}
 
-	if (qfh.qh.sval.max_proc_num <= slotno)
+	if (qfh.qh.sval.procs_num <= slotno)
 	{
-		SFQ_FAIL(EA_FUNCARG, "qfh.qh.sval.max_proc_num <= i");
+		SFQ_FAIL(EA_FUNCARG, "qfh.qh.sval.procs_num <= i");
 	}
-
-	procs_size = qfh.qh.sval.max_proc_num * sizeof(struct sfq_process_info);
 
 /* update process info */
 	proc = &procs[slotno];
 
-	proc->procstatus = procstatus;
+	proc->procstate = procstate;
 	proc->updtime = qo->opentime;
 
-	switch (procstatus)
+	switch (procstate)
 	{
 		case SFQ_PIS_LOOPSTART:
 		{
 			proc->pid = getpid();
-			proc->start_num++;
+			proc->start_cnt++;
 			break;
 		}
 
 		case SFQ_PIS_TAKEOUT:
 		{
-			proc->loop_num++;
+			proc->loop_cnt++;
 
-			switch (to_status)
+			switch (TO_state)
 			{
-				case SFQ_TO_SUCCESS:		{ proc->to_success++;		break; }
-				case SFQ_TO_APPEXIT_NON0:	{ proc->to_appexit_non0++;	break; }
-				case SFQ_TO_CANTEXEC:		{ proc->to_cantexec++;		break; }
-				case SFQ_TO_FAULT:		{ proc->to_fault++;		break; }
+				case SFQ_TOS_SUCCESS:		{ proc->tos_success++;		break; }
+				case SFQ_TOS_APPEXIT_NON0:	{ proc->tos_appexit_non0++;	break; }
+				case SFQ_TOS_CANTEXEC:		{ proc->tos_cantexec++;		break; }
+				case SFQ_TOS_FAULT:		{ proc->tos_fault++;		break; }
 			}
 
 			break;
@@ -547,6 +565,10 @@ SFQ_LIB_INITIALIZE
 		}
 	}
 
+/* */
+	pi_size = sizeof(struct sfq_process_info);
+	procs_size = pi_size * qfh.qh.sval.procs_num;
+
 /* write process table */
 	b = sfq_seek_set_and_write(qo->fp, qfh.qh.sval.procseg_start_pos, procs, procs_size);
 	if (! b)
@@ -554,15 +576,21 @@ SFQ_LIB_INITIALIZE
 		SFQ_FAIL(EA_SEEKSETIO, "sfq_seek_set_and_write");
 	}
 
-SFQ_LIB_CHECKPOINT
+/* */
+	if (questate_ptr)
+	{
+		(*questate_ptr) = qfh.qh.dval.questate;
+	}
 
-	sfq_close_queue(qo);
-	qo = NULL;
+SFQ_LIB_CHECKPOINT
 
 	free(procs);
 	procs = NULL;
 
 SFQ_LIB_FINALIZE
+
+	sfq_close_queue(qo);
+	qo = NULL;
 
 	return SFQ_LIB_IS_SUCCESS();
 }

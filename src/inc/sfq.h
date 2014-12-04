@@ -17,6 +17,9 @@ extern "C" {
 typedef unsigned char sfq_uchar;
 typedef unsigned char sfq_byte;
 
+typedef sfq_uchar questate_t;
+typedef sfq_uchar payload_type_t;
+
 enum
 {
 	SFQ_RC_SUCCESS		= 0,
@@ -25,6 +28,8 @@ enum
 
 	SFQ_RC_NO_ELEMENT	= 51,
 	SFQ_RC_NO_SPACE,
+	SFQ_RC_ACCEPT_STOPPED,
+	SFQ_RC_NOCHANGE_STATE,
 
 	SFQ_RC_EA_FSIZESMALL	= 61,
 	SFQ_RC_EA_EXISTQUEUE,
@@ -37,6 +42,7 @@ enum
 	SFQ_RC_EA_RWELEMENT,
 	SFQ_RC_EA_COPYVALUE,
 	SFQ_RC_EA_READQFH,
+	SFQ_RC_EA_WRITEQFH,
 	SFQ_RC_EA_UPDSTATUS,
 	SFQ_RC_EA_PATHNOTEXIST,
 	SFQ_RC_EA_MKLOGDIR,
@@ -72,8 +78,11 @@ enum
 {
 	SFQ_QST_STDOUT_ON	= 1,
 	SFQ_QST_STDERR_ON	= 2,
-	SFQ_QST_PAUSE_ACCEPT	= 4,
+	SFQ_QST_ACCEPT_ON	= 4,
+	SFQ_QST_EXEC_ON		= 8,
 };
+
+#define SFQ_QST_DEFAULT		(SFQ_QST_ACCEPT_ON | SFQ_QST_EXEC_ON)
 
 /* */
 struct sfq_value
@@ -86,7 +95,7 @@ struct sfq_value
 	char* metadata;				/* 8 */
 	char* soutpath;				/* 8 */
 	char* serrpath;				/* 8 */
-	sfq_uchar payload_type;			/* 1 */
+	payload_type_t payload_type;		/* 1 */
 	size_t payload_size;			/* 8 */
 	sfq_byte* payload;			/* 8 */
 };
@@ -94,7 +103,7 @@ struct sfq_value
 typedef void (*sfq_map_callback)(ulong order, const struct sfq_value* val, void* userdata);
 
 extern int sfq_init(const char* querootdir, const char* quename,
-	size_t filesize_limit, size_t payloadsize_limit, ushort max_process, sfq_uchar questatus);
+	size_t filesize_limit, size_t payloadsize_limit, ushort max_process, questate_t questate);
 
 extern int sfq_push(const char* querootdir, const char* quename, struct sfq_value* val);
 extern int sfq_pop(const char* querootdir, const char* quename, struct sfq_value* val);
@@ -109,6 +118,9 @@ extern void sfq_free_value(struct sfq_value* p);
 /* short-cut */
 extern int sfq_push_str(const char* querootdir, const char* quename, const char* execpath, const char* execargs, const char* metadata, const char* soutpath, const char* serrpath, uuid_t uuid, const char* textdata);
 extern int sfq_push_bin(const char* querootdir, const char* quename, const char* execpath, const char* execargs, const char* metadata, const char* soutpath, const char* serrpath, uuid_t uuid, const sfq_byte* payload, size_t payload_size);
+
+extern int sfq_get_questate(const char* querootdir, const char* quename, questate_t* questate_ptr);
+extern int sfq_set_questate(const char* querootdir, const char* quename, questate_t questate);
 
 #ifdef __cplusplus
 }

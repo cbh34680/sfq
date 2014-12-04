@@ -3,7 +3,7 @@
 #ifdef SFQ_DEBUG_BUILD
 	#define PRINT_SIZES		(0)
 	#define PRINT_OPERATE_HIST1	(1)
-	#define PRINT_OPERATE_HIST2	(0)
+	#define PRINT_OPERATE_HIST2	(1)
 #else
 	#define PRINT_SIZES		(0)
 	#define PRINT_OPERATE_HIST1	(0)
@@ -29,15 +29,15 @@ void sfq_print_procs(const struct sfq_process_info* procs, size_t procs_num)
 		fprintf(stderr, "- [process-%d]\n", i);
 		fprintf(stderr, "- ppid                        = %u\n",  procs[i].ppid);
 		fprintf(stderr, "- pid                         = %u\n",  procs[i].pid);
-		fprintf(stderr, "- procstatus                  = %u\n",  procs[i].procstatus);
+		fprintf(stderr, "- procstate                   = %u\n",  procs[i].procstate);
 		fprintf(stderr, "- updtime                     = %zu\n", procs[i].updtime);
-		fprintf(stderr, "- start_num                   = %zu\n", procs[i].start_num);
-		fprintf(stderr, "- loop_num                    = %zu\n", procs[i].loop_num);
+		fprintf(stderr, "- start_cnt                   = %zu\n", procs[i].start_cnt);
+		fprintf(stderr, "- loop_cnt                    = %zu\n", procs[i].loop_cnt);
 
-		fprintf(stderr, "- to_success                  = %zu\n", procs[i].to_success);
-		fprintf(stderr, "- to_appexit_non0             = %zu\n", procs[i].to_appexit_non0);
-		fprintf(stderr, "- to_cantexec                 = %zu\n", procs[i].to_cantexec);
-		fprintf(stderr, "- to_fault                    = %zu\n", procs[i].to_fault);
+		fprintf(stderr, "- tos_success                 = %zu\n", procs[i].tos_success);
+		fprintf(stderr, "- tos_appexit_non0            = %zu\n", procs[i].tos_appexit_non0);
+		fprintf(stderr, "- tos_cantexec                = %zu\n", procs[i].tos_cantexec);
+		fprintf(stderr, "- tos_fault                   = %zu\n", procs[i].tos_fault);
 
 		if ((i + 1) < procs_num)
 		{
@@ -94,8 +94,8 @@ static void sfq_print_qh_dval_(const struct sfq_qh_dval* p, char c)
 	fprintf(stderr, "%c q_header.elm_num            = %zu\n", c, p->elm_num);
 	fprintf(stderr, "%c q_header.elm_lastid         = %zu\n", c, p->elm_lastid);
 	fprintf(stderr, "%c q_header.lastoper           = %s\n",  c, p->lastoper);
-	fprintf(stderr, "%c q_header.questatus          = %u\n",  c, p->questatus);
-	fprintf(stderr, "%c q_header.update_num         = %zu\n", c, p->update_num);
+	fprintf(stderr, "%c q_header.questate           = %u\n",  c, p->questate);
+	fprintf(stderr, "%c q_header.update_cnt         = %zu\n", c, p->update_cnt);
 	fprintf(stderr, "%c q_header.updatetime         = %zu\n", c, p->updatetime);
 	fprintf(stderr, "\n");
 }
@@ -127,7 +127,7 @@ void sfq_print_q_header(const struct sfq_q_header* p)
 	fprintf(stderr, "# q_header.elmseg_end_pos     = %zu\n", p->sval.elmseg_end_pos);
 	fprintf(stderr, "# q_header.filesize_limit     = %zu\n", p->sval.filesize_limit);
 	fprintf(stderr, "# q_header.payloadsize_limit  = %zu\n", p->sval.payloadsize_limit);
-	fprintf(stderr, "# q_header.max_proc_num       = %u\n",  p->sval.max_proc_num);
+	fprintf(stderr, "# q_header.procs_num       = %u\n",  p->sval.procs_num);
 	fprintf(stderr, "#\n");
 
 	sfq_print_qh_dval(&p->dval);

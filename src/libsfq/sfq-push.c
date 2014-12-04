@@ -7,14 +7,12 @@ SFQ_LIB_INITIALIZE
 	struct sfq_queue_object* qo = NULL;
 	struct sfq_process_info* procs = NULL;
 
-	int i = 0;
 	bool b = false;
 
 	int slotno = -1;
-	size_t iosize = 0;
 	size_t eh_size = 0;
 	off_t elm_pos = 0;
-	sfq_uchar questatus = 0;
+	questate_t questate = 0;
 
 	off_t IfPush_next_elmpos = 0;
 	off_t IfPush_elm_end_pos = 0;
@@ -37,23 +35,29 @@ SFQ_LIB_INITIALIZE
 	}
 
 /* open queue-file */
-	qo = sfq_open_queue(querootdir, quename, "rb+");
+	qo = sfq_open_queue_rw(querootdir, quename);
 	if (! qo)
 	{
 		SFQ_FAIL(EA_OPENFILE, "open_locked_file");
 	}
 
 /* read file-header */
-	b = sfq_readqfh(qo->fp, &qfh, &procs);
+	b = sfq_readqfh(qo, &qfh, &procs);
 	if (! b)
 	{
 		SFQ_FAIL(EA_READQFH, "sfq_readqfh");
 	}
 
-	questatus = qfh.qh.dval.questatus;
+/*
+questate は go_exec() に渡すので、ここで保存しておく
+*/
+	questate = qfh.qh.dval.questate;
 
-	qfh.last_qhd2 = qfh.last_qhd1;
-	qfh.last_qhd1 = qfh.qh.dval;
+/* check accept state */
+	if (! (questate & SFQ_QST_ACCEPT_ON))
+	{
+		SFQ_FAIL_SILENT(ACCEPT_STOPPED);
+	}
 
 /* copy arguments to write-buffer */
 	b = sfq_copy_val2ioeb(val, &ioeb);
@@ -83,6 +87,9 @@ SFQ_LIB_INITIALIZE
 	{
 	/* shift 位置 == push 位置 の場合 ... 全て shift している */
 
+#ifdef SFQ_DEBUG_BUILD
+		assert(qfh.qh.dval.elm_num == 0);
+#endif
 		if (qfh.qh.dval.elm_num != 0)
 		{
 			SFQ_FAIL(EA_ASSERT, "qfh.qh.dval.elm_num != 0");
@@ -100,6 +107,9 @@ SFQ_LIB_INITIALIZE
 	{
 	/* push 位置 < shift 位置 の場合 ... 循環済 */
 
+#ifdef SFQ_DEBUG_BUILD
+		assert(qfh.qh.dval.elm_num);
+#endif
 		if (qfh.qh.dval.elm_num == 0)
 		{
 			SFQ_FAIL(EA_ASSERT, "qfh.qh.dval.elm_num == 0");
@@ -190,7 +200,7 @@ SFQ_LIB_INITIALIZE
 #endif
 
 /* write element */
-	b = sfq_writeelm(qo->fp, elm_pos, &ioeb);
+	b = sfq_writeelm(qo, elm_pos, &ioeb);
 	if (! b)
 	{
 		SFQ_FAIL(EA_RWELEMENT, "sfq_writeelm");
@@ -224,84 +234,70 @@ SFQ_LIB_INITIALIZE
 		}
 	}
 
+
+/* update procs */
+	if (questate & SFQ_QST_EXEC_ON)
+	{
+		if (procs)
+		{
+/*
+プロセステーブルが存在するので、実行予約を試みる
+*/
+			slotno = sfq_reserve_proc(procs, qfh.qh.sval.procs_num);
+		}
+	}
+
+	if (slotno == -1)
+	{
+/*
+プロセステーブルが更新されていないので開放
+*/
+		free(procs);
+		procs = NULL;
+	}
+
 /* update queue file header */
+
 	/* 要素数を加算 */
 	qfh.qh.dval.elm_num++;
 
-	/* デバッグ用 */
-	strcpy(qfh.qh.dval.lastoper, "PSH");
-	qfh.qh.dval.update_num++;
-	qfh.qh.dval.updatetime = qo->opentime;
-
 /* overwrite header */
-	b = sfq_seek_set_and_write(qo->fp, 0, &qfh, sizeof(qfh));
+	b = sfq_writeqfh(qo, &qfh, procs, "PSH");
 	if (! b)
 	{
-		SFQ_FAIL(EA_SEEKSETIO, "sfq_seek_set_and_write(qfh)");
+		SFQ_FAIL(EA_WRITEQFH, "sfq_writeqfh");
 	}
 
 #ifdef SFQ_DEBUG_BUILD
 	sfq_print_q_header(&qfh.qh);
 #endif
 
-	if (procs)
-	{
-/* boot executer */
-		for (i=0; i<qfh.qh.sval.max_proc_num; i++)
-		{
-			if (procs[i].procstatus)
-			{
-				continue;
-			}
-
-			procs[i].ppid = getpid();
-			procs[i].procstatus = SFQ_PIS_WAITFOR;
-			procs[i].updtime = qo->opentime;
-
-			slotno = i;
-
-			break;
-		}
-
-		if (slotno != -1)
-		{
-			size_t procs_size = sizeof(struct sfq_process_info) * qfh.qh.sval.max_proc_num;
-
-/* overwrite process-table */
-			iosize = fwrite(procs, procs_size, 1, qo->fp);
-			if (iosize != 1)
-			{
-				SFQ_FAIL(ES_FILEIO, "fwrite(procs)");
-			}
-
-#ifdef SFQ_DEBUG_BUILD
-			sfq_print_procs(procs, qfh.qh.sval.max_proc_num);
-#endif
-		}
-	}
-
+/*
+正常時に呼び出し元に uuid を返却する
+*/
 	uuid_copy(val->uuid, ioeb.eh.uuid);
 
 SFQ_LIB_CHECKPOINT
 
-	sfq_close_queue(qo);
-	qo = NULL;
-
 	free(procs);
 	procs = NULL;
 
+SFQ_LIB_FINALIZE
+
+	sfq_close_queue(qo);
+	qo = NULL;
+
 	if (slotno != -1)
 	{
-		sfq_go_exec(querootdir, quename, (ushort)slotno, questatus);
+		sfq_go_exec(querootdir, quename, (ushort)slotno, questate);
 	}
-
-SFQ_LIB_FINALIZE
 
 	return SFQ_LIB_RC();
 }
 
-int sfq_push_str(const char* querootdir, const char* quename, const char* execpath, const char* execargs,
-	const char* metadata, const char* soutpath, const char* serrpath, uuid_t uuid,
+int sfq_push_str(const char* querootdir, const char* quename,
+	const char* execpath, const char* execargs, const char* metadata,
+	const char* soutpath, const char* serrpath, uuid_t uuid,
 	const char* textdata)
 {
 	int irc = 0;
@@ -334,8 +330,9 @@ int sfq_push_str(const char* querootdir, const char* quename, const char* execpa
 	return irc;
 }
 
-int sfq_push_bin(const char* querootdir, const char* quename, const char* execpath, const char* execargs,
-	const char* metadata, const char* soutpath, const char* serrpath, uuid_t uuid,
+int sfq_push_bin(const char* querootdir, const char* quename,
+	const char* execpath, const char* execargs, const char* metadata,
+	const char* soutpath, const char* serrpath, uuid_t uuid,
 	const sfq_byte* payload, size_t payload_size)
 {
 	int irc = 0;

@@ -1,9 +1,9 @@
 
 CC       = gcc
-OBJS     = sfqc-lib.o sfqc-init.o sfqc-info.o sfqc-list.o sfqc-pushc.o sfqc-pushb.o sfqc-pop.o sfqc-shift.o sfqc-clear.o
+OBJS     = sfqc-lib.o sfqc-init.o sfqc-info.o sfqc-list.o sfqc-pushc.o sfqc-pushb.o sfqc-pop.o sfqc-shift.o sfqc-clear.o sfqc-sets.o
 
 TARGET   = $(TARGETL) $(TARGETE)
-TARGETE  = sfqc-init sfqc-info sfqc-list sfqc-pushc sfqc-pushb sfqc-pop sfqc-shift sfqc-clear
+TARGETE  = sfqc-init sfqc-info sfqc-list sfqc-pushc sfqc-pushb sfqc-pop sfqc-shift sfqc-clear sfqc-sets
 TARGETL  = libsfqc.so
 
 INCDIRS  = -I../inc -I.
@@ -47,6 +47,9 @@ sfqc-shift: sfqc-shift.o
 	$(CC) $(CFLAGS) $(LIBDIRS) -o $@ $< $(LIBS)
 
 sfqc-clear: sfqc-clear.o
+	$(CC) $(CFLAGS) $(LIBDIRS) -o $@ $< $(LIBS)
+
+sfqc-sets: sfqc-sets.o
 	$(CC) $(CFLAGS) $(LIBDIRS) -o $@ $< $(LIBS)
 
 $(OBJS): $(INCFILES)

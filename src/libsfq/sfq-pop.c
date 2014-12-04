@@ -26,21 +26,18 @@ SFQ_LIB_INITIALIZE
 	}
 
 /* open queue-file */
-	qo = sfq_open_queue(querootdir, quename, "rb+");
+	qo = sfq_open_queue_rw(querootdir, quename);
 	if (! qo)
 	{
 		SFQ_FAIL(EA_OPENFILE, "sfq_open_queue");
 	}
 
 /* read file-header */
-	b = sfq_readqfh(qo->fp, &qfh, NULL);
+	b = sfq_readqfh(qo, &qfh, NULL);
 	if (! b)
 	{
 		SFQ_FAIL(EA_READQFH, "sfq_readqfh");
 	}
-
-	qfh.last_qhd2 = qfh.last_qhd1;
-	qfh.last_qhd1 = qfh.qh.dval;
 
 /* check empty */
 	if (qfh.qh.dval.elm_num == 0)
@@ -48,6 +45,9 @@ SFQ_LIB_INITIALIZE
 		SFQ_FAIL_SILENT(NO_ELEMENT);
 	}
 
+#ifdef SFQ_DEBUG_BUILD
+	assert(qfh.qh.dval.elm_next_shift_pos);
+#endif
 	if (qfh.qh.dval.elm_last_push_pos == 0)
 	{
 		SFQ_FAIL(EA_ASSERT, "qfh.qh.dval.elm_last_push_pos == 0");
@@ -56,7 +56,7 @@ SFQ_LIB_INITIALIZE
 	elm_pos = qfh.qh.dval.elm_last_push_pos;
 
 /* read element */
-	b = sfq_readelm(qo->fp, elm_pos, &ioeb);
+	b = sfq_readelm(qo, elm_pos, &ioeb);
 	if (! b)
 	{
 		SFQ_FAIL(EA_RWELEMENT, "sfq_readelm");
@@ -96,15 +96,11 @@ SFQ_LIB_INITIALIZE
 		qfh.qh.dval.elm_new_push_pos = elm_pos;
 	}
 
-	strcpy(qfh.qh.dval.lastoper, "POP");
-	qfh.qh.dval.update_num++;
-	qfh.qh.dval.updatetime = qo->opentime;
-
 /* overwrite header */
-	b = sfq_seek_set_and_write(qo->fp, 0, &qfh, sizeof(qfh));
+	b = sfq_writeqfh(qo, &qfh, NULL, "POP");
 	if (! b)
 	{
-		SFQ_FAIL(EA_SEEKSETIO, "sfq_seek_set_and_write(qfh)");
+		SFQ_FAIL(EA_WRITEQFH, "sfq_writeqfh(qfh)");
 	}
 
 #ifdef SFQ_DEBUG_BUILD
@@ -120,15 +116,15 @@ SFQ_LIB_INITIALIZE
 
 SFQ_LIB_CHECKPOINT
 
-	sfq_close_queue(qo);
-	qo = NULL;
-
 	if (SFQ_LIB_IS_FAIL())
 	{
 		sfq_free_ioelm_buff(&ioeb);
 	}
 
 SFQ_LIB_FINALIZE
+
+	sfq_close_queue(qo);
+	qo = NULL;
 
 	return SFQ_LIB_RC();
 }

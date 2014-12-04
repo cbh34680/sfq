@@ -36,6 +36,7 @@
 #define SFQ_LIB_INITIALIZE \
 	int fire_line__  = -1; \
 	int fire_rc__ = SFQ_RC_UNKNOWN; \
+	int fire_errno__ = 0; \
 	char fire_reason__[128] = "";
 
 
@@ -51,13 +52,14 @@ SFQ_FAIL_CATCH_LABEL__:
 
 #define SFQ_LIB_FINALIZE \
 	if (fire_reason__[0]) { \
-		fprintf(stderr, "%s(%d): RC=%d [%s]\n", __FILE__, fire_line__, fire_rc__, fire_reason__); \
+		fprintf(stderr, "%s(%d):%s:r=%d e=%d: [%s]\n", __FILE__, fire_line__, __func__, fire_rc__, fire_errno__, fire_reason__); \
 	}
 
 
 #define SFQ_FAIL_SILENT(fire_rc) \
 	fire_line__ = __LINE__; \
 	fire_rc__ = SFQ_RC_ ## fire_rc; \
+	fire_errno__  = errno; \
 	goto SFQ_FAIL_CATCH_LABEL__;
 
 
@@ -71,13 +73,12 @@ SFQ_FAIL_CATCH_LABEL__:
 #define SFQ_FAIL(fire_rc, fmt, ...) \
 	fire_line__ = __LINE__; \
 	fire_rc__ = SFQ_RC_ ## fire_rc; \
+	fire_errno__  = errno; \
 	snprintf(fire_reason__, sizeof(fire_reason__), fmt, ##__VA_ARGS__); \
 	goto SFQ_FAIL_CATCH_LABEL__;
 
 
-#ifdef WIN32
-	#define sfq_stradup(org)	NULL
-#else
+#ifdef __GNUC__
 	/* gnu only */
 	#define sfq_stradup(org) \
 		({ \
@@ -90,6 +91,11 @@ SFQ_FAIL_CATCH_LABEL__:
 			} \
 			dst; \
 		})
+#else
+
+	#define sfq_stradup(org)	sfq_safe_strcpy( alloca( strlen( (org) ) + 1 ), (org) )
+
+	extern char* sfq_safe_strcpy(char* dst, const char* org);
 #endif
 
 /* */
@@ -131,8 +137,18 @@ struct sfq_queue_object
 	sem_t* semobj;
 	FILE* fp;
 	time_t opentime;
+
+	sfq_uchar file_openmode;
 };
 
+/* file open mode */
+enum
+{
+	SFQ_FOM_READ			= 1,
+	SFQ_FOM_WRITE			= 2,
+};
+
+/* proccess info state */
 enum
 {
 	SFQ_PIS_DONE			= 0,
@@ -142,13 +158,14 @@ enum
 	SFQ_PIS_TAKEOUT,
 };
 
+/* take out state */
 enum
 {
-	SFQ_TO_NONE			= 0,
-	SFQ_TO_SUCCESS,
-	SFQ_TO_APPEXIT_NON0,
-	SFQ_TO_CANTEXEC,
-	SFQ_TO_FAULT,
+	SFQ_TOS_NONE			= 0,
+	SFQ_TOS_SUCCESS,
+	SFQ_TOS_APPEXIT_NON0,
+	SFQ_TOS_CANTEXEC,
+	SFQ_TOS_FAULT,
 };
 
 /* --------------------------------------------------------------
@@ -161,17 +178,17 @@ struct sfq_process_info
 	pid_t ppid;			/* 4 */
 	pid_t pid;			/* 4 */
 
-	sfq_uchar procstatus;		/* 1 */
+	sfq_uchar procstate;		/* 1 */
 	sfq_byte filler[7];		/* 7 */
 
 	time_t updtime;			/* 8 */
-	ulong start_num;		/* 8 */
-	ulong loop_num;			/* 8 */
+	ulong start_cnt;		/* 8 */
+	ulong loop_cnt;			/* 8 */
 
-	ulong to_success;		/* 8 */
-	ulong to_appexit_non0;		/* 8 */
-	ulong to_cantexec;		/* 8 */
-	ulong to_fault;			/* 8 */
+	ulong tos_success;		/* 8 */
+	ulong tos_appexit_non0;		/* 8 */
+	ulong tos_cantexec;		/* 8 */
+	ulong tos_fault;		/* 8 */
 };
 
 /* 属性ヘッダ */
@@ -185,7 +202,7 @@ struct sfq_qh_sval
 	size_t payloadsize_limit;	/* 8 */
 	time_t createtime;		/* 8 */
 
-	ushort max_proc_num;		/* 2 ... (P) USHRT_MAX _SC_CHILD_MAX */
+	ushort procs_num;		/* 2 ... (P) USHRT_MAX _SC_CHILD_MAX */
 	sfq_byte filler[6];		/* 6 */
 };
 
@@ -199,10 +216,10 @@ struct sfq_qh_dval
 	ulong elm_lastid;		/* 8 */
 
 	time_t updatetime;		/* 8 */
-	ulong update_num;		/* 8 */
+	ulong update_cnt;		/* 8 */
 
 	char lastoper[4];		/* 4 */
-	sfq_uchar questatus;		/* 1 */
+	questate_t questate;		/* 1 */
 	sfq_byte filler[3];		/* 3 */
 };
 
@@ -234,7 +251,7 @@ struct sfq_e_header
 
 /* value */
 	ushort eh_size;			/* 2 */
-	sfq_uchar payload_type;		/* 1 */
+	payload_type_t payload_type;	/* 1 */
 	sfq_uchar elmmargin_;		/* 1 ... for debug, set by sfq_copy_val2ioeb() */
 	ushort execpath_size;		/* 2 ... (x) USHRT_MAX PATH_MAX */
 	ushort metadata_size;		/* 2 ... (m) USHRT_MAX */
@@ -252,24 +269,6 @@ struct sfq_e_header
 	size_t elmsize_;		/* 8 ... for debug, set by sfq_copy_val2ioeb() */
 };
 
-extern void sfq_print_sizes(void);
-extern void sfq_print_qf_header(const struct sfq_file_header*);
-extern void sfq_print_q_header(const struct sfq_q_header*);
-extern void sfq_print_qh_dval(const struct sfq_qh_dval*);
-extern void sfq_print_e_header(const struct sfq_e_header*);
-extern void sfq_print_procs(const struct sfq_process_info* procs, size_t procs_num);
-
-extern struct sfq_queue_object* sfq_create_queue(const char* querootdir, const char* quename);
-extern struct sfq_queue_object* sfq_open_queue(const char* querootdir, const char* quename, const char* file_mode);
-extern void sfq_close_queue(struct sfq_queue_object* qo);
-
-extern bool sfq_seek_set_and_read(FILE* fp, off_t pos, void* mem, size_t mem_size);
-extern bool sfq_seek_set_and_write(FILE* fp, off_t pos, const void* mem, size_t mem_size);
-
-extern void sfq_qh_init_pos(struct sfq_q_header*);
-
-extern bool sfq_go_exec(const char* querootdir, const char* quename, ushort slotno, sfq_uchar questatus);
-
 /* helper */
 struct sfq_ioelm_buff
 {
@@ -282,28 +281,60 @@ struct sfq_ioelm_buff
 	char* serrpath;
 };
 
+extern void sfq_print_sizes(void);
+extern void sfq_print_qf_header(const struct sfq_file_header*);
+extern void sfq_print_q_header(const struct sfq_q_header*);
+extern void sfq_print_qh_dval(const struct sfq_qh_dval*);
+extern void sfq_print_e_header(const struct sfq_e_header*);
+extern void sfq_print_procs(const struct sfq_process_info* procs, size_t procs_num);
+
+/* fio */
+extern struct sfq_queue_object* sfq_create_queue(const char* querootdir, const char* quename);
+extern struct sfq_queue_object* sfq_open_queue_rw(const char* querootdir, const char* quename);
+extern struct sfq_queue_object* sfq_open_queue_ro(const char* querootdir, const char* quename);
+extern void sfq_close_queue(struct sfq_queue_object* qo);
+extern bool sfq_readqfh(struct sfq_queue_object* qo,
+	struct sfq_file_header* qfh, struct sfq_process_info** procs_ptr);
+
+extern bool sfq_writeqfh(struct sfq_queue_object* qo, struct sfq_file_header* qfh,
+	const struct sfq_process_info* procs, const char* lastoper);
+
+extern bool sfq_writeelm(struct sfq_queue_object* qo, off_t seek_pos, const struct sfq_ioelm_buff* ioeb);
+extern bool sfq_readelm(struct sfq_queue_object* qo, off_t seek_pos, struct sfq_ioelm_buff* ioeb);
+
+extern bool sfq_seek_set_and_read(FILE* fp, off_t pos, void* mem, size_t mem_size);
+extern bool sfq_seek_set_and_write(FILE* fp, off_t pos, const void* mem, size_t mem_size);
+
+extern void sfq_qh_init_pos(struct sfq_q_header*);
+
+extern bool sfq_go_exec(const char* querootdir, const char* quename, ushort slotno, questate_t questate);
+
+
+/*
 #define SFQ_CLEAR_IOEB(ioeb_ptr) \
 	bzero( (ioeb_ptr), sizeof(struct sfq_ioelm_buff) ); \
 	uuid_clear( (ioeb_ptr)->eh.uuid );
+*/
 
-extern bool sfq_readqfh(FILE* fp, struct sfq_file_header* qfh, struct sfq_process_info** pprocs);
 
 extern bool sfq_copy_ioeb2val(const struct sfq_ioelm_buff* ioeb, struct sfq_value* val);
+
 extern bool sfq_copy_val2ioeb(const struct sfq_value* val, struct sfq_ioelm_buff* ioeb);
 
-extern bool sfq_writeelm(FILE* fp, off_t seek_pos, const struct sfq_ioelm_buff* ioeb);
-extern bool sfq_readelm(FILE* fp, off_t seek_pos, struct sfq_ioelm_buff* ioeb);
 extern void sfq_free_ioelm_buff(struct sfq_ioelm_buff* ioeb);
 
 extern struct sfq_open_names* sfq_alloc_open_names(const char* querootdir, const char* quename);
+
 extern void sfq_free_open_names(struct sfq_open_names* om);
 
 extern bool sfq_mkdir_p(const char *arg, mode_t mode);
 
-extern void sfq_reopen_4proc(const char* logdir, ushort slotno, sfq_uchar questatus);
+extern void sfq_reopen_4proc(const char* logdir, ushort slotno, questate_t questate);
 
 extern void sfq_output_reopen_4exec(FILE* fp, const char* arg_wpath,
 	const char* logdir, const uuid_t uuid, ulong id, const char* ext, const char* env_key);
+
+extern int sfq_reserve_proc(struct sfq_process_info* procs, ushort procs_num);
 
 #endif
 

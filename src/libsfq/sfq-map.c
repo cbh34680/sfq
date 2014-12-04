@@ -8,7 +8,6 @@ SFQ_LIB_INITIALIZE
 
 	ulong num = 0;
 	bool b = false;
-	off_t pos = 0;
 	off_t elm_pos = 0;
 
 	struct sfq_file_header qfh;
@@ -19,14 +18,14 @@ SFQ_LIB_INITIALIZE
 	bzero(&ioeb, sizeof(ioeb));
 
 /* open queue-file */
-	qo = sfq_open_queue(querootdir, quename, "rb");
+	qo = sfq_open_queue_ro(querootdir, quename);
 	if (! qo)
 	{
 		SFQ_FAIL(EA_OPENFILE, "open_locked_file");
 	}
 
 /* read file-header */
-	b = sfq_readqfh(qo->fp, &qfh, NULL);
+	b = sfq_readqfh(qo, &qfh, NULL);
 	if (! b)
 	{
 		SFQ_FAIL(EA_READQFH, "sfq_readqfh");
@@ -38,21 +37,22 @@ SFQ_LIB_INITIALIZE
 		SFQ_FAIL_SILENT(NO_ELEMENT);
 	}
 
+#ifdef SFQ_DEBUG_BUILD
+	assert(qfh.qh.dval.elm_next_shift_pos);
+#endif
 	if (qfh.qh.dval.elm_next_shift_pos == 0)
 	{
 		SFQ_FAIL(EA_ASSERT, "qfh.qh.dval.elm_next_shift_pos == 0");
 	}
 
-	elm_pos = qfh.qh.dval.elm_next_shift_pos;
-
 /* loop elements */
-	for (num=0, pos=elm_pos; pos; num++)
+	for (num=0, elm_pos=qfh.qh.dval.elm_next_shift_pos; elm_pos; num++)
 	{
 		struct sfq_value val;
 
 		bzero(&val, sizeof(val));
 
-		b = sfq_readelm(qo->fp, pos, &ioeb);
+		b = sfq_readelm(qo, elm_pos, &ioeb);
 		if (! b)
 		{
 			SFQ_FAIL(EA_RWELEMENT, "sfq_readelm");
@@ -61,11 +61,11 @@ SFQ_LIB_INITIALIZE
 #ifdef SFQ_DEBUG_BUILD
 		sfq_print_e_header(&ioeb.eh);
 
-		fprintf(stderr, "* [seek-pos=%zu]\n", pos);
+		fprintf(stderr, "* [seek-pos=%zu]\n", elm_pos);
 #endif
 
 /* copy next element-offset to pos */
-		pos = ioeb.eh.next_elmpos;
+		elm_pos = ioeb.eh.next_elmpos;
 
 /* set val */
 		b = sfq_copy_ioeb2val(&ioeb, &val);
@@ -81,15 +81,15 @@ SFQ_LIB_INITIALIZE
 
 SFQ_LIB_CHECKPOINT
 
-	sfq_close_queue(qo);
-	qo = NULL;
-
 	if (SFQ_LIB_IS_FAIL())
 	{
 		sfq_free_ioelm_buff(&ioeb);
 	}
 
 SFQ_LIB_FINALIZE
+
+	sfq_close_queue(qo);
+	qo = NULL;
 
 	return SFQ_LIB_RC();
 }

@@ -1,5 +1,172 @@
 #include "sfq-lib.h"
 
+#ifndef __GNUC__
+char* sfq_safe_strcpy(char* dst, const char* org)
+{
+	if (dst && org)
+	{
+		return strcpy(dst, org);
+	}
+
+	return NULL;
+}
+#endif
+
+int sfq_reserve_proc(struct sfq_process_info* procs, ushort procs_num)
+{
+	int i = 0;
+
+	for (i=0; i<procs_num; i++)
+	{
+		if (procs[i].procstate)
+		{
+			continue;
+		}
+
+		procs[i].ppid = getpid();
+		procs[i].procstate = SFQ_PIS_WAITFOR;
+		procs[i].updtime = time(NULL);
+
+		return i;
+	}
+
+	return -1;
+}
+
+int sfq_get_questate(const char* querootdir, const char* quename, questate_t* questate_ptr)
+{
+SFQ_LIB_INITIALIZE
+
+	struct sfq_queue_object* qo = NULL;
+
+	struct sfq_file_header qfh;
+	bool b = false;
+
+/* initialize */
+	bzero(&qfh, sizeof(qfh));
+
+	if (! questate_ptr)
+	{
+		SFQ_FAIL(EA_FUNCARG, "questate_ptr is null");
+	}
+
+	qo = sfq_open_queue_ro(querootdir, quename);
+	if (! qo)
+	{
+		SFQ_FAIL(EA_OPENFILE, "sfq_open_queue");
+	}
+
+	b = sfq_readqfh(qo, &qfh, NULL);
+	if (! b)
+	{
+		SFQ_FAIL(EA_READQFH, "sfq_readqfh");
+	}
+
+	(*questate_ptr) = qfh.qh.dval.questate;
+
+SFQ_LIB_CHECKPOINT
+
+SFQ_LIB_FINALIZE
+
+	sfq_close_queue(qo);
+	qo = NULL;
+
+	return SFQ_LIB_RC();
+}
+
+int sfq_set_questate(const char* querootdir, const char* quename, questate_t questate)
+{
+SFQ_LIB_INITIALIZE
+
+	struct sfq_queue_object* qo = NULL;
+	struct sfq_process_info* procs = NULL;
+
+	int slotno = -1;
+	bool b = false;
+
+	struct sfq_file_header qfh;
+
+/* initialize */
+	bzero(&qfh, sizeof(qfh));
+
+/* open queue */
+	qo = sfq_open_queue_rw(querootdir, quename);
+	if (! qo)
+	{
+		SFQ_FAIL(EA_OPENFILE, "sfq_open_queue");
+	}
+
+/* read queue header */
+	b = sfq_readqfh(qo, &qfh, &procs);
+	if (! b)
+	{
+		SFQ_FAIL(EA_READQFH, "sfq_readqfh");
+	}
+
+/* update state */
+	if (qfh.qh.dval.questate == questate)
+	{
+/*
+変更前後が同じ値なら更新の必要はない
+*/
+		SFQ_FAIL(NOCHANGE_STATE, "there is no change in the state");
+	}
+
+	if (questate & SFQ_QST_EXEC_ON)
+	{
+/*
+exec が OFF から ON に変わった
+*/
+		if (qfh.qh.dval.elm_num)
+		{
+/*
+キューに要素が存在する
+*/
+			if (procs)
+			{
+/*
+プロセステーブルが存在するので、実行予約を試みる
+*/
+				slotno = sfq_reserve_proc(procs, qfh.qh.sval.procs_num);
+			}
+		}
+	}
+
+	if (slotno == -1)
+	{
+/*
+プロセステーブルが更新されていないので開放
+*/
+		free(procs);
+		procs = NULL;
+	}
+
+	qfh.qh.dval.questate = questate;
+
+	b = sfq_writeqfh(qo, &qfh, procs, "SET");
+	if (! b)
+	{
+		SFQ_FAIL(EA_WRITEQFH, "sfq_writeqfh");
+	}
+
+SFQ_LIB_CHECKPOINT
+
+SFQ_LIB_FINALIZE
+
+	free(procs);
+	procs = NULL;
+
+	sfq_close_queue(qo);
+	qo = NULL;
+
+	if (slotno != -1)
+	{
+		sfq_go_exec(querootdir, quename, (ushort)slotno, questate);
+	}
+
+	return SFQ_LIB_RC();
+}
+
 bool sfq_copy_val2ioeb(const struct sfq_value* val, struct sfq_ioelm_buff* ioeb)
 {
 SFQ_LIB_INITIALIZE
@@ -373,12 +540,20 @@ SFQ_LIB_INITIALIZE
 /* */
 	if (! querootdir)
 	{
-		querootdir = SFQ_DEFAULT_QUEUE_DIR;
+		querootdir = getenv("SFQ_QUEUE_DIR");
+		if (! querootdir)
+		{
+			querootdir = SFQ_DEFAULT_QUEUE_DIR;
+		}
 	}
 
 	if (! quename)
 	{
-		quename = SFQ_DEFAULT_QUEUE_NAME;
+		quename = getenv("SFQ_QUEUE_NAME");
+		if (! quename)
+		{
+			quename = SFQ_DEFAULT_QUEUE_NAME;
+		}
 	}
 
 	quename_len = strlen(quename);
@@ -566,18 +741,20 @@ SFQ_LIB_FINALIZE
 
 void sfq_free_open_names(struct sfq_open_names* om)
 {
-	if (om)
+	if (! om)
 	{
-		free(om->querootdir);
-		free(om->quename);
-		free(om->quedir);
-		free(om->quefile);
-		free(om->quelogdir);
-		free(om->queproclogdir);
-		free(om->queexeclogdir);
-		free(om->semname);
-		free(om);
+		return;
 	}
+
+	free(om->querootdir);
+	free(om->quename);
+	free(om->quedir);
+	free(om->quefile);
+	free(om->quelogdir);
+	free(om->queproclogdir);
+	free(om->queexeclogdir);
+	free(om->semname);
+	free(om);
 }
 
 /*
