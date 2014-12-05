@@ -175,7 +175,12 @@ static int print_notjson(const struct sfq_value* val, uint printmethod)
 			printf("payload-type: %s\n",
 				(val->payload_type & SFQ_PLT_CHARARRAY) ? "text" : "binary");
 
-			printf("payload-size: %zu\n", val->payload_size);
+/*
+payload を出力するときに '\0' は含まないので NULLTERM の場合は -1
+*/
+			printf("payload-size: %zu\n",
+				(val->payload_type & SFQ_PLT_NULLTERM)
+					? (val->payload_size - 1) : val->payload_size);
 		}
 
 		if (b64mem)
@@ -380,7 +385,6 @@ int sfqc_takeout(int argc, char** argv, sfq_takeoutfunc_t takeoutfunc)
 	int irc = 0;
 	char* message = NULL;
 	int jumppos = 0;
-	char uuid_s[36 + 1] = "";
 
 	uint printmethod = 0;
 
@@ -421,6 +425,7 @@ SFQC_MAIN_INITIALIZE
 		goto EXIT_LABEL;
 	}
 
+	char uuid_s[36 + 1] = "";
 	uuid_unparse(val.uuid, uuid_s);
 
 	puts("=");
