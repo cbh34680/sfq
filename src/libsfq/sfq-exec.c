@@ -2,6 +2,7 @@
 
 static bool update_procstate(const char* om_querootdir, const char* om_quename, ushort slotno,
 	sfq_uchar procstate, int TO_state, questate_t* questate_ptr);
+
 static size_t atomic_write(int fd, char *buf, int count);
 
 #define READ	(0)
@@ -78,15 +79,17 @@ SFQ_LIB_INITIALIZE
 					break;
 				}
 
+				argv[i] = token;
+/*
 				argv[i] = sfq_stradup(token);
 				if (! argv[i])
 				{
 					SFQ_FAIL(ES_MEMALLOC, "argv_i");
 				}
+*/
 			}
 		}
 	}
-
 
 /* execvp() が成功すれば処理は戻らない */
 
@@ -320,7 +323,7 @@ fprintf(stderr, "#\n");
 		SFQ_FAIL(EA_UPDSTATUS, "loop start");
 	}
 
-fprintf(stderr, "%d) before loop questate=%u\n", pid, questate);
+fprintf(stderr, "before loop [questate=%u]\n", questate);
 
 	while ((shift_rc == SFQ_RC_SUCCESS) && (questate & SFQ_QST_EXEC_ON))
 	{
@@ -331,14 +334,16 @@ fprintf(stderr, "%d) before loop questate=%u\n", pid, questate);
 
 		loop++;
 
-fprintf(stderr, "%d) loop %zu shift\n", pid, loop);
+fprintf(stderr, "loop(%zu) block-top [time=%zu]\n", loop, time(NULL));
+
+fprintf(stderr, "loop(%zu) attempt to shift\n", loop);
 
 		shift_rc = sfq_shift(om_querootdir, om_quename, &val);
 		if (shift_rc == SFQ_RC_NO_ELEMENT)
 		{
 			/* no more element */
 
-fprintf(stderr, "%d) no more element\n", pid);
+fprintf(stderr, "loop(%zu) no more element, break\n", loop);
 
 			break;
 		}
@@ -346,25 +351,27 @@ fprintf(stderr, "%d) no more element\n", pid);
 		if (shift_rc == SFQ_RC_SUCCESS)
 		{
 			int irc = 0;
-			char uuid_s[36 + 1];
+			char uuid_s[36 + 1] = "";
 
 			uuid_unparse(val.uuid, uuid_s);
 
-fprintf(stderr, "%d) shift success (id=%zu pushtime=%zu uuid=%s)\n", pid, val.id, val.pushtime, uuid_s);
+fprintf(stderr, "loop(%zu) shift success [id=%zu pushtime=%zu uuid=%s]\n", loop, val.id, val.pushtime, uuid_s);
 
-fprintf(stderr, "%d) exec id=%zu\n", pid, val.id);
+fprintf(stderr, "loop(%zu) attempt to exec [id=%zu]\n", loop, val.id);
 
-			irc = pipe_fork_write_dup_exec_wait(om_querootdir, om_quename, slotno, om_queexeclogdir, &val);
+			irc = pipe_fork_write_dup_exec_wait(om_querootdir, om_quename,
+				slotno, om_queexeclogdir, &val);
+
 			if (irc == 0)
 			{
 				/* execapp() exit(== 0) */
 				TO_state = SFQ_TOS_SUCCESS;
-fprintf(stderr, "%d) exec success\n", pid);
+fprintf(stderr, "loop(%zu) exec success\n", loop);
 			}
 			else if (irc == SFQ_RC_EC_EXECFAIL)
 			{
 				TO_state = SFQ_TOS_CANTEXEC;
-fprintf(stderr, "%d) exec fail\n", pid);
+fprintf(stderr, "loop(%zu) exec fail\n", loop);
 			}
 			else if (irc > 0)
 			{
@@ -373,14 +380,14 @@ fprintf(stderr, "%d) exec fail\n", pid);
 1 - 127 のユーザが使える exit-code
 */
 				TO_state = SFQ_TOS_APPEXIT_NON0;
-fprintf(stderr, "%d) exec app exit rc=%d\n", pid, irc);
+fprintf(stderr, "loop(%zu) exec app exit non-zero [rc=%d]\n", loop, irc);
 			}
 			else
 			{
 /* 不明 */
 				/* can not execapp() */
 				TO_state = SFQ_TOS_CANTEXEC;
-fprintf(stderr, "%d) exec fail/2\n", pid);
+fprintf(stderr, "loop(%zu) exec fail unknown-cause [rc=%d]\n", loop, irc);
 			}
 		}
 		else
@@ -389,7 +396,7 @@ fprintf(stderr, "%d) exec fail/2\n", pid);
 			/* shift error (<> not found) */
 			TO_state = SFQ_TOS_FAULT;
 
-fprintf(stderr, "%d) shift error rc=%d\n", pid, shift_rc);
+fprintf(stderr, "loop(%zu) shift fail [rc=%d]\n", loop, shift_rc);
 		}
 
 		sfq_free_value(&val);
@@ -403,7 +410,7 @@ fprintf(stderr, "%d) shift error rc=%d\n", pid, shift_rc);
 			SFQ_FAIL(EA_UPDSTATUS, "loop increment");
 		}
 
-fprintf(stderr, "%d) next loop questate=%u\n", pid, questate);
+fprintf(stderr, "loop(%zu) block-bottom [time=%zu questate=%u]\n", loop, time(NULL), questate);
 	}
 
 SFQ_LIB_CHECKPOINT
@@ -414,7 +421,7 @@ SFQ_LIB_CHECKPOINT
 */
 	update_procstate(om_querootdir, om_quename, slotno, SFQ_PIS_DONE, 0, NULL);
 
-fprintf(stderr, "%d) loop end %zu\n", pid, loop);
+fprintf(stderr, "after loop [times=%zu]\n", loop);
 fprintf(stderr, "\n");
 
 SFQ_LIB_FINALIZE
