@@ -380,6 +380,7 @@ int sfqc_takeout(int argc, char** argv, sfq_takeoutfunc_t takeoutfunc)
 	int irc = 0;
 	char* message = NULL;
 	int jumppos = 0;
+	char uuid_s[36 + 1] = "";
 
 	uint printmethod = 0;
 
@@ -411,7 +412,7 @@ SFQC_MAIN_INITIALIZE
 		goto EXIT_LABEL;
 	}
 
-#if 0
+#ifdef SFQ_DEBUG_BUILD
 	irc = sfq_alloc_print_value(&val, &pval);
 	if (irc != SFQ_RC_SUCCESS)
 	{
@@ -420,6 +421,7 @@ SFQC_MAIN_INITIALIZE
 		goto EXIT_LABEL;
 	}
 
+	uuid_unparse(val.uuid, uuid_s);
 
 	puts("=");
 	printf("%zu\n%zu\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n",
