@@ -20,7 +20,7 @@ $(TARGET): $(OBJS)
 .c.o:
 	$(CC) $(CFLAGS) $(INCDIRS) -c $<
 
-$(OBJS): $(INCFILES)
+$(OBJS): $(INCFILES) Makefile
 
 clean:
 	rm -f $(TARGET)

@@ -145,9 +145,81 @@ void sfqc_free_init_option(struct sfqc_init_option* p)
 	free(p->inputfile);
 	free(p->soutpath);
 	free(p->serrpath);
+	free(p->printmethod);
 
 	bzero(p, sizeof(struct sfqc_init_option));
 }
+
+int get_ul_bytesize(const char* str, unsigned long* ul_ptr, char** e_ptr)
+{
+	ulong mul = 0;
+
+	char* e = NULL;
+	unsigned long ul = strtoul(str, &e, 0);
+
+	if (*e)
+	{
+		(*e_ptr) = e;
+
+		if ((strlen(e) == 1) || ((strlen(e) == 2) && (((e[1] == 'b') || (e[1] == 'B')))))
+		{
+			switch (*e)
+			{
+				case 'k':
+				case 'K':
+				{
+					mul = (1024);
+					break;
+				}
+
+				case 'm':
+				case 'M':
+				{
+					mul = (1024 * 1024);
+					break;
+				}
+
+				case 'g':
+				case 'G':
+				{
+					mul = (1024 * 1024 * 1024);
+					break;
+				}
+			}
+		}
+
+		if (mul == 0)
+		{
+			return 1;
+		}
+		else
+		{
+			if (ul == 0)
+			{
+				ul = 1;
+			}
+		}
+	}
+
+	if (mul)
+	{
+		ul *= mul;
+	}
+
+	(*ul_ptr) = ul;
+
+	return 0;
+}
+
+#define RESET_STR(org, p, MEMBER) \
+	char* c = strdup(org); \
+	if (! c) { \
+		snprintf(message, sizeof(message), "'%c': mem alloc", opt); \
+		jumppos = __LINE__; \
+		goto EXIT_LABEL; \
+	} \
+	free(p->MEMBER); \
+	p->MEMBER = c;
 
 int sfqc_get_init_option(int argc, char** argv, const char* optstring, int use_rest, struct sfqc_init_option* p)
 {
@@ -166,98 +238,17 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, int use_r
 	{
 		switch (opt)
 		{
-			case '?':
-			{
-				snprintf(message, sizeof(message), "'%c': unknown option", optopt);
-				jumppos = __LINE__;
-				goto EXIT_LABEL;
-
-				break;
-			}
-			case 'N':
-			{
-				/* QUEUE 名 */
-				char* c = strdup(optarg);
-				if (! c)
-				{
-					snprintf(message, sizeof(message), "'%c': mem alloc", opt);
-					jumppos = __LINE__;
-					goto EXIT_LABEL;
-				}
-				free(p->quename);
-				p->quename = c;
-
-				break;
-			}
-			case 'D':
-			{
-				/* QUEUE ディレクトリ */
-				char* c = strdup(optarg);
-				if (! c)
-				{
-					snprintf(message, sizeof(message), "'%c': mem alloc", opt);
-					jumppos = __LINE__;
-					goto EXIT_LABEL;
-				}
-				free(p->querootdir);
-				p->querootdir = c;
-
-				break;
-			}
 			case 'S':
 			{
 				/* ファイルサイズの最大 */
-				ulong mul = 0;
-
+				unsigned long ul = 0;
 				char* e = NULL;
-				unsigned long ul = strtoul(optarg, &e, 0);
-				if (*e)
+
+				if (get_ul_bytesize(optarg, &ul, &e) != 0)
 				{
-					if ((strlen(e) == 1) || ((strlen(e) == 2) && (((e[1] == 'b') || (e[1] == 'B')))))
-					{
-						switch (*e)
-						{
-							case 'k':
-							case 'K':
-							{
-								mul = (1024);
-								break;
-							}
-
-							case 'm':
-							case 'M':
-							{
-								mul = (1024 * 1024);
-								break;
-							}
-
-							case 'g':
-							case 'G':
-							{
-								mul = (1024 * 1024 * 1024);
-								break;
-							}
-						}
-					}
-
-					if (mul == 0)
-					{
-						snprintf(message, sizeof(message), "'%c': ignore [%s]", opt, e);
-						jumppos = __LINE__;
-						goto EXIT_LABEL;
-					}
-					else
-					{
-						if (ul == 0)
-						{
-							ul = 1;
-						}
-					}
-				}
-
-				if (mul)
-				{
-					ul *= mul;
+					snprintf(message, sizeof(message), "'%c': ignore [%s]", opt, e);
+					jumppos = __LINE__;
+					goto EXIT_LABEL;
 				}
 
 				p->filesize_limit = ul;
@@ -267,57 +258,14 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, int use_r
 			case 'L':
 			{
 				/* 要素サイズの最大 */
-				ulong mul = 0;
-
+				unsigned long ul = 0;
 				char* e = NULL;
-				unsigned long ul = strtoul(optarg, &e, 0);
-				if (*e)
+
+				if (get_ul_bytesize(optarg, &ul, &e) != 0)
 				{
-					if ((strlen(e) == 1) || ((strlen(e) == 2) && (((e[1] == 'b') || (e[1] == 'B')))))
-					{
-						switch (*e)
-						{
-							case 'k':
-							case 'K':
-							{
-								mul = (1024);
-								break;
-							}
-
-							case 'm':
-							case 'M':
-							{
-								mul = (1024 * 1024);
-								break;
-							}
-
-							case 'g':
-							case 'G':
-							{
-								mul = (1024 * 1024 * 1024);
-								break;
-							}
-						}
-					}
-
-					if (mul == 0)
-					{
-						snprintf(message, sizeof(message), "'%c': ignore [%s]", opt, e);
-						jumppos = __LINE__;
-						goto EXIT_LABEL;
-					}
-					else
-					{
-						if (ul == 0)
-						{
-							ul = 1;
-						}
-					}
-				}
-
-				if (mul)
-				{
-					ul *= mul;
+					snprintf(message, sizeof(message), "'%c': ignore [%s]", opt, e);
+					jumppos = __LINE__;
+					goto EXIT_LABEL;
 				}
 
 				p->payloadsize_limit = ul;
@@ -328,7 +276,9 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, int use_r
 			{
 				/* 最大プロセス数 */
 				char* e = NULL;
-				unsigned long ul = strtoul(optarg, &e, 0);
+				unsigned long ul = 0;
+
+				ul =strtoul(optarg, &e, 0);
 				if (*e)
 				{
 					snprintf(message, sizeof(message), "'%c': ignore [%s]", opt, e);
@@ -339,115 +289,29 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, int use_r
 				{
 					snprintf(message, sizeof(message), "'%c': size over (%u)", opt, USHRT_MAX);
 				}
+
 				p->procs_num = (ushort)ul;
 
 				break;
 			}
-			case 'x':
-			{
-				/* exec() path */
-				char* c = strdup(optarg);
-				if (! c)
-				{
-					snprintf(message, sizeof(message), "'%c': mem alloc", opt);
-					jumppos = __LINE__;
-					goto EXIT_LABEL;
-				}
-				free(p->execpath);
-				p->execpath = c;
 
-				break;
-			}
-			case 'a':
-			{
-				/* exec() args */
-				char* c = strdup(optarg);
-				if (! c)
-				{
-					snprintf(message, sizeof(message), "'%c': mem alloc", opt);
-					jumppos = __LINE__;
-					goto EXIT_LABEL;
-				}
-				free(p->execargs);
-				p->execargs = c;
+			case 'N': { RESET_STR(optarg, p, quename);	break; } // QUEUE 名
+			case 'D': { RESET_STR(optarg, p, querootdir);	break; } // QUEUE ディレクトリ
+			case 'x': { RESET_STR(optarg, p, execpath);	break; } // exec() パス
+			case 'a': { RESET_STR(optarg, p, execargs);	break; } // exec() 引数 (カンマ区切り)
+			case 't': { RESET_STR(optarg, p, textdata);	break; } // データ# テキスト
+			case 'f': { RESET_STR(optarg, p, inputfile);	break; } // データ# ファイル名
+			case 'm': { RESET_STR(optarg, p, metadata);	break; } // メタ情報
+			case 'p': { RESET_STR(optarg, p, printmethod);	break; } // pop, shift の出力方法
 
-				break;
-			}
-			case 't':
-			{
-				/* テキスト */
-				char* c = strdup(optarg);
-				if (! c)
-				{
-					snprintf(message, sizeof(message), "'%c': mem alloc", opt);
-					jumppos = __LINE__;
-					goto EXIT_LABEL;
-				}
-				free(p->textdata);
-				p->textdata = c;
+			// 標準出力のリダイレクト先
+			case 'o': { RESET_STR(optarg ? optarg : "-", p, soutpath); break; }
 
-				break;
-			}
-			case 'f':
-			{
-				/* ファイル名 */
-				char* c = strdup(optarg);
-				if (! c)
-				{
-					snprintf(message, sizeof(message), "'%c': mem alloc", opt);
-					jumppos = __LINE__;
-					goto EXIT_LABEL;
-				}
-				free(p->inputfile);
-				p->inputfile = c;
+			// 標準エラーのリダイレクト先
+			case 'e': { RESET_STR(optarg ? optarg : "-", p, serrpath); break; }
 
-				break;
-			}
-			case 'm':
-			{
-				/* メタ情報 */
-				char* c = strdup(optarg);
-				if (! c)
-				{
-					snprintf(message, sizeof(message), "'%c': mem alloc", opt);
-					jumppos = __LINE__;
-					goto EXIT_LABEL;
-				}
-				free(p->metadata);
-				p->metadata = c;
-
-				break;
-			}
-			case 'o':
-			{
-				/* 標準出力のリダイレクト先 */
-				char* c = strdup(optarg ? optarg : "-");
-				if (! c)
-				{
-					snprintf(message, sizeof(message), "'%c': mem alloc", opt);
-					jumppos = __LINE__;
-					goto EXIT_LABEL;
-				}
-				free(p->soutpath);
-				p->soutpath = c;
-
-				break;
-			}
-			case 'e':
-			{
-				/* 標準エラーのリダイレクト先 */
-				char* c = strdup(optarg ? optarg : "-");
-				if (! c)
-				{
-					snprintf(message, sizeof(message), "'%c': mem alloc", opt);
-					jumppos = __LINE__;
-					goto EXIT_LABEL;
-				}
-				free(p->serrpath);
-				p->serrpath = c;
-
-				break;
-			}
+/* */
+			case '?':
 			default:
 			{
 				snprintf(message, sizeof(message), "'%c': unknown route", opt);

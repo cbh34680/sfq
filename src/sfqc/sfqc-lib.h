@@ -24,20 +24,21 @@
 
 #define DEBUG_PRINT_BAR		"========================="
 
-	#define SFQ_MAIN_INITIALIZE \
+	#define SFQC_MAIN_INITIALIZE \
 		{ \
 			fprintf(stderr, DEBUG_PRINT_BAR " DEBUG BUILD (%s) " DEBUG_PRINT_BAR "\n\n", argv[0]); \
 			setvbuf(stdout, NULL, _IONBF, 0); \
 		}
 
-	#define SFQ_MAIN_FINALIZE \
+	#define SFQC_MAIN_FINALIZE \
 		{ \
 		}
 
 #else
-	#define SFQ_MAIN_INITIALIZE
-	#define SFQ_MAIN_FINALIZE
+	#define SFQC_MAIN_INITIALIZE
+	#define SFQC_MAIN_FINALIZE
 #endif
+
 
 /* プログラム引数 */
 struct sfqc_init_option
@@ -57,9 +58,27 @@ struct sfqc_init_option
 	char* soutpath;			/* o */
 	char* serrpath;			/* e */
 
+	char* printmethod;		/* p */
+
 	const char** commands;
 	int command_num;
 };
+
+/* pop, shift の表示オプション */
+enum
+{
+	SFQC_PRM_ASRAW			= 0U,	/* ----  */
+	SFQC_PRM_ASJSON			= 1U,	/* json  */
+	SFQC_PRM_WITH_ATTR		= 2U,	/* witha */
+	SFQC_PRM_PAYLOAD_B64		= 4U,	/* b64p  */
+};
+
+#define SFQC_PRM_DEFAULT		(SFQC_PRM_ASRAW)
+
+/* プロトタイプ定義 */
+typedef int (*sfq_takeoutfunc_t)(const char* querootdir, const char* quename, struct sfq_value* val);
+
+extern int sfqc_takeout(int argc, char** argv, sfq_takeoutfunc_t takeoutfunc);
 
 extern int sfqc_get_init_option(int argc, char** argv, const char* optstring,
 	int use_rest, struct sfqc_init_option* p);

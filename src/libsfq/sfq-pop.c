@@ -62,6 +62,10 @@ SFQ_LIB_INITIALIZE
 		SFQ_FAIL(EA_RWELEMENT, "sfq_readelm");
 	}
 
+#ifdef SFQ_DEBUG_BUILD
+	sfq_print_e_header(&ioeb.eh);
+#endif
+
 /* update queue file header */
 	qfh.qh.dval.elm_num--;
 
@@ -102,10 +106,6 @@ SFQ_LIB_INITIALIZE
 	{
 		SFQ_FAIL(EA_WRITEQFH, "sfq_writeqfh(qfh)");
 	}
-
-#ifdef SFQ_DEBUG_BUILD
-	sfq_print_q_header(&qfh.qh);
-#endif
 
 /* set val */
 	b = sfq_copy_ioeb2val(&ioeb, val);

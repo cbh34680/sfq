@@ -78,26 +78,6 @@ SFQ_FAIL_CATCH_LABEL__:
 	goto SFQ_FAIL_CATCH_LABEL__;
 
 
-#ifdef __GNUC__
-	/* gnu only */
-	#define sfq_stradup(org) \
-		({ \
-			char* dst = NULL; \
-			if (org) { \
-				dst = alloca(strlen( (org) ) + 1); \
-				if (dst) { \
-					strcpy(dst, org); \
-				} \
-			} \
-			dst; \
-		})
-#else
-
-	#define sfq_stradup(org)	sfq_safe_strcpy( alloca( strlen( (org) ) + 1 ), (org) )
-
-	extern char* sfq_safe_strcpy(char* dst, const char* org);
-#endif
-
 /* */
 #ifndef SFQ_DEFAULT_QUEUE_DIR
 	#define SFQ_DEFAULT_QUEUE_DIR	"/var/tmp"
@@ -144,8 +124,8 @@ struct sfq_queue_object
 /* file open mode */
 enum
 {
-	SFQ_FOM_READ			= 1,
-	SFQ_FOM_WRITE			= 2,
+	SFQ_FOM_READ			= 1U,
+	SFQ_FOM_WRITE			= 2U,
 };
 
 /* proccess info state */

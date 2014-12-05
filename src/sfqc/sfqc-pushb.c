@@ -20,7 +20,7 @@ int main(int argc, char** argv)
 
 /* */
 
-SFQ_MAIN_INITIALIZE
+SFQC_MAIN_INITIALIZE
 
 	atexit(release_heap);
 
@@ -64,7 +64,7 @@ SFQ_MAIN_INITIALIZE
 			mem = sfqc_readfile(opt.inputfile, &memsize);
 			if (! mem)
 			{
-				message = "sfqc_readfile";
+				message = "can't read file";
 				jumppos = __LINE__;
 				goto EXIT_LABEL;
 			}
@@ -114,7 +114,7 @@ EXIT_LABEL:
 		fprintf(stderr, "%s(%d): %s\n", __FILE__, jumppos, message);
 	}
 
-SFQ_MAIN_FINALIZE
+SFQC_MAIN_FINALIZE
 
 	return irc;
 }

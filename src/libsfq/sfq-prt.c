@@ -1,11 +1,9 @@
 #include "sfq-lib.h"
 
 #ifdef SFQ_DEBUG_BUILD
-	#define PRINT_SIZES		(0)
 	#define PRINT_OPERATE_HIST1	(1)
 	#define PRINT_OPERATE_HIST2	(1)
 #else
-	#define PRINT_SIZES		(0)
 	#define PRINT_OPERATE_HIST1	(0)
 	#define PRINT_OPERATE_HIST2	(0)
 #endif
@@ -49,7 +47,6 @@ void sfq_print_procs(const struct sfq_process_info* procs, size_t procs_num)
 
 void sfq_print_sizes(void)
 {
-#if PRINT_SIZES
 	long sc_child_max = sysconf(_SC_CHILD_MAX);
 	long sc_arg_max = sysconf(_SC_ARG_MAX);
 
@@ -82,7 +79,6 @@ void sfq_print_sizes(void)
 	fprintf(stderr, "! sizeof(e_header)            = %zu\n", sizeof(struct sfq_e_header));
 	fprintf(stderr, "! sizeof(sfq_value)           = %zu\n", sizeof(struct sfq_value));
 	fprintf(stderr, "\n");
-#endif
 }
 
 static void sfq_print_qh_dval_(const struct sfq_qh_dval* p, char c)
@@ -127,7 +123,7 @@ void sfq_print_q_header(const struct sfq_q_header* p)
 	fprintf(stderr, "# q_header.elmseg_end_pos     = %zu\n", p->sval.elmseg_end_pos);
 	fprintf(stderr, "# q_header.filesize_limit     = %zu\n", p->sval.filesize_limit);
 	fprintf(stderr, "# q_header.payloadsize_limit  = %zu\n", p->sval.payloadsize_limit);
-	fprintf(stderr, "# q_header.procs_num       = %u\n",  p->sval.procs_num);
+	fprintf(stderr, "# q_header.procs_num          = %u\n",  p->sval.procs_num);
 	fprintf(stderr, "#\n");
 
 	sfq_print_qh_dval(&p->dval);

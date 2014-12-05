@@ -11,7 +11,7 @@ int main(int argc, char** argv)
 /* */
 	struct sfqc_init_option opt;
 
-SFQ_MAIN_INITIALIZE
+SFQC_MAIN_INITIALIZE
 
 	bzero(&opt, sizeof(opt));
 
@@ -67,7 +67,7 @@ EXIT_LABEL:
 
 	sfqc_free_init_option(&opt);
 
-SFQ_MAIN_FINALIZE
+SFQC_MAIN_FINALIZE
 
 	return irc;
 }

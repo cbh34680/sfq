@@ -268,10 +268,6 @@ questate は go_exec() に渡すので、ここで保存しておく
 		SFQ_FAIL(EA_WRITEQFH, "sfq_writeqfh");
 	}
 
-#ifdef SFQ_DEBUG_BUILD
-	sfq_print_q_header(&qfh.qh);
-#endif
-
 /*
 正常時に呼び出し元に uuid を返却する
 */

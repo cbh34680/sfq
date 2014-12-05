@@ -20,3 +20,4 @@
 /sfqc-sets
 *.out
 /?.c
+/?.php

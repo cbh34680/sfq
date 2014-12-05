@@ -15,11 +15,15 @@ SFQ_LIB_INITIALIZE
 	char** argv = NULL;
 	size_t argv_size = 0;
 
-	char* pos = NULL;
 	int valnum = 0;
 
 	if (execargs)
 	{
+/*
+(カンマ区切りの) 引数の数を数える
+*/
+		char* pos = NULL;
+
 		valnum = 1;
 
 		pos = execargs;
@@ -56,6 +60,7 @@ SFQ_LIB_INITIALIZE
 		}
 		else
 		{
+			char* pos = NULL;
 			char* saveptr = NULL;
 			char* token = NULL;
 			int i = 0;

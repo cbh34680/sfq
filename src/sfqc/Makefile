@@ -1,30 +1,61 @@
+#
+# [target : dependent]
+#
+# $@ | target
+# $% | target member
+#    | --> target=libxx.a(xx.o) ... $@=libxx.a $%=xx.o
+#    |
+# $< | dependent first
+# $? | dependent newest target
+# $^ | dependent all
+#
+# ---------------------------------------------------------------------
+#
+# [json]
+# https://jansson.readthedocs.org/en/2.7/index.html
+#
+# ---------------------------------------------------------------------
+#
+# [base64]
+# http://src.gnu-darwin.org/src/contrib/wpa_supplicant/base64.h
+# http://src.gnu-darwin.org/src/contrib/wpa_supplicant/base64.c
+#
 
 CC       = gcc
-OBJS     = sfqc-lib.o sfqc-init.o sfqc-info.o sfqc-list.o sfqc-pushc.o sfqc-pushb.o sfqc-pop.o sfqc-shift.o sfqc-clear.o sfqc-sets.o
+OBJSL    = sfqc-lib.o sfqc-to.o base64.o
+OBJSE    = sfqc-init.o sfqc-info.o sfqc-list.o sfqc-pushc.o sfqc-pushb.o sfqc-pop.o sfqc-shift.o sfqc-clear.o sfqc-sets.o
+OBJS     = $(OBJSL) $(OBJSE)
 
-TARGET   = $(TARGETL) $(TARGETE)
 TARGETE  = sfqc-init sfqc-info sfqc-list sfqc-pushc sfqc-pushb sfqc-pop sfqc-shift sfqc-clear sfqc-sets
 TARGETL  = libsfqc.so
+TARGET   = $(TARGETL) $(TARGETE)
 
-INCDIRS  = -I../inc -I.
-INCFILES = ../inc/sfq.h sfqc-lib.h
+INCDIRS  = -I../jansson -I../inc -I.
+INCFILES = ../inc/sfq.h sfqc-lib.h base64.h
 
 CFLAGS   = -Wall -O2 -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 $(CFLAGSEXT)
 CFLAGSL  = $(CFLAGS) -fPIC
 LDFLAGS  = -Wall -shared
 
-LIBDIRS  = -L../libsfq -L.
-LIBS     = -lsfqc -lsfq -lpthread -lm -luuid
+LIBDIRS  = -L../jansson -L../libsfq -L.
+LIBS     = -lsfqc -lsfq -lpthread -lm -luuid -ljansson
 
 #
 all: $(TARGET)
 
+libsfqc.so: $(OBJSL)
+	$(CC) $(LDFLAGS) -o $@ $^
+
 sfqc-lib.o: sfqc-lib.c
 	$(CC) $(CFLAGSL) $(INCDIRS) -c $<
 
-libsfqc.so: sfqc-lib.o
-	$(CC) $(LDFLAGS) -o $@ $<
+sfqc-to.o: sfqc-to.c
+	$(CC) $(CFLAGSL) $(INCDIRS) -c $<
 
+base64.o: base64.c
+	$(CC) $(CFLAGSL) -Wno-unused-but-set-variable $(INCDIRS) -c $<
+
+#
 sfqc-init: sfqc-init.o
 	$(CC) $(CFLAGS) $(LIBDIRS) -o $@ $< $(LIBS)
 
@@ -52,7 +83,7 @@ sfqc-clear: sfqc-clear.o
 sfqc-sets: sfqc-sets.o
 	$(CC) $(CFLAGS) $(LIBDIRS) -o $@ $< $(LIBS)
 
-$(OBJS): $(INCFILES)
+$(OBJS): $(INCFILES) Makefile
 
 .c.o:
 	$(CC) $(CFLAGS) $(INCDIRS) -c $<

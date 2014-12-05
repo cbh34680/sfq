@@ -60,21 +60,6 @@ SFQ_LIB_INITIALIZE
 	qo->fp = fp;
 	qo->opentime = time(NULL);
 
-#ifdef SFQ_DEBUG_BUILD
-/*
-	fprintf(stderr, "QUEROOTDIR=[%s]\n", qo->om->querootdir);
-	fprintf(stderr, "QUENAME=[%s]\n", qo->om->quename);
-	fprintf(stderr, "QUEDIR=[%s]\n", qo->om->quedir);
-	fprintf(stderr, "QUEFILE=[%s]\n", qo->om->quefile);
-	fprintf(stderr, "QUELOGDIR=[%s]\n", qo->om->quelogdir);
-	fprintf(stderr, "QUEPROCLOGDIR=[%s]\n", qo->om->queproclogdir);
-	fprintf(stderr, "QUEEXECLOGDIR=[%s]\n", qo->om->queexeclogdir);
-	fprintf(stderr, "SEMAPHORE=[%s]\n", qo->om->semname);
-	fprintf(stderr, "OPENTIME=[%zu]\n", qo->opentime);
-	fprintf(stderr, "\n");
-*/
-#endif
-
 SFQ_LIB_CHECKPOINT
 
 	if (SFQ_LIB_IS_FAIL())
@@ -334,12 +319,6 @@ SFQ_LIB_INITIALIZE
 	{
 		SFQ_FAIL(EA_ILLEGALVER, "qfh_size not match");
 	}
-
-#ifdef SFQ_DEBUG_BUILD
-/*
-	sfq_print_qf_header(qfh);
-*/
-#endif
 
 /* read process-table */
 	if (procs_ptr)

@@ -68,18 +68,18 @@ enum
 /* PayLoad Type: uchar */
 enum
 {
-	SFQ_PLT_NULLTERM	= 1,
-	SFQ_PLT_BINARY		= 2,
-	SFQ_PLT_CHARARRAY	= 4,	/* Null Term String */
+	SFQ_PLT_NULLTERM	= 1U,
+	SFQ_PLT_BINARY		= 2U,
+	SFQ_PLT_CHARARRAY	= 4U,	/* Null Term String */
 };
 
 /* Queue Status: uchar */
 enum
 {
-	SFQ_QST_STDOUT_ON	= 1,
-	SFQ_QST_STDERR_ON	= 2,
-	SFQ_QST_ACCEPT_ON	= 4,
-	SFQ_QST_EXEC_ON		= 8,
+	SFQ_QST_STDOUT_ON	= 1U,
+	SFQ_QST_STDERR_ON	= 2U,
+	SFQ_QST_ACCEPT_ON	= 4U,
+	SFQ_QST_EXEC_ON		= 8U,
 };
 
 #define SFQ_QST_DEFAULT		(SFQ_QST_ACCEPT_ON | SFQ_QST_EXEC_ON)
@@ -121,6 +121,23 @@ extern int sfq_push_bin(const char* querootdir, const char* quename, const char*
 
 extern int sfq_get_questate(const char* querootdir, const char* quename, questate_t* questate_ptr);
 extern int sfq_set_questate(const char* querootdir, const char* quename, questate_t questate);
+
+#ifdef __GNUC__
+	#define sfq_stradup(org) ({ \
+			char* dst = NULL; \
+			if (org) { \
+				dst = alloca(strlen( (org) ) + 1); \
+				if (dst) { \
+					strcpy(dst, org); \
+				} \
+			} \
+			dst; \
+		})
+#else
+		#define sfq_stradup(org)        sfq_safe_strcpy( alloca( strlen( (org) ) + 1 ), (org) )
+
+		extern char* sfq_safe_strcpy(char* dst, const char* org);
+#endif
 
 #ifdef __cplusplus
 }
