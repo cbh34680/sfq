@@ -300,5 +300,8 @@ extern bool sfq_writeqfh(struct sfq_queue_object* qo, struct sfq_file_header* qf
 extern void sfq_output_reopen_4exec(FILE* fp, const time_t* now, const char* arg_wpath,
 	const char* logdir, const uuid_t uuid, ulong id, const char* ext, const char* env_key);
 
+extern int sfq_execwait(const char* om_querootdir, const char* om_quename,
+        ushort slotno, const char* om_queexeclogdir, struct sfq_value* val);
+
 #endif
 
