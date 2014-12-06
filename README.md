@@ -1,8 +1,5 @@
-sfq
+sfq - Simple File-based Queue
 ===
-
-Simple File-based Queue
-
 [Development Environment]
 * OS) CentOS 7 64bit
 
