@@ -17,6 +17,8 @@
 #include <signal.h>
 #include <math.h>
 
+#include <libgen.h>
+
 #ifdef WIN32
 	#include "win32-dummy-build.h"
 #else

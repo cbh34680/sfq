@@ -90,8 +90,6 @@ void sfq_output_reopen_4exec(FILE* fp, const time_t* now, const char* arg_wpath,
 {
 	const char* opened = NULL;
 
-fprintf(stderr, "\t");
-
 	if (arg_wpath && (arg_wpath[0] != '\0'))
 	{
 /* len(arg_wpath) > 0 */
@@ -107,11 +105,15 @@ fprintf(stderr, "\t");
 				wpath = alloc_wpath_4exec(logdir, uuid, id, ext);
 				if (wpath)
 				{
-fprintf(stderr, "open(%s) file w[%s] for default log\n", ext, wpath);
+fprintf(stderr, "\topen(%s) file [mode=wb path=%s] for default log\n", ext, wpath);
 
 					if (freopen(wpath, "wb", fp))
 					{
 						opened = sfq_stradup(wpath);
+					}
+					else
+					{
+perror("\t\terror");
 					}
 				}
 
@@ -178,11 +180,25 @@ fprintf(stderr, "open(%s) file w[%s] for default log\n", ext, wpath);
 
 			if (path2)
 			{
-fprintf(stderr, "open(%s) file [%s][%s] for specified log\n", ext, wmode, path2);
-
-				if (freopen(path2, wmode, fp))
+				char* dir = sfq_stradup(path2);
+				if (dir)
 				{
-					opened = path2;
+					if (dirname(dir))
+					{
+						if (sfq_mkdir_p(dir, 0700))
+						{
+fprintf(stderr, "\topen(%s) file [mode=%s path=%s] for specified log\n", ext, wmode, path2);
+
+							if (freopen(path2, wmode, fp))
+							{
+								opened = path2;
+							}
+							else
+							{
+perror("\t\terror");
+							}
+						}
+					}
 				}
 			}
 		}
@@ -204,7 +220,7 @@ fprintf(stderr, "open(%s) file [%s][%s] for specified log\n", ext, wmode, path2)
 	}
 	else
 	{
-fprintf(stderr, "open(%s) /dev/null\n", ext);
+fprintf(stderr, "\topen(%s) [mode=wb path=/dev/null]\n", ext);
 
 		freopen("/dev/null", "wb", fp);
 	}

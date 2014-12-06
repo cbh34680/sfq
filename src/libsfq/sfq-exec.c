@@ -292,6 +292,8 @@ exec() が成功すればここには来ない
 			int irc = 0;
 			int status = 0;
 
+fprintf(stderr, "\tbefore wait child-process [pid=%d]\n", pid);
+
 			irc = waitpid(pid, &status, 0);
 
 			if (irc != -1)
@@ -299,9 +301,9 @@ exec() が成功すればここには来ない
 				if (WIFEXITED(status))
 				{
 					int exit_code = WEXITSTATUS(status);
-#ifdef SFQ_DEBUG_BUILD
-					fprintf(stderr, "wait) pid=%d exit=%d\n", pid, exit_code);
-#endif
+
+fprintf(stderr, "\tafter wait child-process [pid=%d exit=%d]\n", pid, exit_code);
+
 					return exit_code;
 				}
 			}
@@ -491,8 +493,14 @@ bool sfq_go_exec(const char* querootdir, const char* quename, ushort slotno, que
 			sfq_free_open_names(om);
 			om = NULL;
 
-			/* */
+/*
+ループ処理の標準出力、標準エラー出力先を切り替え
+*/
 			sfq_reopen_4proc(om_queproclogdir, slotno, questate);
+
+/*
+ループ処理の実行
+*/
 			foreach_element(om_querootdir, om_quename, slotno, om_queexeclogdir);
 
 			exit (EXIT_SUCCESS);
