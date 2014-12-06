@@ -1,5 +1,9 @@
 
-TARGET  = inc/sfq.h lib/libsfq.so lib/libsfqc.so lib/libjansson.so bin/sfqc-init bin/sfqc-info bin/sfqc-list bin/sfqc-pushc bin/sfqc-pushb bin/sfqc-pop bin/sfqc-shift bin/sfqc-clear
+TARGETI = inc/sfq.h
+TARGETL = lib/libsfq.so lib/libsfqc.so lib/libjansson.so
+TARGETE = bin/sfqc-init bin/sfqc-info bin/sfqc-list bin/sfqc-pushc bin/sfqc-pushb bin/sfqc-pop bin/sfqc-shift bin/sfqc-clear bin/sfqc-sets
+
+TARGET  = $(TARGETI) $(TARGETL) $(TARGETE)
 
 all: $(TARGET)
 
@@ -42,6 +46,9 @@ bin/sfqc-shift: src/sfqc/sfqc-shift
 
 bin/sfqc-clear: src/sfqc/sfqc-clear
 	cd src/sfqc/; make $(MAKEOPT); cp -p sfqc-clear ../../bin/sfqc-clear
+
+bin/sfqc-sets: src/sfqc/sfqc-sets
+	cd src/sfqc/; make $(MAKEOPT); cp -p sfqc-sets ../../bin/sfqc-sets
 
 debug:
 	make clean
