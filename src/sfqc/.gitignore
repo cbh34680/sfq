@@ -1,5 +1,6 @@
 *.so
 *.o
+*.out
 /targetver.h
 /ReadMe.txt
 /sfqc.cpp
@@ -18,6 +19,6 @@
 /sfqc-pushc
 /sfqc-shift
 /sfqc-sets
-*.out
 /?.c
 /?.php
+/vchk
