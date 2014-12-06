@@ -85,58 +85,128 @@ static char* alloc_wpath_4exec(const char* logdir, const uuid_t uuid, ulong id, 
 	return wpath;
 }
 
-void sfq_output_reopen_4exec(FILE* fp, const char* arg_wpath,
+void sfq_output_reopen_4exec(FILE* fp, const time_t* now, const char* arg_wpath,
 	const char* logdir, const uuid_t uuid, ulong id, const char* ext, const char* env_key)
 {
-	const char* wpath = NULL;
+	const char* opened = NULL;
 
-	if (arg_wpath)
+fprintf(stderr, "\t");
+
+	if (arg_wpath && (arg_wpath[0] != '\0'))
 	{
+/* len(arg_wpath) > 0 */
+
 		if (strcmp(arg_wpath, "-") == 0)
 		{
 			/* "-o -" "-e -" はデフォルトのログファイルとする */
 
 			if (logdir)
 			{
-				char* path = alloc_wpath_4exec(logdir, uuid, id, ext);
-				if (path)
+				char* wpath = NULL;
+
+				wpath = alloc_wpath_4exec(logdir, uuid, id, ext);
+				if (wpath)
 				{
-					if (freopen(path, "wb", fp))
+fprintf(stderr, "open(%s) file w[%s] for default log\n", ext, wpath);
+
+					if (freopen(wpath, "wb", fp))
 					{
-						wpath = sfq_stradup(path);
+						opened = sfq_stradup(wpath);
 					}
 				}
 
-				free(path);
-				path = NULL;
+				free(wpath);
+				wpath = NULL;
 			}
 		}
 		else
 		{
-			if (freopen(arg_wpath, "wb", fp))
+			char wmode[] = "wb";
+			const char* path1 = NULL;
+			const char* path2 = NULL;
+
+			if (strlen(arg_wpath) >= 3)
 			{
-				wpath = arg_wpath;
+				if (arg_wpath[1] == ',')
+				{
+					switch (arg_wpath[0])
+					{
+						case 'a':
+						case 'w':
+						{
+							/* "a,X", "w,X" "a,XYZ" "w,xyz" ... */
+
+							wmode[0] = arg_wpath[0];
+							path1 = &arg_wpath[2];
+
+							break;
+						}
+					}
+				}
+
+				if (! path1)
+				{
+					path1 = arg_wpath;
+				}
+			}
+			else
+			{
+				path1 = arg_wpath;
+			}
+
+			if (strchr(path1, '%'))
+			{
+				struct tm tmp_tm;
+
+				if (localtime_r(now, &tmp_tm))
+				{
+					char tmp_s[BUFSIZ];
+					size_t wsize = 0;
+
+					wsize = strftime(tmp_s, sizeof(tmp_s), path1, &tmp_tm);
+
+					if (wsize != 0)
+					{
+						path2 = tmp_s;
+					}
+				}
+			}
+			else
+			{
+				path2 = path1;
+			}
+
+			if (path2)
+			{
+fprintf(stderr, "open(%s) file [%s][%s] for specified log\n", ext, wmode, path2);
+
+				if (freopen(path2, wmode, fp))
+				{
+					opened = path2;
+				}
 			}
 		}
 	}
 
-	if (! wpath)
+	if (opened)
 	{
-		wpath = "/dev/null";
-
-		freopen(wpath, "wb", fp);
-	}
-
-	if (wpath)
-	{
-		char* path = realpath(wpath, NULL);
-		if (path)
+/*
+通常のファイルを書込みモードで開けたら環境変数に残す
+*/
+		char* rpath = realpath(opened, NULL);
+		if (rpath)
 		{
-			setenv(env_key, path, 0);
+			setenv(env_key, rpath, 0);
 		}
 
-		free(path);
-		path = NULL;
+		free(rpath);
+		rpath = NULL;
+	}
+	else
+	{
+fprintf(stderr, "open(%s) /dev/null\n", ext);
+
+		freopen("/dev/null", "wb", fp);
 	}
 }
 

@@ -33,25 +33,9 @@ SFQ_LIB_INITIALIZE
 	}
 
 /* print queue header */
-#ifdef SFQ_DEBUG_BUILD
-	fprintf(stderr, "! om.querootdir:    %s\n",  qo->om->querootdir);
-	fprintf(stderr, "! om.quename:       %s\n",  qo->om->quename);
-	fprintf(stderr, "! om.quedir:        %s\n",  qo->om->quedir);
-	fprintf(stderr, "! om.quefile:       %s\n",  qo->om->quefile);
-	fprintf(stderr, "! om.quelogdir:     %s\n",  qo->om->quelogdir);
-	fprintf(stderr, "! om.queproclogdir: %s\n",  qo->om->queproclogdir);
-	fprintf(stderr, "! om.queexeclogdir: %s\n",  qo->om->queexeclogdir);
-	fprintf(stderr, "! om.semname:       %s\n",  qo->om->semname);
-	fprintf(stderr, "! om.opentime:      %zu\n", qo->opentime);
-	fprintf(stderr, "\n");
-
+	sfq_print_qo(qo);
 	sfq_print_qf_header(&qfh);
-#endif
-
-	if (procs)
-	{
-		sfq_print_procs(procs, qfh.qh.sval.procs_num);
-	}
+	sfq_print_procs(procs, qfh.qh.sval.procs_num);
 
 SFQ_LIB_CHECKPOINT
 

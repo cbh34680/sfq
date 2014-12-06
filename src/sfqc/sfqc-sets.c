@@ -13,7 +13,6 @@ struct noun_bit_set
 	questate_t bit;
 };
 
-
 int get_off_on(const char* cms[2], questate_t* bit_ptr)
 {
 	struct noun_bit_set nb_map[] =

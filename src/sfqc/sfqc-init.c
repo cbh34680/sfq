@@ -58,6 +58,8 @@ SFQC_MAIN_INITIALIZE
 		goto EXIT_LABEL;
 	}
 
+	fprintf(stderr, "queue has been created\n");
+
 EXIT_LABEL:
 
 	if (message)

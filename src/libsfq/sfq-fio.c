@@ -729,10 +729,12 @@ bool sfq_seek_set_and_write(FILE* fp, off_t set_pos, const void* mem, size_t mem
 
 void sfq_qh_init_pos(struct sfq_q_header* p)
 {
-	if (p)
+	if (! p)
 	{
-		p->dval.elm_last_push_pos = p->dval.elm_next_shift_pos = p->dval.elm_num = 0;
-		p->dval.elm_new_push_pos = p->sval.elmseg_start_pos;
+		return;
 	}
+
+	p->dval.elm_last_push_pos = p->dval.elm_next_shift_pos = p->dval.elm_num = 0;
+	p->dval.elm_new_push_pos = p->sval.elmseg_start_pos;
 }
 

@@ -6,7 +6,7 @@
 void print_element(ulong order, const struct sfq_value* val, void* userdata)
 {
 	int irc = 0;
-	struct tm tm;
+	struct tm tmp;
 
 	char dt[32] = "";
 	char uuid_s[37] = "";
@@ -15,15 +15,15 @@ void print_element(ulong order, const struct sfq_value* val, void* userdata)
 
 	bzero(&pval, sizeof(pval));
 
-	localtime_r(&val->pushtime, &tm);
-	strftime(dt, sizeof(dt), "%Y-%m-%d %H:%M:%S", &tm);
+	localtime_r(&val->pushtime, &tmp);
+	strftime(dt, sizeof(dt), "%Y-%m-%d %H:%M:%S", &tmp);
 
 	uuid_unparse_upper(val->uuid, uuid_s);
 
 	irc = sfq_alloc_print_value(val, &pval);
 	if (irc == SFQ_RC_SUCCESS)
 	{
-		printf("%lu" _T_ "%zu" _T_ "%s" _T_ "%s" _T_ "%s" _T_       "%s" _T_       "%s" _T_       "%s" _T_       "%s" _T_       "%zu" _T_          "\"%s\"" LF,
+		printf("%lu" _T_ "%zu" _T_ "%s" _T_ "%s" _T_ "%s" _T_       "%s" _T_       "%s" _T_       "%s" _T_       "%s" _T_       "%zu" _T_          "%s" LF,
 		       order,    pval.id,  dt,      uuid_s,  pval.execpath, pval.execargs, pval.metadata, pval.soutpath, pval.serrpath, val->payload_size, (char*)pval.payload);
 
 		sfq_free_value(&pval);
@@ -69,7 +69,11 @@ SFQC_MAIN_INITIALIZE
 
 	if (cnt == 0)
 	{
-		fprintf(stderr, "\nelement does not exist in the queue\n");
+		fprintf(stderr, "element does not exist in the queue\n");
+	}
+	else if (cnt == 1)
+	{
+		fprintf(stderr, "\nthere is one element in the queue\n");
 	}
 	else
 	{

@@ -101,9 +101,9 @@ queue header の初期値を設定
 		SFQ_FAIL(EA_WRITEQFH, "sfq_writeqfh");
 	}
 
-#ifdef SFQ_DEBUG_BUILD
+/* print queue header */
+	sfq_print_qo(qo);
 	sfq_print_qf_header(&qfh);
-#endif
 
 SFQ_LIB_CHECKPOINT
 

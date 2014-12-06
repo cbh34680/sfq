@@ -8,6 +8,21 @@
 	#define PRINT_OPERATE_HIST2	(0)
 #endif
 
+void sfq_print_qo(const struct sfq_queue_object* qo)
+{
+	fprintf(stderr, "! [queue]\n");
+	fprintf(stderr, "! om.querootdir:    %s\n",  qo->om->querootdir);
+	fprintf(stderr, "! om.quename:       %s\n",  qo->om->quename);
+	fprintf(stderr, "! om.quedir:        %s\n",  qo->om->quedir);
+	fprintf(stderr, "! om.quefile:       %s\n",  qo->om->quefile);
+	fprintf(stderr, "! om.quelogdir:     %s\n",  qo->om->quelogdir);
+	fprintf(stderr, "! om.queproclogdir: %s\n",  qo->om->queproclogdir);
+	fprintf(stderr, "! om.queexeclogdir: %s\n",  qo->om->queexeclogdir);
+	fprintf(stderr, "! om.semname:       %s\n",  qo->om->semname);
+	fprintf(stderr, "! om.opentime:      %zu\n", qo->opentime);
+	fprintf(stderr, "\n");
+}
+
 void sfq_print_procs(const struct sfq_process_info* procs, size_t procs_num)
 {
 	int i = 0;

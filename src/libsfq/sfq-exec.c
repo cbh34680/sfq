@@ -224,14 +224,34 @@ SFQ_LIB_FINALIZE
 
 static void reopen_4exec(const char* logdir, const struct sfq_value* val)
 {
-/* stdio */
-	freopen("/dev/null", "rb", stdin);
+	time_t now = time(NULL);
+
+	const char* soutpath = val->soutpath;
+	const char* serrpath = val->serrpath;
+
+	if (soutpath && serrpath)
+	{
+		if (strcmp(soutpath, serrpath) == 0)
+		{
+/*
+標準出力先と標準エラー出力先が同じファイル名
+*/
+fprintf(stderr, "\tsoutpath == serrpath [%s], redirect stderr to /dev/null\n", soutpath);
+
+			serrpath = NULL;
+		}
+	}
 
 /* stdout */
-	sfq_output_reopen_4exec(stdout, val->soutpath, logdir, val->uuid, val->id, "out", "SFQ_SOUTPATH");
+	sfq_output_reopen_4exec(stdout, &now,
+		soutpath, logdir, val->uuid, val->id, "out", "SFQ_SOUTPATH");
 
 /* stderr */
-	sfq_output_reopen_4exec(stderr, val->serrpath, logdir, val->uuid, val->id, "err", "SFQ_SERRPATH");
+	sfq_output_reopen_4exec(stderr, &now,
+		serrpath, logdir, val->uuid, val->id, "err", "SFQ_SERRPATH");
+
+/* stdio */
+	freopen("/dev/null", "rb", stdin);
 }
 
 static int pipe_fork_write_dup_exec_wait(const char* om_querootdir, const char* om_quename,
