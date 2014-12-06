@@ -24,10 +24,11 @@ typedef int			mode_t;
 #define true			(1)
 #define false			(0)
 
-#define PATH_MAX		(255)
+#define PATH_MAX		(99)
 #define _SC_ARG_MAX		(99)
 #define _SC_CHILD_MAX		(99)
 #define SEM_FAILED		(99)
+#define MAXNAMLEN		(99)
 
 #define bzero(a, b)
 #define sysconf(a)		(99)
@@ -65,6 +66,9 @@ typedef int			mode_t;
 
 #define getopt(a, b, c)		(99)
 #define optarg			NULL
+#define optind			(99)
+
+#define __func__		"__func__"
 
 
 #ifdef __cplusplus

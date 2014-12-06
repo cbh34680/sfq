@@ -7,8 +7,12 @@
 /* ulong, ushort ... */
 #include <sys/types.h>
 
-/* yum install libuuid-devel */
-#include <uuid/uuid.h>
+#ifdef WIN32
+	#define uuid_t	void*
+#else
+	/* yum install libuuid-devel */
+	#include <uuid/uuid.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
