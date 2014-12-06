@@ -100,7 +100,40 @@ SFQ_LIB_CHECKPOINT
 SFQ_LIB_FINALIZE
 }
 
-static int child_write_dup_exec_exit(const char* om_quename, ushort slotno, struct sfq_value* val)
+static void reopen_4exec(const char* logdir, const struct sfq_value* val)
+{
+	time_t now = time(NULL);
+
+	const char* soutpath = val->soutpath;
+	const char* serrpath = val->serrpath;
+
+	if (soutpath && serrpath)
+	{
+		if (strcmp(soutpath, serrpath) == 0)
+		{
+/*
+標準出力先と標準エラー出力先が同じファイル名
+*/
+fprintf(stderr, "\tsoutpath == serrpath [%s], redirect stderr to /dev/null\n", soutpath);
+
+			serrpath = NULL;
+		}
+	}
+
+/* stdout */
+	sfq_output_reopen_4exec(stdout, &now,
+		soutpath, logdir, val->uuid, val->id, "out", "SFQ_SOUTPATH");
+
+/* stderr */
+	sfq_output_reopen_4exec(stderr, &now,
+		serrpath, logdir, val->uuid, val->id, "err", "SFQ_SERRPATH");
+
+/* stdio */
+	freopen("/dev/null", "rb", stdin);
+}
+
+static int child_write_dup_exec_exit(const char* om_quename,
+		ushort slotno, const char* om_queexeclogdir, struct sfq_value* val)
 {
 SFQ_LIB_INITIALIZE
 
@@ -112,6 +145,8 @@ SFQ_LIB_INITIALIZE
 	char uuid_s[36 + 1] = "";
 
 /* */
+fprintf(stderr, "\tprepare exec\n");
+
 #ifdef SFQ_DEBUG_BUILD
 	assert(om_quename);
 	assert(val);
@@ -130,6 +165,7 @@ payload は pipe 経由で送信
 		{
 			SFQ_FAIL(ES_MEMALLOC, "execpath");
 		}
+fprintf(stderr, "\t\texecpath = %s\n", execpath);
 	}
 
 	if (val->execargs)
@@ -139,6 +175,7 @@ payload は pipe 経由で送信
 		{
 			SFQ_FAIL(ES_MEMALLOC, "execargs");
 		}
+fprintf(stderr, "\t\texecargs = %s\n", execargs);
 	}
 
 	if (val->payload && val->payload_size)
@@ -176,6 +213,8 @@ payload は pipe 経由で送信
 		{
 			SFQ_FAIL(ES_DUP, "pipefd[READ] -> STDIN_FILENO");
 		}
+
+fprintf(stderr, "\t\tpayload size = %zu\n", val->payload_size);
 	}
 
 	/* queue */
@@ -197,7 +236,12 @@ payload は pipe 経由で送信
 	if (val->metadata)
 	{
 		setenv("SFQ_META", val->metadata, 0);
+
+fprintf(stderr, "\t\tmetadata = %s\n", val->metadata);
 	}
+
+/* */
+	reopen_4exec(om_queexeclogdir, val);
 
 	sfq_free_value(val);
 
@@ -207,7 +251,7 @@ payload は pipe 経由で送信
 /*
 exec() が成功すればここには来ない
 */
-	SFQ_FAIL(EC_EXECFAIL, "execapp");
+	//SFQ_FAIL(EC_EXECFAIL, "execapp");
 
 SFQ_LIB_CHECKPOINT
 
@@ -222,37 +266,6 @@ SFQ_LIB_FINALIZE
 	return SFQ_LIB_RC();
 }
 
-static void reopen_4exec(const char* logdir, const struct sfq_value* val)
-{
-	time_t now = time(NULL);
-
-	const char* soutpath = val->soutpath;
-	const char* serrpath = val->serrpath;
-
-	if (soutpath && serrpath)
-	{
-		if (strcmp(soutpath, serrpath) == 0)
-		{
-/*
-標準出力先と標準エラー出力先が同じファイル名
-*/
-fprintf(stderr, "\tsoutpath == serrpath [%s], redirect stderr to /dev/null\n", soutpath);
-
-			serrpath = NULL;
-		}
-	}
-
-/* stdout */
-	sfq_output_reopen_4exec(stdout, &now,
-		soutpath, logdir, val->uuid, val->id, "out", "SFQ_SOUTPATH");
-
-/* stderr */
-	sfq_output_reopen_4exec(stderr, &now,
-		serrpath, logdir, val->uuid, val->id, "err", "SFQ_SERRPATH");
-
-/* stdio */
-	freopen("/dev/null", "rb", stdin);
-}
 
 static int pipe_fork_write_dup_exec_wait(const char* om_querootdir, const char* om_quename,
 	ushort slotno, const char* om_queexeclogdir, struct sfq_value* val)
@@ -276,8 +289,7 @@ wait() 後にステータスが取得できない
 		if (pid == 0)
 		{
 /* child */
-			reopen_4exec(om_queexeclogdir, val);
-			child_write_dup_exec_exit(om_quename, slotno, val);
+			child_write_dup_exec_exit(om_quename, slotno, om_queexeclogdir, val);
 
 			sfq_free_value(val);
 
@@ -292,6 +304,8 @@ exec() が成功すればここには来ない
 			int irc = 0;
 			int status = 0;
 
+fprintf(stderr, "\tbefore wait child-process [pid=%d]\n", pid);
+
 			irc = waitpid(pid, &status, 0);
 
 			if (irc != -1)
@@ -299,9 +313,9 @@ exec() が成功すればここには来ない
 				if (WIFEXITED(status))
 				{
 					int exit_code = WEXITSTATUS(status);
-#ifdef SFQ_DEBUG_BUILD
-					fprintf(stderr, "wait) pid=%d exit=%d\n", pid, exit_code);
-#endif
+
+fprintf(stderr, "\tafter wait child-process [pid=%d exit=%d]\n", pid, exit_code);
+
 					return exit_code;
 				}
 			}
@@ -441,7 +455,7 @@ SFQ_LIB_CHECKPOINT
 */
 	update_procstate(om_querootdir, om_quename, slotno, SFQ_PIS_DONE, 0, NULL);
 
-fprintf(stderr, "after loop [times=%zu]\n", loop);
+fprintf(stderr, "after loop [loop times=%zu]\n", loop);
 fprintf(stderr, "\n");
 
 SFQ_LIB_FINALIZE
@@ -491,8 +505,14 @@ bool sfq_go_exec(const char* querootdir, const char* quename, ushort slotno, que
 			sfq_free_open_names(om);
 			om = NULL;
 
-			/* */
+/*
+ループ処理の標準出力、標準エラー出力先を切り替え
+*/
 			sfq_reopen_4proc(om_queproclogdir, slotno, questate);
+
+/*
+ループ処理の実行
+*/
 			foreach_element(om_querootdir, om_quename, slotno, om_queexeclogdir);
 
 			exit (EXIT_SUCCESS);

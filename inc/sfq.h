@@ -7,8 +7,13 @@
 /* ulong, ushort ... */
 #include <sys/types.h>
 
-/* yum install libuuid-devel */
-#include <uuid/uuid.h>
+#ifdef WIN32
+	/* for msvc compile (compile only not link) */
+	#define uuid_t	void*
+#else
+	/* yum install libuuid-devel */
+	#include <uuid/uuid.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -70,7 +75,7 @@ enum
 {
 	SFQ_PLT_NULLTERM	= 1U,
 	SFQ_PLT_BINARY		= 2U,
-	SFQ_PLT_CHARARRAY	= 4U,	/* Null Term String */
+	SFQ_PLT_CHARARRAY	= 4U,
 };
 
 /* Queue Status: uchar */
@@ -105,23 +110,32 @@ typedef void (*sfq_map_callback)(ulong order, const struct sfq_value* val, void*
 extern int sfq_init(const char* querootdir, const char* quename,
 	size_t filesize_limit, size_t payloadsize_limit, ushort max_process, questate_t questate);
 
+extern int sfq_map(const char* querootdir, const char* quename,
+	sfq_map_callback callback, void* userdata);
+
 extern int sfq_push(const char* querootdir, const char* quename, struct sfq_value* val);
 extern int sfq_pop(const char* querootdir, const char* quename, struct sfq_value* val);
 extern int sfq_shift(const char* querootdir, const char* quename, struct sfq_value* val);
 extern int sfq_info(const char* querootdir, const char* quename);
-extern int sfq_map(const char* querootdir, const char* quename, sfq_map_callback callback, void* userdata);
 extern int sfq_clear(const char* querootdir, const char* quename);
-
 extern int sfq_alloc_print_value(const struct sfq_value* bin, struct sfq_value* str);
 extern void sfq_free_value(struct sfq_value* p);
 
 /* short-cut */
-extern int sfq_push_str(const char* querootdir, const char* quename, const char* execpath, const char* execargs, const char* metadata, const char* soutpath, const char* serrpath, uuid_t uuid, const char* textdata);
-extern int sfq_push_bin(const char* querootdir, const char* quename, const char* execpath, const char* execargs, const char* metadata, const char* soutpath, const char* serrpath, uuid_t uuid, const sfq_byte* payload, size_t payload_size);
+extern int sfq_push_str(const char* querootdir, const char* quename,
+	const char* execpath, const char* execargs, const char* metadata,
+	const char* soutpath, const char* serrpath, uuid_t uuid,
+	const char* textdata);
+
+extern int sfq_push_bin(const char* querootdir, const char* quename,
+	const char* execpath, const char* execargs, const char* metadata,
+	const char* soutpath, const char* serrpath, uuid_t uuid,
+	const sfq_byte* payload, size_t payload_size);
 
 extern int sfq_get_questate(const char* querootdir, const char* quename, questate_t* questate_ptr);
 extern int sfq_set_questate(const char* querootdir, const char* quename, questate_t questate);
 
+/* stack allocate and string copy */
 #ifdef __GNUC__
 	#define sfq_stradup(org) ({ \
 			char* dst = NULL; \
@@ -134,7 +148,8 @@ extern int sfq_set_questate(const char* querootdir, const char* quename, questat
 			dst; \
 		})
 #else
-		#define sfq_stradup(org)        sfq_safe_strcpy( alloca( strlen( (org) ) + 1 ), (org) )
+		#define sfq_stradup(org) \
+			sfq_safe_strcpy( alloca( strlen( (org) ) + 1 ), (org) )
 
 		extern char* sfq_safe_strcpy(char* dst, const char* org);
 #endif

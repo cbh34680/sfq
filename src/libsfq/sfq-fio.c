@@ -1,6 +1,7 @@
 #include "sfq-lib.h"
 
-static struct sfq_queue_object* open_queue_(const char* querootdir, const char* quename, const char* file_mode)
+static struct sfq_queue_object* open_queue_(const char* querootdir, const char* quename,
+	const char* file_mode)
 {
 SFQ_LIB_INITIALIZE
 
@@ -286,7 +287,8 @@ SFQ_LIB_FINALIZE
 	return SFQ_LIB_IS_SUCCESS();
 }
 
-bool sfq_readqfh(struct sfq_queue_object* qo, struct sfq_file_header* qfh, struct sfq_process_info** procs_ptr)
+bool sfq_readqfh(struct sfq_queue_object* qo, struct sfq_file_header* qfh,
+	struct sfq_process_info** procs_ptr)
 {
 SFQ_LIB_INITIALIZE
 
