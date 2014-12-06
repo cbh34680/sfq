@@ -40,9 +40,7 @@ for example
 ... text("date > /tmp/aaa.txt") is sent automatically to the standard input of "/bin/sh"
 
 [Command Options]
-*
-*
-*
+...
 
 ## License
 * MIT  
