@@ -9,9 +9,13 @@
 #include <sys/stat.h>
 #include <assert.h>
 
+#include <stdarg.h>
+#include <ctype.h>
+
 #ifdef WIN32
 	#include "win32-dummy-build.h"
 #else
+	#include <stdbool.h>
 	#include <inttypes.h>
 	#include <dirent.h>
 	#include <unistd.h>
@@ -62,6 +66,8 @@ struct sfqc_init_option
 
 	const char** commands;
 	int command_num;
+
+	bool quiet;			/* q */
 };
 
 /* pop, shift の表示オプション */
@@ -69,8 +75,11 @@ enum
 {
 	SFQC_PRM_ASRAW			= 0U,	/* ----  */
 	SFQC_PRM_ASJSON			= 1U,	/* json  */
-	SFQC_PRM_WITH_ATTR		= 2U,	/* witha */
-	SFQC_PRM_PAYLOAD_B64		= 4U,	/* b64p  */
+
+	SFQC_PRM_PAYLOAD_BASE64		= 2U,	/* pb64  */
+
+	SFQC_PRM_HEADER_HTTP		= 4U,	/* hdrh */
+	SFQC_PRM_HEADER_CUSTOM		= 8U,	/* hdrc */
 };
 
 #define SFQC_PRM_DEFAULT		(SFQC_PRM_ASRAW)
@@ -85,10 +94,9 @@ extern int sfqc_get_init_option(int argc, char** argv, const char* optstring,
 
 extern void sfqc_free_init_option(struct sfqc_init_option* p);
 
-extern sfq_byte* sfqc_readstdin(size_t* readsize);
-extern sfq_byte* sfqc_readfile(const char* path, size_t* readsize);
-
-extern int sfqc_can_push(const struct sfqc_init_option* p);
+extern char** sfqc_split(char* params_str, char c_delim);
+extern int sfqc_readstdin(sfq_byte** mem_ptr, size_t* memsize_ptr);
+extern int sfqc_readfile(const char* path, sfq_byte** mem_ptr, size_t* memsize_ptr);
 
 #endif
 

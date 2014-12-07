@@ -28,18 +28,10 @@ SFQC_MAIN_INITIALIZE
 	bzero(&opt, sizeof(opt));
 
 /* */
-	irc = sfqc_get_init_option(argc, argv, "D:N:o:e:f:x:a:m:", 0, &opt);
+	irc = sfqc_get_init_option(argc, argv, "D:N:o:e:f:x:a:m:q", 0, &opt);
 	if (irc != 0)
 	{
 		message = "get_init_option: parse error";
-		jumppos = __LINE__;
-		goto EXIT_LABEL;
-	}
-
-	irc = sfqc_can_push(&opt);
-	if (irc != 0)
-	{
-		message = "sfqc_can_push";
 		jumppos = __LINE__;
 		goto EXIT_LABEL;
 	}
@@ -49,26 +41,41 @@ SFQC_MAIN_INITIALIZE
 		if (strcmp(opt.inputfile, "-") == 0)
 		{
 /* read from stdin */
-			mem = sfqc_readstdin(&memsize);
-			if (! mem)
+			irc = sfqc_readstdin(&mem, &memsize);
+			if (irc != 0)
 			{
-				message = "sfqc_readstdin";
+				message = "can't read stdin";
 				jumppos = __LINE__;
 				goto EXIT_LABEL;
 			}
-
 		}
 		else
 		{
 /* read from file */
-			mem = sfqc_readfile(opt.inputfile, &memsize);
-			if (! mem)
+			irc = sfqc_readfile(opt.inputfile, &mem, &memsize);
+			if (irc != 0)
 			{
 				message = "can't read file";
 				jumppos = __LINE__;
 				goto EXIT_LABEL;
 			}
 		}
+	}
+
+if (! mem)
+{
+puts("mem is null");
+}
+
+	if (opt.execpath || opt.execargs || mem)
+	{
+		// go next
+	}
+	else
+	{
+		message = "no inpu data";
+		jumppos = __LINE__;
+		goto EXIT_LABEL;
 	}
 
 	irc = sfq_push_bin(opt.querootdir, opt.quename,
@@ -107,12 +114,15 @@ EXIT_LABEL:
 	free(mem);
 	mem = NULL;
 
-	sfqc_free_init_option(&opt);
-
-	if (message)
+	if (! opt.quiet)
 	{
-		fprintf(stderr, "%s(%d): %s\n", __FILE__, jumppos, message);
+		if (message)
+		{
+			fprintf(stderr, "%s(%d): %s\n", __FILE__, jumppos, message);
+		}
 	}
+
+	sfqc_free_init_option(&opt);
 
 SFQC_MAIN_FINALIZE
 

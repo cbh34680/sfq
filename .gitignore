@@ -3,4 +3,6 @@
 *.o
 *.sh
 *.txt
+*.bin
+*.dat
 noname

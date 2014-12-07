@@ -134,6 +134,7 @@ extern int sfq_push_bin(const char* querootdir, const char* quename,
 
 extern int sfq_get_questate(const char* querootdir, const char* quename, questate_t* questate_ptr);
 extern int sfq_set_questate(const char* querootdir, const char* quename, questate_t questate);
+extern size_t sfq_payload_len(const struct sfq_value* val);
 
 /* stack allocate and string copy */
 #ifdef __GNUC__

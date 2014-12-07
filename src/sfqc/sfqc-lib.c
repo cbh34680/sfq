@@ -1,22 +1,83 @@
 #include "sfqc-lib.h"
 
-sfq_byte* sfqc_readstdin(size_t* readsize)
+char** sfqc_split(char* params_str, char c_delim)
 {
+	int i = 0;
+
+	char** params = NULL;
+	int alloc_num = 0;
+
+	char* pos = NULL;
+	char* token = NULL;
+	char* saveptr = NULL;
+
+	char delim[2] = { c_delim, '\0' };
+
+	if (! params_str)
+	{
+		return NULL;
+	}
+
+/* count ',' */
+	pos = params_str;
+	while (*pos)
+	{
+		if ((*pos) == c_delim)
+		{
+			alloc_num++;
+		}
+		pos++;
+	}
+	alloc_num++;
+
+/* alloc char*[] */
+	params = (char**)calloc(sizeof(char*), alloc_num + 1);
+	if (! params)
+	{
+		return NULL;
+	}
+
+/* set to char*[] */
+	for (i=0, pos=params_str; i<alloc_num; i++, pos=NULL)
+	{
+		token = strtok_r(pos, delim, &saveptr);
+		if (token == NULL)
+		{
+			break;
+		}
+
+		params[i] = token;
+	}
+
+	return params;
+}
+
+int sfqc_readstdin(sfq_byte** mem_ptr, size_t* memsize_ptr)
+{
+	int ret = 1;
+
 	sfq_byte* mem = NULL;
 	size_t memsize = 0;
 	sfq_byte buf[BUFSIZ];
 	size_t n = 1;
 
-	while (n)
+/* */
+	while (! feof(stdin))
 	{
 		n = fread(buf, 1, sizeof(buf), stdin);
+
+		if (ferror(stdin))
+		{
+			goto EXIT_LABEL;
+		}
+
 		if (n)
 		{
 /* allocate mem */
 			mem = realloc(mem, memsize + n + 1);
 			if (! mem)
 			{
-				return NULL;
+				goto EXIT_LABEL;
 			}
 
 			memcpy(&mem[memsize], buf, n);
@@ -24,68 +85,87 @@ sfq_byte* sfqc_readstdin(size_t* readsize)
 		}
 	}
 
-	if (memsize == 0)
+	if (mem)
 	{
-		return NULL;
+		mem[memsize] = '\0';
 	}
 
-	mem[memsize] = '\0';
+	(*mem_ptr) = mem;
 
-	if (readsize)
+	if (memsize_ptr)
 	{
-		(*readsize) = memsize;
+		(*memsize_ptr) = memsize;
 	}
 
-	return mem;
+	ret = 0;
+
+EXIT_LABEL:
+
+	if (ret != 0)
+	{
+		free(mem);
+		mem = NULL;
+	}
+
+	return ret;
 }
 
-sfq_byte* sfqc_readfile(const char* path, size_t* readsize)
+int sfqc_readfile(const char* path, sfq_byte** mem_ptr, size_t* memsize_ptr)
 {
+	int ret = 1;
+
 	sfq_byte* mem = NULL;
 	FILE* fp = NULL;
 	struct stat st;
-	int rc = -1;
 	size_t n = 0;
+	int irc = 0;
 
-	rc = stat(path, &st);
-	if (rc != 0)
+	irc = stat(path, &st);
+	if (irc != 0)
 	{
 		goto EXIT_LABEL;
 	}
 
-	fp = fopen(path, "r");
-	if (! fp)
+	if (st.st_size > 0)
 	{
-		goto EXIT_LABEL;
+		fp = fopen(path, "rb");
+		if (! fp)
+		{
+			goto EXIT_LABEL;
+		}
+
+		mem = malloc(st.st_size + 1);
+		if (! mem)
+		{
+			goto EXIT_LABEL;
+		}
+
+		n = fread(mem, st.st_size, 1, fp);
+		if (n != 1)
+		{
+			goto EXIT_LABEL;
+		}
+
+		mem[st.st_size] = '\0';
+
 	}
 
-	if (st.st_size == 0)
+	(*mem_ptr) = mem;
+
+	if (memsize_ptr)
 	{
-		goto EXIT_LABEL;
+		(*memsize_ptr) = st.st_size;
 	}
 
-	mem = malloc(st.st_size + 1);
-	if (! mem)
-	{
-		goto EXIT_LABEL;
-	}
-
-	n = fread(mem, st.st_size, 1, fp);
-	if (n != 1)
-	{
-		goto EXIT_LABEL;
-	}
-
-	mem[st.st_size] = '\0';
-
-	if (readsize)
-	{
-		(*readsize) = st.st_size;
-	}
-
-	rc = 0;
+	ret = 0;
 
 EXIT_LABEL:
+
+	if (ret != 0)
+	{
+		free(mem);
+		mem = NULL;
+	}
 
 	if (fp)
 	{
@@ -93,39 +173,7 @@ EXIT_LABEL:
 		fp = NULL;
 	}
 
-	if (rc != 0)
-	{
-		free(mem);
-		mem = NULL;
-	}
-
-	return mem;
-}
-
-int sfqc_can_push(const struct sfqc_init_option* p)
-{
-	if (p)
-	{
-		if (p->execpath || p->execargs || p->textdata || p->inputfile)
-		{
-			if (p->textdata && p->inputfile)
-			{
-				/* go next ... false ('-f' && '-t') */
-
-				fprintf(stderr, "%s(%d): '-f' and '-t' can not be specified together\n", __FILE__, __LINE__);
-
-				return 1;
-			}
-			else
-			{
-				return 0;
-			}
-		}
-	}
-
-	fprintf(stderr, "%s(%d): no input data\n", __FILE__, __LINE__);
-
-	return 1;
+	return ret;
 }
 
 /* プログラム引数の解析 */
@@ -309,6 +357,12 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, int use_r
 
 			// 標準エラーのリダイレクト先
 			case 'e': { RESET_STR(optarg ? optarg : "-", p, serrpath); break; }
+
+			case 'q':
+			{
+				p->quiet = true;
+				break;
+			}
 
 /* */
 			case '?':

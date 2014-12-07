@@ -12,6 +12,26 @@ char* sfq_safe_strcpy(char* dst, const char* org)
 }
 #endif
 
+size_t sfq_payload_len(const struct sfq_value* val)
+{
+	size_t ret = 0;
+
+	if (val)
+	{
+		if (val->payload)
+		{
+			ret = val->payload_size;
+
+			if (val->payload_type & SFQ_PLT_NULLTERM)
+			{
+				ret--;
+			}
+		}
+	}
+
+	return ret;
+}
+
 int sfq_reserve_proc(struct sfq_process_info* procs, ushort procs_num)
 {
 	int i = 0;
