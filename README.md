@@ -17,13 +17,13 @@ sfq - Simple File-based Queue
 
 [Run) Queue Type-1]
 
-Queue is static. you can add data (by sfqc-pushc command) and you can get data (by sfqc-shift command)
+Queue is static. you can add data (by sfqc-pusht command) and you can get data (by sfqc-shift command)
 
 for example
 * 1) sfqc-init ("noname" directory is made in "/var/tmp")
-* 2) sfqc-pushc -t aaa
-* 3) sfqc-pushc -t bbb
-* 4) sfqc-pushc -t ccc (added 3 record)
+* 2) sfqc-pusht -t aaa
+* 3) sfqc-pusht -t bbb
+* 4) sfqc-pusht -t ccc (added 3 record)
 * 5) sfqc-list (print records)
 * 6) sfqc-shift (you got "aaa")
 * 7) sfqc-pop (you got "ccc")
@@ -36,7 +36,7 @@ Queue is dynamic. you can add data (by command) but data is automatically retrie
 for example
 * 1) rm -rf /var/tmp/noname (delete the queue that was made before)
 * 2) sfqc-init -P 1
-* 3) sfqc-pushc -t 'date > /tmp/aaa.txt' (you get to tell the current time in "/tmp/aaa.txt")
+* 3) sfqc-pusht -t 'date > /tmp/aaa.txt' (you get to tell the current time in "/tmp/aaa.txt")
 ... text("date > /tmp/aaa.txt") is sent automatically to the standard input of "/bin/sh"
 
 [Command Options]
