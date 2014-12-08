@@ -30,14 +30,14 @@ TARGETE  = sfqc-init sfqc-info sfqc-list sfqc-pusht sfqc-pushb sfqc-pop sfqc-shi
 TARGETL  = libsfqc.so
 TARGET   = $(TARGETL) $(TARGETE)
 
-INCDIRS  = -I../jansson -I../inc -I.
+INCDIRS  = -I../../include -I../inc -I.
 INCFILES = ../inc/sfq.h sfqc-lib.h base64.h
 
 CFLAGS   = -Wall -O2 -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 $(CFLAGSEXT)
 CFLAGSL  = $(CFLAGS) -fPIC
 LDFLAGS  = -Wall -shared
 
-LIBDIRS  = -L../jansson -L../libsfq -L.
+LIBDIRS  = -L../../lib -L../libsfq -L.
 LIBS     = -lsfqc -lsfq -lpthread -lm -luuid -ljansson
 
 #

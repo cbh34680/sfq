@@ -1,21 +1,18 @@
 
-TARGETI = inc/sfq.h
-TARGETL = lib/libsfq.so lib/libsfqc.so lib/libjansson.so
+TARGETI = include/sfq.h
+TARGETL = lib/libsfq.so lib/libsfqc.so
 TARGETE = bin/sfqc-init bin/sfqc-info bin/sfqc-list bin/sfqc-pusht bin/sfqc-pushb bin/sfqc-pop bin/sfqc-shift bin/sfqc-clear bin/sfqc-sets
 
 TARGET  = $(TARGETI) $(TARGETL) $(TARGETE)
 
 all: $(TARGET)
 
-inc/sfq.h: src/inc/sfq.h
-	cp -p $^ inc
+include/sfq.h: src/inc/sfq.h
+	cp -p $^ include
 
 lib/libsfq.so: src/libsfq/libsfq.so
 
 lib/libsfqc.so: src/sfqc/libsfqc.so
-
-lib/libjansson.so: src/jansson/libjansson.so
-	cp -p $^ lib
 
 src/libsfq/libsfq.so:
 	cd src/libsfq/; make $(MAKEOPT); cp -p libsfq.so ../../lib/libsfq.so

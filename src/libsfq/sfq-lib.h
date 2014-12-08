@@ -137,6 +137,7 @@ enum
 	SFQ_PIS_WAITFOR,
 	SFQ_PIS_LOOPSTART,
 	SFQ_PIS_TAKEOUT,
+	SFQ_PIS_LOCK,
 };
 
 /* take out state */

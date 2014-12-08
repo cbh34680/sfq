@@ -76,11 +76,21 @@ static void print_date(const char* key, time_t t)
 	printf("%s: %s" CRLF, key, dt);
 }
 
-static void print_http_headers(const char* content_type, size_t content_length)
+static void print_http_headers(bool exist, const char* content_type, size_t content_length)
 {
 	time_t now = time(NULL);
 
-	printf("HTTP/1.0 200 OK" CRLF);
+	printf("HTTP/1.0 ");
+
+	if (exist)
+	{
+		printf("200 OK" CRLF);
+	}
+	else
+	{
+		printf("204 No Content" CRLF);
+	}
+
 	printf("Content-Type: %s" CRLF, content_type);
 	printf("Content-Length: %zu" CRLF, content_length);
 
@@ -221,7 +231,7 @@ static void print_raw(uint printmethod, const struct sfq_value* val)
 		const char* content_type = text_output
 			? "text/plain; charset=UTF-8" : "application/octed-stream";
 
-		print_http_headers(content_type, data_len);
+		print_http_headers(true, content_type, data_len);
 
 		if (! text_output)
 		{
@@ -414,7 +424,7 @@ static void print_by_json(uint printmethod, const struct sfq_value* val)
 
 	if (http)
 	{
-		print_http_headers("application/json", strlen(jsontext));
+		print_http_headers(true, "application/json", strlen(jsontext));
 	}
 
 	if (adda)
@@ -549,7 +559,7 @@ SFQC_MAIN_INITIALIZE
 
 			if (printmethod & SFQC_PRM_HTTP_HEADER)
 			{
-				print_http_headers("text/plain; charset=UTF-8", strlen(message));
+				print_http_headers(false, "text/plain; charset=UTF-8", strlen(message));
 				printf(CRLF);
 				printf("%s" CRLF, message);
 

@@ -43,6 +43,8 @@
 	#define SFQC_MAIN_FINALIZE
 #endif
 
+#define SFQC_RESERVE_SLOT_MIN		(4)
+
 
 /* プログラム引数 */
 struct sfqc_init_option
@@ -51,7 +53,7 @@ struct sfqc_init_option
 	char* quename;			/* N */
 	size_t filesize_limit;		/* S */
 	size_t payloadsize_limit;	/* L */
-	ushort procs_num;		/* R */
+	ushort boota_proc_num;		/* B */
 
 	char* execpath;			/* x */
 	char* execargs;			/* a */

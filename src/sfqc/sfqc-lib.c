@@ -322,7 +322,7 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, int use_r
 
 				break;
 			}
-			case 'R':
+			case 'B':
 			{
 				/* 最大プロセス数 */
 				char* e = NULL;
@@ -340,7 +340,7 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, int use_r
 					snprintf(message, sizeof(message), "'%c': size over (%u)", opt, USHRT_MAX);
 				}
 
-				p->procs_num = (ushort)ul;
+				p->boota_proc_num = (ushort)ul;
 
 				break;
 			}

@@ -1,7 +1,7 @@
 #include "sfq-lib.h"
 
-int sfq_init(const char* querootdir, const char* quename,
-	size_t filesize_limit, size_t payloadsize_limit, ushort procs_num, questate_t questate)
+int sfq_init(const char* querootdir, const char* quename, size_t filesize_limit,
+	size_t payloadsize_limit, ushort procs_num, ushort boota_proc_num, questate_t questate)
 {
 SFQ_LIB_INITIALIZE
 
@@ -22,10 +22,17 @@ SFQ_LIB_INITIALIZE
 	eh_size = sizeof(struct sfq_e_header);
 	pi_size = sizeof(struct sfq_process_info);
 
+	bzero(&qfh, qfh_size);
+
+/* */
+	if (procs_num < boota_proc_num)
+	{
+		SFQ_FAIL(EA_OVERLIMIT, "bootable process must not be larger than process num");
+	}
+
 /*
 queue header の初期値を設定
 */
-	bzero(&qfh, qfh_size);
 
 	strcpy(qfh.magicstr, SFQ_MAGICSTR);
 	qfh.qfh_size = qfh_size;
@@ -42,7 +49,7 @@ queue header の初期値を設定
 		{
 			if (procs_num > sysmax)
 			{
-				SFQ_FAIL(EA_OVERLIMIT, "procs_num");
+				SFQ_FAIL(EA_OVERLIMIT, "process num is greater than system limit");
 			}
 		}
 
@@ -76,6 +83,25 @@ queue header の初期値を設定
 	if (! qo)
 	{
 		SFQ_FAIL(EA_OPENFILE, "sfq_create_queue");
+	}
+
+	if (procs)
+	{
+		if (procs_num > boota_proc_num)
+		{
+			int i = 0;
+
+/*
+起動可能数を超えたスロットはロックしておく
+*/
+			for (i=0; i<(procs_num - boota_proc_num); i++)
+			{
+				struct sfq_process_info* proc = &procs[(procs_num - 1) - i];
+
+				proc->procstate = SFQ_PIS_LOCK;
+				proc->updtime = qo->opentime;
+			}
+		}
 	}
 
 /* initialize queue-header */

@@ -39,25 +39,35 @@ void sfq_print_procs(const struct sfq_process_info* procs, size_t procs_num)
 
 	for (i=0; i<procs_num; i++)
 	{
-		fprintf(stderr, "- [process-%d]\n", i);
-		fprintf(stderr, "- ppid                        = %u\n",  procs[i].ppid);
-		fprintf(stderr, "- pid                         = %u\n",  procs[i].pid);
-		fprintf(stderr, "- procstate                   = %u\n",  procs[i].procstate);
-		fprintf(stderr, "- updtime                     = %zu\n", procs[i].updtime);
-		fprintf(stderr, "- start_cnt                   = %zu\n", procs[i].start_cnt);
-		fprintf(stderr, "- loop_cnt                    = %zu\n", procs[i].loop_cnt);
+		const struct sfq_process_info* proc = &procs[i];
 
-		fprintf(stderr, "- tos_success                 = %zu\n", procs[i].tos_success);
-		fprintf(stderr, "- tos_appexit_non0            = %zu\n", procs[i].tos_appexit_non0);
-		fprintf(stderr, "- tos_cantexec                = %zu\n", procs[i].tos_cantexec);
-		fprintf(stderr, "- tos_fault                   = %zu\n", procs[i].tos_fault);
+		if (proc->procstate == SFQ_PIS_LOCK)
+		{
+			continue;
+		}
+
+		fprintf(stderr, "- [process-%d]\n", i);
+		fprintf(stderr, "- ppid                        = %u\n",  proc->ppid);
+		fprintf(stderr, "- pid                         = %u\n",  proc->pid);
+		fprintf(stderr, "- procstate                   = %u\n",  proc->procstate);
+		fprintf(stderr, "- updtime                     = %zu\n", proc->updtime);
+		fprintf(stderr, "- start_cnt                   = %zu\n", proc->start_cnt);
+		fprintf(stderr, "- loop_cnt                    = %zu\n", proc->loop_cnt);
+
+		fprintf(stderr, "- tos_success                 = %zu\n", proc->tos_success);
+		fprintf(stderr, "- tos_appexit_non0            = %zu\n", proc->tos_appexit_non0);
+		fprintf(stderr, "- tos_cantexec                = %zu\n", proc->tos_cantexec);
+		fprintf(stderr, "- tos_fault                   = %zu\n", proc->tos_fault);
 
 		if ((i + 1) < procs_num)
 		{
 			fprintf(stderr, "-\n");
 		}
+		else
+		{
+			fprintf(stderr, "\n");
+		}
 	}
-	fprintf(stderr, "\n");
 }
 
 void sfq_print_sizes(void)

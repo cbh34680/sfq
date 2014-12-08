@@ -1,0 +1,10 @@
+prefix=/home/devuser/dev
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: sfq
+Description: Library for manipulating queue data
+Version: 0.11
+Libs: -L${libdir} -lsfq
+Cflags: -I${includedir}

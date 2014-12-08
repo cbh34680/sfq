@@ -1,3 +1,5 @@
+/*.so
+/*.so.*
 /targetver.h
 /dllmain.cpp
 /libsfq.cpp

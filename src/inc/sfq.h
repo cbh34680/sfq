@@ -107,8 +107,8 @@ struct sfq_value
 
 typedef void (*sfq_map_callback)(ulong order, const struct sfq_value* val, void* userdata);
 
-extern int sfq_init(const char* querootdir, const char* quename,
-	size_t filesize_limit, size_t payloadsize_limit, ushort max_process, questate_t questate);
+extern int sfq_init(const char* querootdir, const char* quename, size_t filesize_limit,
+	size_t payloadsize_limit, ushort procs_num, ushort boota_proc_num, questate_t questate);
 
 extern int sfq_map(const char* querootdir, const char* quename,
 	sfq_map_callback callback, void* userdata);
