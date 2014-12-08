@@ -13,6 +13,8 @@ int main(int argc, char** argv)
 	char* message = NULL;
 	int jumppos = 0;
 
+	sfq_byte* mem = NULL;
+
 	atexit(release_heap);
 
 /* */
@@ -22,12 +24,42 @@ SFQC_MAIN_INITIALIZE
 	bzero(&opt, sizeof(opt));
 
 /* */
-	irc = sfqc_get_init_option(argc, argv, "D:N:o:e:x:a:m:t:q", 0, &opt);
+	irc = sfqc_get_init_option(argc, argv, "D:N:o:e:f:x:a:m:t:q", 0, &opt);
 	if (irc != 0)
 	{
 		message = "get_init_option: parse error";
 		jumppos = __LINE__;
 		goto EXIT_LABEL;
+	}
+
+
+	if (opt.inputfile)
+	{
+		if (strcmp(opt.inputfile, "-") == 0)
+		{
+/* read from stdin */
+			irc = sfqc_readstdin(&mem, NULL);
+			if (irc != 0)
+			{
+				message = "can't read stdin";
+				jumppos = __LINE__;
+				goto EXIT_LABEL;
+			}
+		}
+		else
+		{
+/* read from file */
+			irc = sfqc_readfile(opt.inputfile, &mem, NULL);
+			if (irc != 0)
+			{
+				message = "can't read file";
+				jumppos = __LINE__;
+				goto EXIT_LABEL;
+			}
+		}
+
+		free(opt.textdata);
+		opt.textdata = (char*)mem;
 	}
 
 	if (opt.execpath || opt.execargs || opt.textdata)
@@ -41,8 +73,8 @@ SFQC_MAIN_INITIALIZE
 		goto EXIT_LABEL;
 	}
 
-	irc = sfq_push_str(opt.querootdir, opt.quename,
-		opt.execpath, opt.execargs, opt.metadata,
+	irc = sfq_push_text(opt.querootdir, opt.quename,
+		opt.execpath, opt.execargs, opt.metatext,
 		opt.soutpath, opt.serrpath,
 		NULL,
 		opt.textdata);
@@ -73,6 +105,9 @@ SFQC_MAIN_INITIALIZE
 	}
 
 EXIT_LABEL:
+
+	free(mem);
+	mem = NULL;
 
 	if (! opt.quiet)
 	{

@@ -291,8 +291,8 @@ SFQ_LIB_FINALIZE
 	return SFQ_LIB_RC();
 }
 
-int sfq_push_str(const char* querootdir, const char* quename,
-	const char* execpath, const char* execargs, const char* metadata,
+int sfq_push_text(const char* querootdir, const char* quename,
+	const char* execpath, const char* execargs, const char* metatext,
 	const char* soutpath, const char* serrpath, uuid_t uuid,
 	const char* textdata)
 {
@@ -306,7 +306,7 @@ int sfq_push_str(const char* querootdir, const char* quename,
  */
 	val.execpath = (char*)execpath;
 	val.execargs = (char*)execargs;
-	val.metadata = (char*)metadata;
+	val.metatext = (char*)metatext;
 	val.soutpath = (char*)soutpath;
 	val.serrpath = (char*)serrpath;
 	val.payload_type = SFQ_PLT_CHARARRAY | SFQ_PLT_NULLTERM;
@@ -326,8 +326,8 @@ int sfq_push_str(const char* querootdir, const char* quename,
 	return irc;
 }
 
-int sfq_push_bin(const char* querootdir, const char* quename,
-	const char* execpath, const char* execargs, const char* metadata,
+int sfq_push_binary(const char* querootdir, const char* quename,
+	const char* execpath, const char* execargs, const char* metatext,
 	const char* soutpath, const char* serrpath, uuid_t uuid,
 	const sfq_byte* payload, size_t payload_size)
 {
@@ -341,7 +341,7 @@ int sfq_push_bin(const char* querootdir, const char* quename,
  */
 	val.execpath = (char*)execpath;
 	val.execargs = (char*)execargs;
-	val.metadata = (char*)metadata;
+	val.metatext = (char*)metatext;
 	val.soutpath = (char*)soutpath;
 	val.serrpath = (char*)serrpath;
 	val.payload_type = SFQ_PLT_BINARY;

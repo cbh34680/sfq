@@ -166,7 +166,7 @@ void sfq_print_e_header(const struct sfq_e_header* p)
 	fprintf(stderr, "#\n");
 	fprintf(stderr, "# element.execpath_size       = %u\n",  p->execpath_size);
 	fprintf(stderr, "# element.execargs_size       = %u\n",  p->execargs_size);
-	fprintf(stderr, "# element.metadata_size       = %u\n",  p->metadata_size);
+	fprintf(stderr, "# element.metatext_size       = %u\n",  p->metatext_size);
 	fprintf(stderr, "# element.payload_size        = %zu\n", p->payload_size);
 	fprintf(stderr, "# element.elmmargin_          = %u\n",  p->elmmargin_);
 	fprintf(stderr, "# element.elmsize_            = %zu\n", p->elmsize_);

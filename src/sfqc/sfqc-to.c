@@ -5,11 +5,267 @@
 
 #define CRLF	"\r\n"
 
+static void to_camelcase(char* p)
+{
+	char* pos = p;
+	bool next_upper = true;
+
+	if (! p)
+	{
+		return;
+	}
+
+	while (*pos)
+	{
+		if (((*pos) == ' ') || ((*pos) == ':'))
+		{
+			break;
+		}
+
+		if ((*pos) == '-')
+		{
+			next_upper = true;
+		}
+		else
+		{
+			if (next_upper)
+			{
+				(*pos) = toupper(*pos);
+				next_upper = false;
+			}
+		}
+
+		pos++;
+	}
+}
+
+/*
+static void chomp(char* p)
+{
+	char* pos = NULL;
+
+	if (! p)
+	{
+		return;
+	}
+
+	pos = &p[strlen(p) - 1];
+
+	while (pos != p)
+	{
+		if ((*pos) != '\n')
+		{
+			break;
+		}
+
+		(*pos) = '\0';
+
+		pos--;
+	}
+}
+*/
+
+static void print_date(const char* key, time_t t)
+{
+	struct tm tmp;
+	char dt[64];
+
+	gmtime_r(&t, &tmp);
+	strftime(dt, sizeof dt, "%a, %d %b %Y %H:%M:%S %Z", &tmp);
+
+	printf("%s: %s" CRLF, key, dt);
+}
+
+static void print_http_headers(const char* content_type, size_t content_length)
+{
+	time_t now = time(NULL);
+
+	printf("HTTP/1.0 200 OK" CRLF);
+	printf("Content-Type: %s" CRLF, content_type);
+	printf("Content-Length: %zu" CRLF, content_length);
+
+	print_date("Date", now);
+	print_date("Expires", now + 10);
+/*
+	printf("Date: %s" CRLF, dt);
+	printf("Expires: -1" CRLF);
+	printf("Cache-Control: no-cache" CRLF);
+*/
+	printf("Connection: close" CRLF);
+}
+
+/* ------------------------------------------------------------------------------- */
+// outputtype=plain/text
+
+static void h_printf(bool http, const char* org_format, ...)
+{
+	va_list arg;
+	char* format = NULL;
+
+	format = sfq_stradup(org_format);
+
+	if (http)
+	{
+		printf("X-Sfq-");
+		to_camelcase(format);
+	}
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wvarargs"
+	va_start(arg, format);
+#pragma GCC diagnostic pop
+	vprintf(format, arg);
+	va_end(arg);
+}
+
+static void print_custom_headers(bool http, const struct sfq_value* val,
+	size_t data_len, bool pbin, size_t pb64text_len)
+{
+	char uuid_s[36 + 1] = "";
+
+/* */
+	uuid_unparse(val->uuid, uuid_s);
+
+	h_printf(http, "id: %zu\n", val->id);
+	h_printf(http, "pushtime: %zu\n", val->pushtime);
+	h_printf(http, "uuid: %s\n", uuid_s);
+
+	if (val->execpath)
+	{
+		h_printf(http, "execpath: %s\n", val->execpath);
+	}
+
+	if (val->execargs)
+	{
+		h_printf(http, "execargs: %s\n", val->execargs);
+	}
+
+	if (val->metatext)
+	{
+		h_printf(http, "metatext: %s\n", val->metatext);
+	}
+
+	if (val->soutpath)
+	{
+		h_printf(http, "soutpath: %s\n", val->soutpath);
+	}
+
+	if (val->serrpath)
+	{
+		h_printf(http, "serrpath: %s\n", val->serrpath);
+	}
+
+	h_printf(http, "payload-length: %zu\n", data_len);
+	h_printf(http, "payload-size-in-element: %zu\n", val->payload_size);
+
+	if (val->payload)
+	{
+		h_printf(http, "payload-type: %s\n", pbin ? "binary" : "text");
+	}
+
+	h_printf(http, "payload-encoding: %s\n", pb64text_len ? "base64" : "none");
+
+	if (pb64text_len)
+	{
+		h_printf(http, "payload-base64-length: %zu\n", pb64text_len);
+	}
+}
+
+static void print_raw(uint printmethod, const struct sfq_value* val)
+{
+	char* message = NULL;
+	int jumppos = 0;
+
+	const sfq_byte* data = NULL;
+	size_t data_len = 0;
+
+	char* pb64text = NULL;
+	size_t pb64text_len = 0;
+
+	size_t iosize = 0;
+
+	bool pbin = (val->payload_type & SFQ_PLT_BINARY);
+	bool pb64 = (printmethod & SFQC_PRM_PAYLOAD_BASE64);
+	bool adda = (printmethod & SFQC_PRM_ADD_ATTRIBUTE);
+	bool http = (printmethod & SFQC_PRM_HTTP_HEADER);
+
+	bool text_output = pb64 ? true : (val->payload_type & SFQ_PLT_CHARARRAY);
+
+/* */
+	char uuid_s[36 + 1] = "";
+
+/* */
+	uuid_unparse(val->uuid, uuid_s);
+
+	data = val->payload;
+	data_len = sfq_payload_len(val);
+
+	if (pb64)
+	{
+		pb64text = (char*)base64_encode(data, data_len, &pb64text_len);
+		if (! pb64text)
+		{
+			message = "base64_encode";
+			jumppos = __LINE__;
+			goto EXIT_LABEL;
+		}
+
+		//chomp(pb64text);
+
+		data = (sfq_byte*)pb64text;
+		data_len = strlen(pb64text);
+	}
+
+	if (http)
+	{
+		const char* content_type = text_output
+			? "text/plain; charset=UTF-8" : "application/octed-stream";
+
+		print_http_headers(content_type, data_len);
+
+		if (! text_output)
+		{
+			printf("Content-Disposition: attachment; filename=\"%s.dat\"" CRLF, uuid_s);
+		}
+	}
+
+	if (adda)
+	{
+		print_custom_headers(http, val, data_len, pbin, pb64text_len);
+	}
+
+	if (http || adda)
+	{
+		printf(CRLF);
+	}
+
+	if (data_len)
+	{
+		iosize = fwrite(data, data_len, 1, stdout);
+		if (! iosize)
+		{
+			message = "fwrite";
+			jumppos = __LINE__;
+			goto EXIT_LABEL;
+		}
+	}
+
+EXIT_LABEL:
+
+	free(pb64text);
+	pb64text = NULL;
+
+	if (message)
+	{
+		fprintf(stderr, "%s(%d): %s\n", __FILE__, jumppos, message);
+	}
+}
+
 /* ------------------------------------------------------------------------------- */
 // outputtype=json
 
-static char* create_json_string(const struct sfq_value* val, bool hdrc,
-	const sfq_byte* data, size_t data_len)
+static char* create_json_string(const struct sfq_value* val, bool pbin, bool pb64, size_t pb64text_len,
+	bool adda, const sfq_byte* data, size_t data_len)
 {
 	int irc = 1;
 
@@ -24,10 +280,11 @@ static char* create_json_string(const struct sfq_value* val, bool hdrc,
 /* */
 	uuid_unparse(val->uuid, uuid_s);
 
+
 /* build json object */
 	json = json_object();
 
-	if (hdrc)
+	if (adda)
 	{
 		json_object_set_new(json, "id", json_integer(val->id));
 		json_object_set_new(json, "uuid", json_string(uuid_s));
@@ -43,9 +300,9 @@ static char* create_json_string(const struct sfq_value* val, bool hdrc,
 			json_object_set_new(json, "execargs", json_string(val->execargs));
 		}
 
-		if (val->metadata)
+		if (val->metatext)
 		{
-			json_object_set_new(json, "metadata", json_string(val->metadata));
+			json_object_set_new(json, "metatext", json_string(val->metatext));
 		}
 
 		if (val->soutpath)
@@ -56,6 +313,22 @@ static char* create_json_string(const struct sfq_value* val, bool hdrc,
 		if (val->serrpath)
 		{
 			json_object_set_new(json, "serrpath", json_string(val->serrpath));
+		}
+
+		json_object_set_new(json, "payload-length", json_integer(data_len));
+		json_object_set_new(json, "payload-size-in-element", json_integer(val->payload_size));
+
+		if (val->payload)
+		{
+			json_object_set_new(json, "payload-type", json_string(pbin ? "binary" : "text"));
+		}
+
+		json_object_set_new(json, "payload-encoding",
+			json_string(pb64text_len ? "base64" : "none"));
+
+		if (pb64text_len)
+		{
+			json_object_set_new(json, "payload-base64-length", json_integer(pb64text_len));
 		}
 	}
 
@@ -108,8 +381,8 @@ static void print_by_json(uint printmethod, const struct sfq_value* val)
 
 	bool pbin = (val->payload_type & SFQ_PLT_BINARY);
 	bool pb64 = (printmethod & SFQC_PRM_PAYLOAD_BASE64);
-	bool hdrc = (printmethod & SFQC_PRM_HEADER_CUSTOM);
-	bool hdrh = (printmethod & SFQC_PRM_HEADER_HTTP);
+	bool adda = (printmethod & SFQC_PRM_ADD_ATTRIBUTE);
+	bool http = (printmethod & SFQC_PRM_HTTP_HEADER);
 
 /* */
 	data = val->payload;
@@ -125,11 +398,13 @@ static void print_by_json(uint printmethod, const struct sfq_value* val)
 			goto EXIT_LABEL;
 		}
 
+		//chomp(pb64text);
+
 		data = (sfq_byte*)pb64text;
-		data_len = pb64text_len;
+		data_len = strlen(pb64text);
 	}
 
-	jsontext = create_json_string(val, hdrc, data, data_len);
+	jsontext = create_json_string(val, pbin, pb64, pb64text_len, adda, data, data_len);
 	if (! jsontext)
 	{
 		message = "create_json_string";
@@ -137,11 +412,18 @@ static void print_by_json(uint printmethod, const struct sfq_value* val)
 		goto EXIT_LABEL;
 	}
 
-	if (hdrh)
+	if (http)
 	{
-		printf("HTTP/1.0 200 OK" CRLF);
-		printf("Content-Type: application/json" CRLF);
-		printf("Content-Length: %zu" CRLF, strlen(jsontext));
+		print_http_headers("application/json", strlen(jsontext));
+	}
+
+	if (adda)
+	{
+		print_custom_headers(http, val, data_len, pbin, pb64text_len);
+	}
+
+	if (http || adda)
+	{
 		printf(CRLF);
 	}
 
@@ -154,174 +436,6 @@ EXIT_LABEL:
 
 	free(jsontext);
 	jsontext = NULL;
-
-	if (message)
-	{
-		fprintf(stderr, "%s(%d): %s\n", __FILE__, jumppos, message);
-	}
-}
-
-/* ------------------------------------------------------------------------------- */
-// outputtype=plain/text
-
-static void h_printf(bool hdrh, const char* org_format, ...)
-{
-	va_list arg;
-	char* format = NULL;
-
-	format = sfq_stradup(org_format);
-
-	if (hdrh)
-	{
-		printf("X-Sfq-");
-
-		char* pos = format;
-		bool next_upper = true;
-
-		while (*pos)
-		{
-			if (((*pos) == ' ') || ((*pos) == ':'))
-			{
-				break;
-			}
-
-			if ((*pos) == '-')
-			{
-				next_upper = true;
-			}
-			else
-			{
-				if (next_upper)
-				{
-					(*pos) = toupper(*pos);
-					next_upper = false;
-				}
-			}
-
-			pos++;
-		}
-	}
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wvarargs"
-	va_start(arg, format);
-#pragma GCC diagnostic pop
-	vprintf(format, arg);
-	va_end(arg);
-}
-
-static void print_by_text(uint printmethod, const struct sfq_value* val)
-{
-	char* message = NULL;
-	int jumppos = 0;
-
-	const sfq_byte* data = NULL;
-	size_t data_len = 0;
-
-	char* pb64text = NULL;
-	size_t pb64text_len = 0;
-
-	size_t iosize = 0;
-
-	bool pb64 = (printmethod & SFQC_PRM_PAYLOAD_BASE64);
-	bool hdrc = (printmethod & SFQC_PRM_HEADER_CUSTOM);
-	bool hdrh = (printmethod & SFQC_PRM_HEADER_HTTP);
-
-	bool is_text = pb64 ? true : (val->payload_type & SFQ_PLT_CHARARRAY);
-
-/* */
-	char uuid_s[36 + 1] = "";
-
-/* */
-	uuid_unparse(val->uuid, uuid_s);
-
-	data = val->payload;
-	data_len = sfq_payload_len(val);
-
-	if (pb64)
-	{
-		pb64text = (char*)base64_encode(data, data_len, &pb64text_len);
-		if (! pb64text)
-		{
-			message = "base64_encode";
-			jumppos = __LINE__;
-			goto EXIT_LABEL;
-		}
-
-		data = (sfq_byte*)pb64text;
-		data_len = pb64text_len;
-	}
-
-	if (hdrh)
-	{
-		printf("HTTP/1.0 200 OK" CRLF);
-		printf("Content-Type: %s" CRLF, is_text ? "text/plain" : "application/octed-stream");
-		printf("Content-Length: %zu" CRLF, data_len);
-	}
-
-	if (hdrc)
-	{
-		h_printf(hdrh, "id: %zu\n", val->id);
-		h_printf(hdrh, "pushtime: %zu\n", val->pushtime);
-		h_printf(hdrh, "uuid: %s\n", uuid_s);
-
-		if (val->execpath)
-		{
-			h_printf(hdrh, "execpath: %s\n", val->execpath);
-		}
-
-		if (val->execargs)
-		{
-			h_printf(hdrh, "execargs: %s\n", val->execargs);
-		}
-
-		if (val->metadata)
-		{
-			h_printf(hdrh, "metadata: %s\n", val->metadata);
-		}
-
-		if (val->soutpath)
-		{
-			h_printf(hdrh, "soutpath: %s\n", val->soutpath);
-		}
-
-		if (val->serrpath)
-		{
-			h_printf(hdrh, "serrpath: %s\n", val->serrpath);
-		}
-	}
-
-	if (hdrh || hdrc)
-	{
-		printf(CRLF);
-	}
-
-	iosize = fwrite(data, data_len, 1, stdout);
-	if (! iosize)
-	{
-		message = "fwrite";
-		jumppos = __LINE__;
-		goto EXIT_LABEL;
-	}
-
-	if (is_text)
-	{
- 		if (pb64)
-		{
-/*
-base64 のときは data の最後が改行文字なのでここでは出力しない
-*/
-		}
-		else
-		{
-			printf(CRLF);
-		}
-	}
-
-EXIT_LABEL:
-
-	free(pb64text);
-	pb64text = NULL;
 
 	if (message)
 	{
@@ -355,13 +469,13 @@ static int parse_printmethod(const char* arg, uint* printmethod_ptr)
 				{
 					printmethod |= SFQC_PRM_ASJSON;
 				}
-				else if (strcmp(*pos, "hdrc") == 0)
+				else if (strcmp(*pos, "adda") == 0)
 				{
-					printmethod |= SFQC_PRM_HEADER_CUSTOM;
+					printmethod |= SFQC_PRM_ADD_ATTRIBUTE;
 				}
-				else if (strcmp(*pos, "hdrh") == 0)
+				else if (strcmp(*pos, "http") == 0)
 				{
-					printmethod |= SFQC_PRM_HEADER_HTTP;
+					printmethod |= SFQC_PRM_HTTP_HEADER;
 				}
 				else if (strcmp(*pos, "pb64") == 0)
 				{
@@ -416,10 +530,34 @@ SFQC_MAIN_INITIALIZE
 		goto EXIT_LABEL;
 	}
 
+	irc = parse_printmethod(opt.printmethod, &printmethod);
+	if (irc != 0)
+	{
+		message = "parse_printmethod";
+		jumppos = __LINE__;
+		goto EXIT_LABEL;
+	}
+
 	irc = takeoutfunc(opt.querootdir, opt.quename, &val);
 	if (irc != 0)
 	{
-		message = (irc == SFQ_RC_NO_ELEMENT) ? "element does not exist in the queue" : "takeout";
+		message = "takeout";
+
+		if (irc == SFQ_RC_NO_ELEMENT)
+		{
+			message = "element does not exist in the queue";
+
+			if (printmethod & SFQC_PRM_HTTP_HEADER)
+			{
+				print_http_headers("text/plain; charset=UTF-8", strlen(message));
+				printf(CRLF);
+				printf("%s" CRLF, message);
+
+				message = NULL;
+			}
+
+		}
+
 		jumppos = __LINE__;
 		goto EXIT_LABEL;
 	}
@@ -439,19 +577,11 @@ SFQ_DEBUG_BUILD
 
 	puts("=");
 	printf("%zu\n%zu\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n",
-		pval.id, pval.pushtime, uuid_s, pval.execpath, pval.execargs, pval.metadata,
+		pval.id, pval.pushtime, uuid_s, pval.execpath, pval.execargs, pval.metatext,
 		pval.soutpath, pval.serrpath,
 		pval.payload);
 	puts("=");
 #endif
-
-	irc = parse_printmethod(opt.printmethod, &printmethod);
-	if (irc != 0)
-	{
-		message = "parse_printmethod";
-		jumppos = __LINE__;
-		goto EXIT_LABEL;
-	}
 
 	if (printmethod & SFQC_PRM_ASJSON)
 	{
@@ -459,7 +589,7 @@ SFQ_DEBUG_BUILD
 	}
 	else
 	{
-		print_by_text(printmethod, &val);
+		print_raw(printmethod, &val);
 	}
 
 EXIT_LABEL:

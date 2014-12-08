@@ -56,7 +56,7 @@ struct sfqc_init_option
 	char* execpath;			/* x */
 	char* execargs;			/* a */
 	char* textdata;			/* t */
-	char* metadata;			/* m */
+	char* metatext;			/* m */
 	char* inputfile;		/* f */
 
 	char* soutpath;			/* o */
@@ -73,13 +73,13 @@ struct sfqc_init_option
 /* pop, shift の表示オプション */
 enum
 {
-	SFQC_PRM_ASRAW			= 0U,	/* ----  */
-	SFQC_PRM_ASJSON			= 1U,	/* json  */
+	SFQC_PRM_ASRAW			= 0U,	/* ---- */
+	SFQC_PRM_ASJSON			= 1U,	/* json */
 
-	SFQC_PRM_PAYLOAD_BASE64		= 2U,	/* pb64  */
+	SFQC_PRM_PAYLOAD_BASE64		= 2U,	/* pb64 */
 
-	SFQC_PRM_HEADER_HTTP		= 4U,	/* hdrh */
-	SFQC_PRM_HEADER_CUSTOM		= 8U,	/* hdrc */
+	SFQC_PRM_HTTP_HEADER		= 4U,	/* http */
+	SFQC_PRM_ADD_ATTRIBUTE		= 8U,	/* adda */
 };
 
 #define SFQC_PRM_DEFAULT		(SFQC_PRM_ASRAW)

@@ -381,7 +381,7 @@ SFQ_LIB_FINALIZE
  *    - payload  (eh.payload_size  >= 0)
  *    - execpath (eh.execpath_size >= 0) ... nullterm string
  *    - execargs (eh.execargs_size >= 0) ... nullterm string
- *    - metadata (eh.metadata_size >= 0) ... nullterm string
+ *    - metatext (eh.metatext_size >= 0) ... nullterm string
  *    - soutpath (eh.soutpath_size >= 0) ... nullterm string
  *    - serrpath (eh.serrpath_size >= 0) ... nullterm string
  *
@@ -440,15 +440,15 @@ SFQ_LIB_INITIALIZE
 		}
 	}
 
-	if (ioeb->eh.metadata_size)
+	if (ioeb->eh.metatext_size)
 	{
-		assert(ioeb->metadata);
+		assert(ioeb->metatext);
 
-	/* w: metadata */
-		iosize = fwrite(ioeb->metadata, ioeb->eh.metadata_size, 1, qo->fp);
+	/* w: metatext */
+		iosize = fwrite(ioeb->metatext, ioeb->eh.metatext_size, 1, qo->fp);
 		if (iosize != 1)
 		{
-			SFQ_FAIL(ES_FILEIO, "FILE-WRITE(metadata)");
+			SFQ_FAIL(ES_FILEIO, "FILE-WRITE(metatext)");
 		}
 	}
 
@@ -493,7 +493,7 @@ SFQ_LIB_INITIALIZE
 
 	char* execpath = NULL;
 	char* execargs = NULL;
-	char* metadata = NULL;
+	char* metatext = NULL;
 	sfq_byte* payload = NULL;
 	char* soutpath = NULL;
 	char* serrpath = NULL;
@@ -570,19 +570,19 @@ SFQ_LIB_INITIALIZE
 		}
 	}
 
-	if (ioeb->eh.metadata_size)
+	if (ioeb->eh.metatext_size)
 	{
-	/* w: metadata */
-		metadata = malloc(ioeb->eh.metadata_size);
-		if (! metadata)
+	/* w: metatext */
+		metatext = malloc(ioeb->eh.metatext_size);
+		if (! metatext)
 		{
-			SFQ_FAIL(ES_MEMALLOC, "ALLOC(metadata)");
+			SFQ_FAIL(ES_MEMALLOC, "ALLOC(metatext)");
 		}
 
-		iosize = fread(metadata, ioeb->eh.metadata_size, 1, qo->fp);
+		iosize = fread(metatext, ioeb->eh.metatext_size, 1, qo->fp);
 		if (iosize != 1)
 		{
-			SFQ_FAIL(ES_FILEIO, "FILE-READ(metadata)");
+			SFQ_FAIL(ES_FILEIO, "FILE-READ(metatext)");
 		}
 	}
 
@@ -621,7 +621,7 @@ SFQ_LIB_INITIALIZE
 	ioeb->payload = payload;
 	ioeb->execpath = execpath;
 	ioeb->execargs = execargs;
-	ioeb->metadata = metadata;
+	ioeb->metatext = metatext;
 	ioeb->soutpath = soutpath;
 	ioeb->serrpath = serrpath;
 
@@ -632,7 +632,7 @@ SFQ_LIB_CHECKPOINT
 		free(payload);
 		free(execpath);
 		free(execargs);
-		free(metadata);
+		free(metatext);
 		free(soutpath);
 		free(serrpath);
 	}
@@ -652,7 +652,7 @@ void sfq_free_ioelm_buff(struct sfq_ioelm_buff* ioeb)
 	free(ioeb->payload);
 	free(ioeb->execpath);
 	free(ioeb->execargs);
-	free(ioeb->metadata);
+	free(ioeb->metatext);
 	free(ioeb->soutpath);
 	free(ioeb->serrpath);
 

@@ -97,7 +97,7 @@ struct sfq_value
 	uuid_t uuid;				/* 16 */
 	char* execpath;				/* 8 */
 	char* execargs;				/* 8 */
-	char* metadata;				/* 8 */
+	char* metatext;				/* 8 */
 	char* soutpath;				/* 8 */
 	char* serrpath;				/* 8 */
 	payload_type_t payload_type;		/* 1 */
@@ -122,13 +122,13 @@ extern int sfq_alloc_print_value(const struct sfq_value* bin, struct sfq_value* 
 extern void sfq_free_value(struct sfq_value* p);
 
 /* short-cut */
-extern int sfq_push_str(const char* querootdir, const char* quename,
-	const char* execpath, const char* execargs, const char* metadata,
+extern int sfq_push_text(const char* querootdir, const char* quename,
+	const char* execpath, const char* execargs, const char* metatext,
 	const char* soutpath, const char* serrpath, uuid_t uuid,
 	const char* textdata);
 
-extern int sfq_push_bin(const char* querootdir, const char* quename,
-	const char* execpath, const char* execargs, const char* metadata,
+extern int sfq_push_binary(const char* querootdir, const char* quename,
+	const char* execpath, const char* execargs, const char* metatext,
 	const char* soutpath, const char* serrpath, uuid_t uuid,
 	const sfq_byte* payload, size_t payload_size);
 

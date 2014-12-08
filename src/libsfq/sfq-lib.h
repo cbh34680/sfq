@@ -235,7 +235,7 @@ struct sfq_e_header
 	payload_type_t payload_type;	/* 1 */
 	sfq_uchar elmmargin_;		/* 1 ... for debug, set by sfq_copy_val2ioeb() */
 	ushort execpath_size;		/* 2 ... (x) USHRT_MAX PATH_MAX */
-	ushort metadata_size;		/* 2 ... (m) USHRT_MAX */
+	ushort metatext_size;		/* 2 ... (m) USHRT_MAX */
 
 	uint execargs_size;		/* 4 ... (a) UINT_MAX _SC_ARG_MAX */
 	ushort soutpath_size;		/* 2 ... (o) USHRT_MAX PATH_MAX */
@@ -256,7 +256,7 @@ struct sfq_ioelm_buff
 	struct sfq_e_header eh;
 	char* execpath;
 	char* execargs;
-	char* metadata;
+	char* metatext;
 	sfq_byte* payload;
 	char* soutpath;
 	char* serrpath;

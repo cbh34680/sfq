@@ -62,11 +62,6 @@ SFQC_MAIN_INITIALIZE
 		}
 	}
 
-if (! mem)
-{
-puts("mem is null");
-}
-
 	if (opt.execpath || opt.execargs || mem)
 	{
 		// go next
@@ -78,8 +73,8 @@ puts("mem is null");
 		goto EXIT_LABEL;
 	}
 
-	irc = sfq_push_bin(opt.querootdir, opt.quename,
-		opt.execpath, opt.execargs, opt.metadata,
+	irc = sfq_push_binary(opt.querootdir, opt.quename,
+		opt.execpath, opt.execargs, opt.metatext,
 		opt.soutpath, opt.serrpath,
 		NULL,
 		mem, memsize);

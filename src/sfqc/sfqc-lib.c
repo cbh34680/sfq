@@ -87,6 +87,7 @@ int sfqc_readstdin(sfq_byte** mem_ptr, size_t* memsize_ptr)
 
 	if (mem)
 	{
+		/* null term for push-text */
 		mem[memsize] = '\0';
 	}
 
@@ -146,6 +147,7 @@ int sfqc_readfile(const char* path, sfq_byte** mem_ptr, size_t* memsize_ptr)
 			goto EXIT_LABEL;
 		}
 
+		/* null term for push-text */
 		mem[st.st_size] = '\0';
 
 	}
@@ -188,7 +190,7 @@ void sfqc_free_init_option(struct sfqc_init_option* p)
 	free(p->quename);
 	free(p->execpath);
 	free(p->execargs);
-	free(p->metadata);
+	free(p->metatext);
 	free(p->textdata);
 	free(p->inputfile);
 	free(p->soutpath);
@@ -349,7 +351,7 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, int use_r
 			case 'a': { RESET_STR(optarg, p, execargs);	break; } // exec() 引数 (カンマ区切り)
 			case 't': { RESET_STR(optarg, p, textdata);	break; } // データ# テキスト
 			case 'f': { RESET_STR(optarg, p, inputfile);	break; } // データ# ファイル名
-			case 'm': { RESET_STR(optarg, p, metadata);	break; } // メタ情報
+			case 'm': { RESET_STR(optarg, p, metatext);	break; } // メタ情報
 			case 'p': { RESET_STR(optarg, p, printmethod);	break; } // pop, shift の出力方法
 
 			// 標準出力のリダイレクト先

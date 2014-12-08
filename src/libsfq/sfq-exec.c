@@ -240,12 +240,12 @@ fprintf(stderr, "\t\tpayload size = %zu\n", val->payload_size);
 	uuid_unparse(val->uuid, uuid_s);
 	setenv("SFQ_UUID", uuid_s, 0);
 
-	/* metadata */
-	if (val->metadata)
+	/* metatext */
+	if (val->metatext)
 	{
-		setenv("SFQ_META", val->metadata, 0);
+		setenv("SFQ_META", val->metatext, 0);
 
-fprintf(stderr, "\t\tmetadata = %s\n", val->metadata);
+fprintf(stderr, "\t\tmetatext = %s\n", val->metatext);
 	}
 
 /* */

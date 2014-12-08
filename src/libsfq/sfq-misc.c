@@ -265,20 +265,20 @@ SFQ_LIB_INITIALIZE
 		}
 	}
 
-	if (val->metadata)
+	if (val->metatext)
 	{
-		size_t metadata_len = strlen(val->metadata);
-		if (metadata_len)
+		size_t metatext_len = strlen(val->metatext);
+		if (metatext_len)
 		{
-			size_t metadata_size = metadata_len + 1;
+			size_t metatext_size = metatext_len + 1;
 
-			if (metadata_size >= USHRT_MAX)
+			if (metatext_size >= USHRT_MAX)
 			{
-				SFQ_FAIL(EA_OVERLIMIT, "metadata_size");
+				SFQ_FAIL(EA_OVERLIMIT, "metatext_size");
 			}
 
-			ioeb->metadata = val->metadata;
-			ioeb->eh.metadata_size = (ushort)metadata_size;
+			ioeb->metatext = val->metatext;
+			ioeb->eh.metatext_size = (ushort)metatext_size;
 		}
 	}
 
@@ -336,7 +336,7 @@ SFQ_LIB_INITIALIZE
 		eh_size +
 		ioeb->eh.execpath_size +
 		ioeb->eh.execargs_size +
-		ioeb->eh.metadata_size +
+		ioeb->eh.metatext_size +
 		ioeb->eh.payload_size  +
 		ioeb->eh.soutpath_size +
 		ioeb->eh.serrpath_size
@@ -375,7 +375,7 @@ bool sfq_copy_ioeb2val(const struct sfq_ioelm_buff* ioeb, struct sfq_value* val)
 
 	val->execpath = ioeb->eh.execpath_size ? ioeb->execpath : NULL;
 	val->execargs = ioeb->eh.execargs_size ? ioeb->execargs : NULL;
-	val->metadata = ioeb->eh.metadata_size ? ioeb->metadata : NULL;
+	val->metatext = ioeb->eh.metatext_size ? ioeb->metatext : NULL;
 
 	val->payload_type = ioeb->eh.payload_type;
 	val->payload_size = ioeb->eh.payload_size;
@@ -396,7 +396,7 @@ void sfq_free_value(struct sfq_value* val)
 
 	free(val->execpath);
 	free(val->execargs);
-	free(val->metadata);
+	free(val->metatext);
 	free(val->payload);
 	free(val->soutpath);
 	free(val->serrpath);
@@ -412,7 +412,7 @@ SFQ_LIB_INITIALIZE
 
 	char* execpath = NULL;
 	char* execargs = NULL;
-	char* metadata = NULL;
+	char* metatext = NULL;
 	char* payload = NULL;
 	char* soutpath = NULL;
 	char* serrpath = NULL;
@@ -442,10 +442,10 @@ SFQ_LIB_INITIALIZE
 		SFQ_FAIL(ES_STRDUP, "execargs");
 	}
 
-	metadata = strdup(val->metadata ? val->metadata : NA);
-	if (! metadata)
+	metatext = strdup(val->metatext ? val->metatext : NA);
+	if (! metatext)
 	{
-		SFQ_FAIL(ES_STRDUP, "metadata");
+		SFQ_FAIL(ES_STRDUP, "metatext");
 	}
 
 	soutpath = strdup(val->soutpath ? val->soutpath : NA);
@@ -503,7 +503,7 @@ SFQ_LIB_INITIALIZE
 
 	dst->execpath = execpath;
 	dst->execargs = execargs;
-	dst->metadata = metadata;
+	dst->metatext = metatext;
 	dst->soutpath = soutpath;
 	dst->serrpath = serrpath;
 
@@ -513,7 +513,7 @@ SFQ_LIB_CHECKPOINT
 	{
 		free(execpath);
 		free(execargs);
-		free(metadata);
+		free(metatext);
 		free(payload);
 		free(soutpath);
 		free(serrpath);
