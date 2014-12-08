@@ -35,7 +35,7 @@ Queue is dynamic. you can add data (by command) but data is automatically retrie
 
 for example
 * 1) rm -rf /var/tmp/noname (delete the queue that was made before)
-* 2) sfqc-init -P 1
+* 2) sfqc-init -R 1
 * 3) sfqc-pusht -t 'date > /tmp/aaa.txt' (you get to tell the current time in "/tmp/aaa.txt")
 ... text("date > /tmp/aaa.txt") is sent automatically to the standard input of "/bin/sh"
 
