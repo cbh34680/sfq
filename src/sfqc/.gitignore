@@ -1,6 +1,7 @@
-*.so
-*.o
-*.out
+/*.sh
+/*.so
+/*.o
+/*.out
 /targetver.h
 /ReadMe.txt
 /sfqc.cpp

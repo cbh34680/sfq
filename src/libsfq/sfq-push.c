@@ -34,6 +34,25 @@ SFQ_LIB_INITIALIZE
 		SFQ_FAIL(EA_FUNCARG, "val is null");
 	}
 
+	if (val->payload)
+	{
+		if (! val->payload_type)
+		{
+			SFQ_FAIL(EA_FUNCARG, "payload is unknown-type");
+		}
+
+		if (val->payload_type & (SFQ_PLT_CHARARRAY | SFQ_PLT_NULLTERM))
+		{
+			/* is null-term string*/
+
+			if (! val->payload_size)
+			{
+				/* auto detect */
+				val->payload_size = strlen((char*)val->payload) + 1;
+			}
+		}
+	}
+
 /* open queue-file */
 	qo = sfq_open_queue_rw(querootdir, quename);
 	if (! qo)
@@ -310,7 +329,11 @@ int sfq_push_text(const char* querootdir, const char* quename,
 	val.soutpath = (char*)soutpath;
 	val.serrpath = (char*)serrpath;
 	val.payload_type = SFQ_PLT_CHARARRAY | SFQ_PLT_NULLTERM;
+/*
+if null-terminated string, can auto-detect of size
+
 	val.payload_size = (textdata ? (strlen(textdata) + 1) : 0);
+*/
 	val.payload = (sfq_byte*)textdata;
 
 	irc = sfq_push(querootdir, quename, &val);

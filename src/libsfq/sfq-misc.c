@@ -558,6 +558,28 @@ SFQ_LIB_INITIALIZE
 	char* cpos = NULL;
 
 /* */
+	if (querootdir)
+	{
+/*
+空文字列("") のときは NULL と同じ動作にする
+*/
+		if (strlen(querootdir) == 0)
+		{
+			querootdir = NULL;
+		}
+	}
+	if (quename)
+	{
+/*
+空文字列("") のときは NULL と同じ動作にする
+*/
+		if (strlen(quename) == 0)
+		{
+			quename = NULL;
+		}
+	}
+
+/* */
 	if (! querootdir)
 	{
 		querootdir = getenv("SFQ_QUEUE_DIR");
