@@ -3,7 +3,7 @@
 unalias -a
 cd $(dirname $(readlink -f "$0"))
 
-EXTSO='wrap_libsfq/modules/wrap_libsfq.so'
+EXTSO='../wrap_libsfq/modules/wrap_libsfq.so'
 [ ! -f ${EXTSO} ] && echo "extension file not found" && exit 1
 
 PHPOPT=''
@@ -14,7 +14,7 @@ ls -l ${EXTSO}
 echo
 
 echo "* test-push.php"
-php ${PHPOPT} test-push.php
+php ${PHPOPT} test-push.php $EXTSO
 [ $? != 0 ] && echo "push fault" && exit 1
 echo
 
