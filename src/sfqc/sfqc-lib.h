@@ -55,6 +55,9 @@ struct sfqc_init_option
 	size_t payloadsize_limit;	/* L */
 	ushort boota_proc_num;		/* B */
 
+	char* queuser;			/* U */
+	char* quegroup;			/* G */
+
 	char* execpath;			/* x */
 	char* execargs;			/* a */
 	char* textdata;			/* t */
@@ -92,7 +95,7 @@ typedef int (*sfq_takeoutfunc_t)(const char* querootdir, const char* quename, st
 extern int sfqc_takeout(int argc, char** argv, sfq_takeoutfunc_t takeoutfunc);
 
 extern int sfqc_get_init_option(int argc, char** argv, const char* optstring,
-	int use_rest, struct sfqc_init_option* p);
+	bool use_rest, struct sfqc_init_option* p);
 
 extern void sfqc_free_init_option(struct sfqc_init_option* p);
 

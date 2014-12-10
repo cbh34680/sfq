@@ -69,7 +69,7 @@ SFQC_MAIN_INITIALIZE
 	atexit(release_heap);
 
 /* */
-	irc = sfqc_get_init_option(argc, argv, "D:N:", 1, &opt);
+	irc = sfqc_get_init_option(argc, argv, "D:N:", true, &opt);
 	if (irc != 0)
 	{
 		message = "get_init_option: parse error";

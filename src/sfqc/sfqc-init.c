@@ -20,7 +20,7 @@ SFQC_MAIN_INITIALIZE
 	bzero(&qco, sizeof(qco));
 
 /* */
-	irc = sfqc_get_init_option(argc, argv, "D:N:S:L:B:oe", 0, &opt);
+	irc = sfqc_get_init_option(argc, argv, "D:N:S:L:B:U:G:oe", false, &opt);
 	if (irc != 0)
 	{
 		message = "get_init_option: parse error";

@@ -188,6 +188,9 @@ void sfqc_free_init_option(struct sfqc_init_option* p)
 
 	free(p->querootdir);
 	free(p->quename);
+	free(p->queuser);
+	free(p->quegroup);
+
 	free(p->execpath);
 	free(p->execargs);
 	free(p->metatext);
@@ -271,7 +274,7 @@ int get_ul_bytesize(const char* str, unsigned long* ul_ptr, char** e_ptr)
 	free(p->MEMBER); \
 	p->MEMBER = c;
 
-int sfqc_get_init_option(int argc, char** argv, const char* optstring, int use_rest, struct sfqc_init_option* p)
+int sfqc_get_init_option(int argc, char** argv, const char* optstring, bool use_rest, struct sfqc_init_option* p)
 {
 	int irc = 1;
 	int opt = 0;
@@ -347,6 +350,9 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, int use_r
 
 			case 'N': { RESET_STR(optarg, p, quename);	break; } // QUEUE 名
 			case 'D': { RESET_STR(optarg, p, querootdir);	break; } // QUEUE ディレクトリ
+			case 'U': { RESET_STR(optarg, p, queuser);	break; } // QUEUE ユーザ
+			case 'G': { RESET_STR(optarg, p, quegroup);	break; } // QUEUE グループ
+
 			case 'x': { RESET_STR(optarg, p, execpath);	break; } // exec() パス
 			case 'a': { RESET_STR(optarg, p, execargs);	break; } // exec() 引数 (カンマ区切り)
 			case 't': { RESET_STR(optarg, p, textdata);	break; } // データ# テキスト
