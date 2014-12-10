@@ -532,7 +532,7 @@ SFQC_MAIN_INITIALIZE
 	bzero(&pval, sizeof(pval));
 
 /* */
-	irc = sfqc_get_init_option(argc, argv, "D:N:p:q", 0, &opt);
+	irc = sfqc_get_init_option(argc, argv, "D:N:p:q", false, &opt);
 	if (irc != 0)
 	{
 		message = "get_init_option: parse error";
@@ -553,17 +553,18 @@ SFQC_MAIN_INITIALIZE
 	{
 		message = "takeout";
 
-		if (irc == SFQ_RC_NO_ELEMENT)
+		switch (irc)
 		{
-			message = "element does not exist in the queue";
-
-			if (printmethod & SFQC_PRM_HTTP_HEADER)
+			case SFQ_RC_W_NOELEMENT:
 			{
-				print_http_headers(false, "text/plain; charset=UTF-8", strlen(message));
-				printf(CRLF);
-				printf("%s" CRLF, message);
+				message = "element does not exist in the queue";
+				break;
+			}
 
-				message = NULL;
+			case SFQ_RC_W_TAKEOUT_STOPPED:
+			{
+				message = "queue is stopped retrieval";
+				break;
 			}
 
 		}
@@ -607,11 +608,21 @@ EXIT_LABEL:
 	sfq_free_value(&val);
 	sfq_free_value(&pval);
 
-	if (! opt.quiet)
+	if (printmethod & SFQC_PRM_HTTP_HEADER)
 	{
-		if (message)
+		print_http_headers(false, "text/plain; charset=UTF-8", strlen(message));
+
+		printf(CRLF);
+		printf("%s" CRLF, message);
+	}
+	else
+	{
+		if (! opt.quiet)
 		{
-			fprintf(stderr, "%s(%d): %s\n", __FILE__, jumppos, message);
+			if (message)
+			{
+				fprintf(stderr, "%s(%d): %s\n", __FILE__, jumppos, message);
+			}
 		}
 	}
 

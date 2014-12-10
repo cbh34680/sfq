@@ -649,12 +649,12 @@ void sfq_free_ioelm_buff(struct sfq_ioelm_buff* ioeb)
 		return;
 	}
 
-	free(ioeb->payload);
-	free(ioeb->execpath);
-	free(ioeb->execargs);
-	free(ioeb->metatext);
-	free(ioeb->soutpath);
-	free(ioeb->serrpath);
+	free((char*)ioeb->payload);
+	free((char*)ioeb->execpath);
+	free((char*)ioeb->execargs);
+	free((char*)ioeb->metatext);
+	free((char*)ioeb->soutpath);
+	free((char*)ioeb->serrpath);
 
 	bzero(ioeb, sizeof(*ioeb));
 }

@@ -186,16 +186,18 @@ void sfqc_free_init_option(struct sfqc_init_option* p)
 		return;
 	}
 
-	free(p->querootdir);
-	free(p->quename);
-	free(p->execpath);
-	free(p->execargs);
-	free(p->metatext);
-	free(p->textdata);
-	free(p->inputfile);
-	free(p->soutpath);
-	free(p->serrpath);
-	free(p->printmethod);
+	free((char*)p->querootdir);
+	free((char*)p->quename);
+	free((char*)p->queuser);
+	free((char*)p->quegroup);
+	free((char*)p->execpath);
+	free((char*)p->execargs);
+	free((char*)p->metatext);
+	free((char*)p->textdata);
+	free((char*)p->inputfile);
+	free((char*)p->soutpath);
+	free((char*)p->serrpath);
+	free((char*)p->printmethod);
 
 	bzero(p, sizeof(struct sfqc_init_option));
 }
@@ -268,10 +270,10 @@ int get_ul_bytesize(const char* str, unsigned long* ul_ptr, char** e_ptr)
 		jumppos = __LINE__; \
 		goto EXIT_LABEL; \
 	} \
-	free(p->MEMBER); \
+	free((char*)p->MEMBER); \
 	p->MEMBER = c;
 
-int sfqc_get_init_option(int argc, char** argv, const char* optstring, int use_rest, struct sfqc_init_option* p)
+int sfqc_get_init_option(int argc, char** argv, const char* optstring, bool use_rest, struct sfqc_init_option* p)
 {
 	int irc = 1;
 	int opt = 0;
@@ -347,6 +349,9 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, int use_r
 
 			case 'N': { RESET_STR(optarg, p, quename);	break; } // QUEUE 名
 			case 'D': { RESET_STR(optarg, p, querootdir);	break; } // QUEUE ディレクトリ
+			case 'U': { RESET_STR(optarg, p, queuser);	break; } // QUEUE ユーザ
+			case 'G': { RESET_STR(optarg, p, quegroup);	break; } // QUEUE グループ
+
 			case 'x': { RESET_STR(optarg, p, execpath);	break; } // exec() パス
 			case 'a': { RESET_STR(optarg, p, execargs);	break; } // exec() 引数 (カンマ区切り)
 			case 't': { RESET_STR(optarg, p, textdata);	break; } // データ# テキスト

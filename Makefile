@@ -11,8 +11,10 @@ include/sfq.h: src/inc/sfq.h
 	cp -p $^ include
 
 lib/libsfq.so: src/libsfq/libsfq.so
+	cp -p $^ $@
 
 lib/libsfqc.so: src/sfqc/libsfqc.so
+	cp -p $^ $@
 
 src/libsfq/libsfq.so:
 	cd src/libsfq/; make $(MAKEOPT); cp -p libsfq.so ../../lib/libsfq.so

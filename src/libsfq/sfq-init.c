@@ -1,7 +1,6 @@
 #include "sfq-lib.h"
 
-int sfq_init(const char* querootdir, const char* quename, size_t filesize_limit,
-	size_t payloadsize_limit, ushort procs_num, ushort boota_proc_num, questate_t questate)
+int sfq_init(const char* querootdir, const char* quename, const struct sfq_queue_create_option* qco)
 {
 SFQ_LIB_INITIALIZE
 
@@ -25,7 +24,7 @@ SFQ_LIB_INITIALIZE
 	bzero(&qfh, qfh_size);
 
 /* */
-	if (procs_num < boota_proc_num)
+	if (qco->procs_num < qco->boota_proc_num)
 	{
 		SFQ_FAIL(EA_OVERLIMIT, "bootable process must not be larger than process num");
 	}
@@ -36,25 +35,25 @@ queue header の初期値を設定
 
 	strcpy(qfh.magicstr, SFQ_MAGICSTR);
 	qfh.qfh_size = qfh_size;
-	qfh.qh.dval.questate = questate;
+	qfh.qh.dval.questate = qco->questate;
 	strcpy(qfh.last_qhd1.lastoper, "---");
 	strcpy(qfh.last_qhd2.lastoper, "---");
 
 /* check max process num */
 
-	if (procs_num)
+	if (qco->procs_num)
 	{
 		long sysmax = sysconf(_SC_CHILD_MAX);
 		if (sysmax > 0)
 		{
-			if (procs_num > sysmax)
+			if (qco->procs_num > sysmax)
 			{
 				SFQ_FAIL(EA_OVERLIMIT, "process num is greater than system limit");
 			}
 		}
 
 /* calc procs-start offset */
-		procs_size = pi_size * procs_num;
+		procs_size = pi_size * qco->procs_num;
 
 		procs = alloca(procs_size);
 		if (! procs)
@@ -71,7 +70,7 @@ queue header の初期値を設定
 	elmseg_start_pos = qfh_size + procs_size;
 
 /* check size */
-	if (filesize_limit < (elmseg_start_pos + eh_size + 1))
+	if (qco->filesize_limit < (elmseg_start_pos + eh_size + 1))
 	{
 	/* 最小ファイルサイズは sfq_file_header + pid_table + sfq_e_header + payload(1 byte) */
 
@@ -87,16 +86,18 @@ queue header の初期値を設定
 
 	if (procs)
 	{
-		if (procs_num > boota_proc_num)
+		if (qco->procs_num > qco->boota_proc_num)
 		{
 			int i = 0;
 
 /*
 起動可能数を超えたスロットはロックしておく
+
+--> 配列の後方からロックする
 */
-			for (i=0; i<(procs_num - boota_proc_num); i++)
+			for (i=0; i<(qco->procs_num - qco->boota_proc_num); i++)
 			{
-				struct sfq_process_info* proc = &procs[(procs_num - 1) - i];
+				struct sfq_process_info* proc = &procs[(qco->procs_num - 1) - i];
 
 				proc->procstate = SFQ_PIS_LOCK;
 				proc->updtime = qo->opentime;
@@ -108,10 +109,10 @@ queue header の初期値を設定
 
 	/* 静的属性値の設定 */
 	qfh.qh.sval.elmseg_start_pos = elmseg_start_pos;
-	qfh.qh.sval.elmseg_end_pos = (filesize_limit - 1);
-	qfh.qh.sval.filesize_limit = filesize_limit;
-	qfh.qh.sval.payloadsize_limit = payloadsize_limit;
-	qfh.qh.sval.procs_num = procs_num;
+	qfh.qh.sval.elmseg_end_pos = (qco->filesize_limit - 1);
+	qfh.qh.sval.filesize_limit = qco->filesize_limit;
+	qfh.qh.sval.payloadsize_limit = qco->payloadsize_limit;
+	qfh.qh.sval.procs_num = qco->procs_num;
 
 /*
 各ポジションの初期化

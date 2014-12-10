@@ -153,7 +153,7 @@ fprintf(stderr, "loop(%zu) block-top [time=%zu]\n", loop, time(NULL));
 fprintf(stderr, "loop(%zu) attempt to shift\n", loop);
 
 		shift_rc = sfq_shift(om_querootdir, om_quename, &val);
-		if (shift_rc == SFQ_RC_NO_ELEMENT)
+		if (shift_rc == SFQ_RC_W_NOELEMENT)
 		{
 			/* no more element */
 

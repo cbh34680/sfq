@@ -1,0 +1,11 @@
+--- /usr/share/pear/CodeGen/PECL/Extension.php	2014-12-08 10:04:12.374793029 +0900
++++ /usr/share/pear/CodeGen/PECL/Extension.php.fix	2014-12-10 07:19:59.779515620 +0900
+@@ -1174,7 +1174,7 @@
+     function generateFunctionRegistrations()
+     {
+         $code  = "/* {{{ {$this->name}_functions[] */\n";
+-        $code .= "function_entry {$this->name}_functions[] = {\n";
++        $code .= "zend_function_entry {$this->name}_functions[] = {\n";
+         foreach ($this->functions as $function) {
+             $code.= $function->functionEntry();
+         }

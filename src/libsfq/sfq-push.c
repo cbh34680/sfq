@@ -34,6 +34,23 @@ SFQ_LIB_INITIALIZE
 		SFQ_FAIL(EA_FUNCARG, "val is null");
 	}
 
+	if (val->execpath)
+	{
+		if (val->execpath[0] == '\0')
+		{
+			val->execpath = NULL;
+		}
+	}
+
+	if (val->execargs)
+	{
+		if (val->execargs[0] == '\0')
+		{
+			val->execargs = NULL;
+		}
+	}
+
+/* payload_size auto detect (only null-term string) */
 	if (val->payload)
 	{
 		if (! val->payload_type)
@@ -53,6 +70,11 @@ SFQ_LIB_INITIALIZE
 		}
 	}
 
+	if ((! val->execpath) && (! val->execargs) && (! val->payload_size))
+	{
+		SFQ_FAIL(EA_FUNCARG, "no input data");
+	}
+
 /* open queue-file */
 	qo = sfq_open_queue_rw(querootdir, quename);
 	if (! qo)
@@ -67,16 +89,16 @@ SFQ_LIB_INITIALIZE
 		SFQ_FAIL(EA_READQFH, "sfq_readqfh");
 	}
 
+/* check accept state */
+	if (! (qfh.qh.dval.questate & SFQ_QST_ACCEPT_ON))
+	{
+		SFQ_FAIL_SILENT(W_ACCEPT_STOPPED);
+	}
+
 /*
 questate は go_exec() に渡すので、ここで保存しておく
 */
 	questate = qfh.qh.dval.questate;
-
-/* check accept state */
-	if (! (questate & SFQ_QST_ACCEPT_ON))
-	{
-		SFQ_FAIL_SILENT(ACCEPT_STOPPED);
-	}
 
 /* copy arguments to write-buffer */
 	b = sfq_copy_val2ioeb(val, &ioeb);
@@ -151,7 +173,7 @@ questate は go_exec() に渡すので、ここで保存しておく
 		}
 		else
 		{
-			SFQ_FAIL_SILENT(NO_SPACE);
+			SFQ_FAIL_SILENT(W_NOSPACE);
 		}
 	}
 
@@ -208,7 +230,7 @@ questate は go_exec() に渡すので、ここで保存しておく
 		}
 		else
 		{
-			SFQ_FAIL_SILENT(NO_SPACE);
+			SFQ_FAIL_SILENT(W_NOSPACE);
 		}
 	}
 

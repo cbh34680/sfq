@@ -1,5 +1,6 @@
 /*.c
 /*.pc
+/?.php
 /wrap_libsfq
 /php_smart_str.h
 /zend_API.h

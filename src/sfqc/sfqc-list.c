@@ -48,7 +48,7 @@ SFQC_MAIN_INITIALIZE
 	bzero(&opt, sizeof(opt));
 
 /* */
-	irc = sfqc_get_init_option(argc, argv, "D:N:", 0, &opt);
+	irc = sfqc_get_init_option(argc, argv, "D:N:", false, &opt);
 	if (irc != 0)
 	{
 		message = "get_init_option: parse error";
@@ -59,7 +59,7 @@ SFQC_MAIN_INITIALIZE
 	irc = sfq_map(opt.querootdir, opt.quename, print_element, &cnt);
 	if (irc != SFQ_RC_SUCCESS)
 	{
-		if (irc != SFQ_RC_NO_ELEMENT)
+		if (irc != SFQ_RC_W_NOELEMENT)
 		{
 			message = "sfq_map";
 			jumppos = __LINE__;

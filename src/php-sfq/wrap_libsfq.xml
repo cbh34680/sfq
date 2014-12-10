@@ -33,14 +33,16 @@ This is wrap_libsfq PHP extension module.
   </deps>
 
   <constants>
-    <constant type="int" name="SFQ_RC_SUCCESS"		value="SFQ_RC_SUCCESS" />
-    <constant type="int" name="SFQ_RC_NO_ELEMENT"	value="SFQ_RC_NO_ELEMENT" />
-    <constant type="int" name="SFQ_RC_NO_SPACE"		value="SFQ_RC_NO_SPACE" />
-    <constant type="int" name="SFQ_RC_ACCEPT_STOPPED"	value="SFQ_RC_ACCEPT_STOPPED" />
+    <constant type="int" name="SFQ_RC_SUCCESS"			value="SFQ_RC_SUCCESS" />
+    <constant type="int" name="SFQ_RC_W_NOELEMENT"		value="SFQ_RC_W_NOELEMENT" />
+    <constant type="int" name="SFQ_RC_W_NOSPACE"		value="SFQ_RC_W_NOSPACE" />
+    <constant type="int" name="SFQ_RC_W_ACCEPT_STOPPED"		value="SFQ_RC_W_ACCEPT_STOPPED" />
+    <constant type="int" name="SFQ_RC_W_TAKEOUT_STOPPED"	value="SFQ_RC_W_TAKEOUT_STOPPED" />
+    <constant type="int" name="SFQ_RC_FATAL_MIN"		value="SFQ_RC_FATAL_MIN" />
 
-    <constant type="int" name="SFQ_PLT_NULLTERM"	value="SFQ_PLT_NULLTERM" />
-    <constant type="int" name="SFQ_PLT_BINARY"		value="SFQ_PLT_BINARY" />
-    <constant type="int" name="SFQ_PLT_CHARARRAY"	value="SFQ_PLT_CHARARRAY" />
+    <constant type="int" name="SFQ_PLT_NULLTERM"		value="SFQ_PLT_NULLTERM" />
+    <constant type="int" name="SFQ_PLT_BINARY"			value="SFQ_PLT_BINARY" />
+    <constant type="int" name="SFQ_PLT_CHARARRAY"		value="SFQ_PLT_CHARARRAY" />
   </constants>
 
   <code position="top"><?data

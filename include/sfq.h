@@ -27,16 +27,17 @@ typedef sfq_uchar payload_type_t;
 
 enum
 {
-	SFQ_RC_SUCCESS		= 0,
+	SFQ_RC_SUCCESS			= 0,
 
-	SFQ_RC_UNKNOWN		= 11,
+	SFQ_RC_W_NOELEMENT		= 11,
+	SFQ_RC_W_NOSPACE,
+	SFQ_RC_W_ACCEPT_STOPPED,
+	SFQ_RC_W_TAKEOUT_STOPPED,
+	SFQ_RC_W_NOCHANGE_STATE,
 
-	SFQ_RC_NO_ELEMENT	= 51,
-	SFQ_RC_NO_SPACE,
-	SFQ_RC_ACCEPT_STOPPED,
-	SFQ_RC_NOCHANGE_STATE,
-
-	SFQ_RC_EA_FSIZESMALL	= 61,
+	SFQ_RC_FATAL_MIN		= 51,
+	SFQ_RC_UNKNOWN,
+	SFQ_RC_EA_FSIZESMALL,
 	SFQ_RC_EA_EXISTQUEUE,
 	SFQ_RC_EA_OPENFILE,
 	SFQ_RC_EA_FUNCARG,
@@ -84,10 +85,20 @@ enum
 	SFQ_QST_STDOUT_ON	= 1U,
 	SFQ_QST_STDERR_ON	= 2U,
 	SFQ_QST_ACCEPT_ON	= 4U,
-	SFQ_QST_EXEC_ON		= 8U,
+	SFQ_QST_TAKEOUT_ON	= 8U,
+	SFQ_QST_EXEC_ON		= 16U,
 };
 
-#define SFQ_QST_DEFAULT		(SFQ_QST_ACCEPT_ON | SFQ_QST_EXEC_ON)
+#define SFQ_QST_DEFAULT		(SFQ_QST_ACCEPT_ON | SFQ_QST_TAKEOUT_ON | SFQ_QST_EXEC_ON)
+
+struct sfq_queue_create_option
+{
+	size_t filesize_limit;
+	size_t payloadsize_limit;
+	ushort procs_num;
+	ushort boota_proc_num;
+	questate_t questate;
+};
 
 /* */
 struct sfq_value
@@ -95,20 +106,20 @@ struct sfq_value
 	ulong id;				/* 8 */
 	time_t pushtime;			/* 8 */
 	uuid_t uuid;				/* 16 */
-	char* execpath;				/* 8 */
-	char* execargs;				/* 8 */
-	char* metatext;				/* 8 */
-	char* soutpath;				/* 8 */
-	char* serrpath;				/* 8 */
+	const char* execpath;			/* 8 */
+	const char* execargs;			/* 8 */
+	const char* metatext;			/* 8 */
+	const char* soutpath;			/* 8 */
+	const char* serrpath;			/* 8 */
 	payload_type_t payload_type;		/* 1 */
 	size_t payload_size;			/* 8 */
-	sfq_byte* payload;			/* 8 */
+	const sfq_byte* payload;		/* 8 */
 };
 
 typedef void (*sfq_map_callback)(ulong order, const struct sfq_value* val, void* userdata);
 
-extern int sfq_init(const char* querootdir, const char* quename, size_t filesize_limit,
-	size_t payloadsize_limit, ushort procs_num, ushort boota_proc_num, questate_t questate);
+extern int sfq_init(const char* querootdir, const char* quename,
+	const struct sfq_queue_create_option* qco);
 
 extern int sfq_map(const char* querootdir, const char* quename,
 	sfq_map_callback callback, void* userdata);

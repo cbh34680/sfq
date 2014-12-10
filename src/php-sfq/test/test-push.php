@@ -1,10 +1,10 @@
 <?php
 
-$file = 'wrap_libsfq/modules/wrap_libsfq.so';
+$file = $argv[1];
 $data = file_get_contents($file);
 $dlen = strlen($data);
 
-echo "input data size={$dlen}" . PHP_EOL;
+echo "input data file={$file} size={$dlen}" . PHP_EOL;
 
 $ioparam =
 [

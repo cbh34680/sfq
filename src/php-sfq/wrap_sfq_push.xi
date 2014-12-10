@@ -101,16 +101,26 @@ CONTINUE_LABEL:
 
 	if (push_rc == SFQ_RC_SUCCESS)
 	{
-		const char hkey_uuid[] = "uuid";
 		char uuid_s[36 + 1] = "";
-		zval* z_uuid = NULL;
 
 		uuid_unparse(val.uuid, uuid_s);
+/*
+		const char hkey_uuid[] = "uuid";
+		zval* z_uuid = NULL;
 
 		MAKE_STD_ZVAL(z_uuid);
 		ZVAL_STRING(z_uuid, uuid_s, 1);
 
 		zend_hash_update(ioparam_hash, hkey_uuid, sizeof(hkey_uuid), &z_uuid, sizeof(*z_uuid), NULL);
+*/
+	// uuid
+		SFQWL_ZH_UPDATE_STRING(ioparam_hash, "uuid", uuid_s);
+
+	// payload_size
+/*
+payload_size は push 前に算出している可能性があるので書き戻す
+*/
+		SFQWL_ZH_UPDATE_LONG(ioparam_hash, "payload_size", val.payload_size);
 	}
 
 /*

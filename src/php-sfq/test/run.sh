@@ -3,19 +3,23 @@
 unalias -a
 cd $(dirname $(readlink -f "$0"))
 
-[ ! -f wrap_libsfq/modules/wrap_libsfq.so ] && echo "extension file not found" && exit 1
+EXTSO='../wrap_libsfq/modules/wrap_libsfq.so'
+[ ! -f ${EXTSO} ] && echo "extension file not found" && exit 1
+
+PHPOPT=''
+[ ! -f /etc/php.d/wrap_libsfq.ini ] && PHPOPT="-d extension=${EXTSO}"
 
 echo "* ls -l [input]"
-ls -l wrap_libsfq/modules/wrap_libsfq.so
+ls -l ${EXTSO}
 echo
 
 echo "* test-push.php"
-php -d extension=wrap_libsfq/modules/wrap_libsfq.so test-push.php
+php ${PHPOPT} test-push.php $EXTSO
 [ $? != 0 ] && echo "push fault" && exit 1
 echo
 
 echo "* test-takeout.php"
-php -d extension=wrap_libsfq/modules/wrap_libsfq.so test-takeout.php
+php ${PHPOPT} test-takeout.php
 [ $? != 0 ] && echo "takeout fault" && exit 1
 echo
 

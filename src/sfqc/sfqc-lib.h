@@ -49,27 +49,25 @@
 /* プログラム引数 */
 struct sfqc_init_option
 {
-	char* querootdir;		/* D */
-	char* quename;			/* N */
+	const char* querootdir;		/* D */
+	const char* quename;		/* N */
 	size_t filesize_limit;		/* S */
 	size_t payloadsize_limit;	/* L */
 	ushort boota_proc_num;		/* B */
-
-	char* execpath;			/* x */
-	char* execargs;			/* a */
-	char* textdata;			/* t */
-	char* metatext;			/* m */
-	char* inputfile;		/* f */
-
-	char* soutpath;			/* o */
-	char* serrpath;			/* e */
-
-	char* printmethod;		/* p */
+	const char* queuser;		/* U */
+	const char* quegroup;		/* G */
+	const char* execpath;		/* x */
+	const char* execargs;		/* a */
+	const char* textdata;		/* t */
+	const char* metatext;		/* m */
+	const char* inputfile;		/* f */
+	const char* soutpath;		/* o */
+	const char* serrpath;		/* e */
+	const char* printmethod;	/* p */
+	bool quiet;			/* q */
 
 	const char** commands;
 	int command_num;
-
-	bool quiet;			/* q */
 };
 
 /* pop, shift の表示オプション */
@@ -92,7 +90,7 @@ typedef int (*sfq_takeoutfunc_t)(const char* querootdir, const char* quename, st
 extern int sfqc_takeout(int argc, char** argv, sfq_takeoutfunc_t takeoutfunc);
 
 extern int sfqc_get_init_option(int argc, char** argv, const char* optstring,
-	int use_rest, struct sfqc_init_option* p);
+	bool use_rest, struct sfqc_init_option* p);
 
 extern void sfqc_free_init_option(struct sfqc_init_option* p);
 

@@ -255,12 +255,12 @@ struct sfq_e_header
 struct sfq_ioelm_buff
 {
 	struct sfq_e_header eh;
-	char* execpath;
-	char* execargs;
-	char* metatext;
-	sfq_byte* payload;
-	char* soutpath;
-	char* serrpath;
+	const char* execpath;
+	const char* execargs;
+	const char* metatext;
+	const sfq_byte* payload;
+	const char* soutpath;
+	const char* serrpath;
 };
 
 extern void sfq_print_sizes(void);

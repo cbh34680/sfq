@@ -12,13 +12,15 @@ int main(int argc, char** argv)
 
 /* */
 	struct sfqc_init_option opt;
+	struct sfq_queue_create_option qco;
 
 SFQC_MAIN_INITIALIZE
 
 	bzero(&opt, sizeof(opt));
+	bzero(&qco, sizeof(qco));
 
 /* */
-	irc = sfqc_get_init_option(argc, argv, "D:N:S:L:B:oe", 0, &opt);
+	irc = sfqc_get_init_option(argc, argv, "D:N:S:L:B:U:G:oe", false, &opt);
 	if (irc != 0)
 	{
 		message = "get_init_option: parse error";
@@ -58,8 +60,14 @@ SFQC_MAIN_INITIALIZE
 	procs_num = (opt.boota_proc_num > SFQC_RESERVE_SLOT_MIN)
 		? opt.boota_proc_num : SFQC_RESERVE_SLOT_MIN;
 
-	irc = sfq_init(opt.querootdir, opt.quename, opt.filesize_limit,
-		opt.payloadsize_limit, procs_num, opt.boota_proc_num, questate);
+//
+	qco.filesize_limit = opt.filesize_limit;
+	qco.payloadsize_limit = opt.payloadsize_limit;
+	qco.procs_num = procs_num;
+	qco.boota_proc_num = opt.boota_proc_num;
+	qco.questate = questate;
+
+	irc = sfq_init(opt.querootdir, opt.quename, &qco);
 
 	if (irc != SFQ_RC_SUCCESS)
 	{
