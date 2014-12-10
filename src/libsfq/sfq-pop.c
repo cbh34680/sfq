@@ -39,10 +39,16 @@ SFQ_LIB_INITIALIZE
 		SFQ_FAIL(EA_READQFH, "sfq_readqfh");
 	}
 
+/* check accept state */
+	if (! (qfh.qh.dval.questate & SFQ_QST_TAKEOUT_ON))
+	{
+		SFQ_FAIL_SILENT(W_TAKEOUT_STOPPED);
+	}
+
 /* check empty */
 	if (qfh.qh.dval.elm_num == 0)
 	{
-		SFQ_FAIL_SILENT(NO_ELEMENT);
+		SFQ_FAIL_SILENT(W_NOELEMENT);
 	}
 
 #ifdef SFQ_DEBUG_BUILD

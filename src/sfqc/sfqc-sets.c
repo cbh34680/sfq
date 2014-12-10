@@ -20,6 +20,7 @@ int get_off_on(const char* cms[2], questate_t* bit_ptr)
 		{ "stdout",	SFQ_QST_STDOUT_ON },
 		{ "stderr",	SFQ_QST_STDERR_ON },
 		{ "accept",	SFQ_QST_ACCEPT_ON },
+		{ "takeout",	SFQ_QST_TAKEOUT_ON },
 		{ "exec",	SFQ_QST_EXEC_ON },
 	};
 

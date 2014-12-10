@@ -34,7 +34,7 @@ SFQ_LIB_INITIALIZE
 /* check empty */
 	if (qfh.qh.dval.elm_num == 0)
 	{
-		SFQ_FAIL_SILENT(NO_ELEMENT);
+		SFQ_FAIL_SILENT(W_NOELEMENT);
 	}
 
 #ifdef SFQ_DEBUG_BUILD

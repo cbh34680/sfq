@@ -129,7 +129,7 @@ SFQ_LIB_INITIALIZE
 /*
 変更前後が同じ値なら更新の必要はない
 */
-		SFQ_FAIL(NOCHANGE_STATE, "there is no change in the state");
+		SFQ_FAIL(W_NOCHANGE_STATE, "there is no change in the state");
 	}
 
 	if (questate & SFQ_QST_EXEC_ON)
