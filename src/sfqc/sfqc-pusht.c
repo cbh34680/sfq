@@ -58,7 +58,7 @@ SFQC_MAIN_INITIALIZE
 			}
 		}
 
-		free(opt.textdata);
+		free((char*)opt.textdata);
 		opt.textdata = (char*)mem;
 	}
 

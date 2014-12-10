@@ -186,19 +186,18 @@ void sfqc_free_init_option(struct sfqc_init_option* p)
 		return;
 	}
 
-	free(p->querootdir);
-	free(p->quename);
-	free(p->queuser);
-	free(p->quegroup);
-
-	free(p->execpath);
-	free(p->execargs);
-	free(p->metatext);
-	free(p->textdata);
-	free(p->inputfile);
-	free(p->soutpath);
-	free(p->serrpath);
-	free(p->printmethod);
+	free((char*)p->querootdir);
+	free((char*)p->quename);
+	free((char*)p->queuser);
+	free((char*)p->quegroup);
+	free((char*)p->execpath);
+	free((char*)p->execargs);
+	free((char*)p->metatext);
+	free((char*)p->textdata);
+	free((char*)p->inputfile);
+	free((char*)p->soutpath);
+	free((char*)p->serrpath);
+	free((char*)p->printmethod);
 
 	bzero(p, sizeof(struct sfqc_init_option));
 }
@@ -271,7 +270,7 @@ int get_ul_bytesize(const char* str, unsigned long* ul_ptr, char** e_ptr)
 		jumppos = __LINE__; \
 		goto EXIT_LABEL; \
 	} \
-	free(p->MEMBER); \
+	free((char*)p->MEMBER); \
 	p->MEMBER = c;
 
 int sfqc_get_init_option(int argc, char** argv, const char* optstring, bool use_rest, struct sfqc_init_option* p)

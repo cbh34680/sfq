@@ -49,30 +49,25 @@
 /* プログラム引数 */
 struct sfqc_init_option
 {
-	char* querootdir;		/* D */
-	char* quename;			/* N */
+	const char* querootdir;		/* D */
+	const char* quename;		/* N */
 	size_t filesize_limit;		/* S */
 	size_t payloadsize_limit;	/* L */
 	ushort boota_proc_num;		/* B */
-
-	char* queuser;			/* U */
-	char* quegroup;			/* G */
-
-	char* execpath;			/* x */
-	char* execargs;			/* a */
-	char* textdata;			/* t */
-	char* metatext;			/* m */
-	char* inputfile;		/* f */
-
-	char* soutpath;			/* o */
-	char* serrpath;			/* e */
-
-	char* printmethod;		/* p */
+	const char* queuser;		/* U */
+	const char* quegroup;		/* G */
+	const char* execpath;		/* x */
+	const char* execargs;		/* a */
+	const char* textdata;		/* t */
+	const char* metatext;		/* m */
+	const char* inputfile;		/* f */
+	const char* soutpath;		/* o */
+	const char* serrpath;		/* e */
+	const char* printmethod;	/* p */
+	bool quiet;			/* q */
 
 	const char** commands;
 	int command_num;
-
-	bool quiet;			/* q */
 };
 
 /* pop, shift の表示オプション */

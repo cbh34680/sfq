@@ -214,7 +214,6 @@ SFQ_LIB_INITIALIZE
 	ioeb->eh.eh_size = eh_size;
 	ioeb->eh.id = val->id;
 	ioeb->eh.pushtime = val->pushtime;
-	ioeb->eh.payload_type = val->payload_type;
 
 	uuid_copy(ioeb->eh.uuid, val->uuid);
 
@@ -282,9 +281,13 @@ SFQ_LIB_INITIALIZE
 		}
 	}
 
-	if (val->payload && val->payload_size)
+	if (val->payload_size)
 	{
+		assert(val->payload_type);
+		assert(val->payload);
+
 		ioeb->eh.payload_size = val->payload_size;
+		ioeb->eh.payload_type = val->payload_type;
 		ioeb->payload = val->payload;
 	}
 
@@ -373,16 +376,45 @@ bool sfq_copy_ioeb2val(const struct sfq_ioelm_buff* ioeb, struct sfq_value* val)
 
 	uuid_copy(val->uuid, ioeb->eh.uuid);
 
-	val->execpath = ioeb->eh.execpath_size ? ioeb->execpath : NULL;
-	val->execargs = ioeb->eh.execargs_size ? ioeb->execargs : NULL;
-	val->metatext = ioeb->eh.metatext_size ? ioeb->metatext : NULL;
+	if (ioeb->eh.execpath_size)
+	{
+		assert(ioeb->execpath);
+		val->execpath = ioeb->execpath;
+	}
 
-	val->payload_type = ioeb->eh.payload_type;
-	val->payload_size = ioeb->eh.payload_size;
-	val->payload = ioeb->payload;
+	if (ioeb->eh.execargs_size)
+	{
+		assert(ioeb->execargs);
+		val->execargs = ioeb->execargs;
+	}
 
-	val->soutpath = ioeb->eh.soutpath_size ? ioeb->soutpath : NULL;
-	val->serrpath = ioeb->eh.serrpath_size ? ioeb->serrpath : NULL;
+	if (ioeb->eh.metatext_size)
+	{
+		assert(ioeb->metatext);
+		val->metatext = ioeb->metatext;
+	}
+
+	if (ioeb->eh.payload_size)
+	{
+		assert(ioeb->eh.payload_type);
+		assert(ioeb->payload);
+
+		val->payload_size = ioeb->eh.payload_size;
+		val->payload_type = ioeb->eh.payload_type;
+		val->payload = ioeb->payload;
+	}
+
+	if (ioeb->eh.soutpath_size)
+	{
+		assert(ioeb->soutpath);
+		val->soutpath = ioeb->soutpath;
+	}
+
+	if (ioeb->eh.serrpath_size)
+	{
+		assert(ioeb->serrpath);
+		val->serrpath = ioeb->serrpath;
+	}
 
 	return true;
 }
@@ -394,12 +426,12 @@ void sfq_free_value(struct sfq_value* val)
 		return;
 	}
 
-	free(val->execpath);
-	free(val->execargs);
-	free(val->metatext);
-	free(val->payload);
-	free(val->soutpath);
-	free(val->serrpath);
+	free((char*)val->execpath);
+	free((char*)val->execargs);
+	free((char*)val->metatext);
+	free((char*)val->payload);
+	free((char*)val->soutpath);
+	free((char*)val->serrpath);
 
 	bzero(val, sizeof(*val));
 }
@@ -788,14 +820,14 @@ void sfq_free_open_names(struct sfq_open_names* om)
 		return;
 	}
 
-	free(om->querootdir);
-	free(om->quename);
-	free(om->quedir);
-	free(om->quefile);
-	free(om->quelogdir);
-	free(om->queproclogdir);
-	free(om->queexeclogdir);
-	free(om->semname);
+	free((char*)om->querootdir);
+	free((char*)om->quename);
+	free((char*)om->quedir);
+	free((char*)om->quefile);
+	free((char*)om->quelogdir);
+	free((char*)om->queproclogdir);
+	free((char*)om->queexeclogdir);
+	free((char*)om->semname);
 	free(om);
 }
 

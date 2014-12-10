@@ -106,14 +106,14 @@ struct sfq_value
 	ulong id;				/* 8 */
 	time_t pushtime;			/* 8 */
 	uuid_t uuid;				/* 16 */
-	char* execpath;				/* 8 */
-	char* execargs;				/* 8 */
-	char* metatext;				/* 8 */
-	char* soutpath;				/* 8 */
-	char* serrpath;				/* 8 */
+	const char* execpath;			/* 8 */
+	const char* execargs;			/* 8 */
+	const char* metatext;			/* 8 */
+	const char* soutpath;			/* 8 */
+	const char* serrpath;			/* 8 */
 	payload_type_t payload_type;		/* 1 */
 	size_t payload_size;			/* 8 */
-	sfq_byte* payload;			/* 8 */
+	const sfq_byte* payload;		/* 8 */
 };
 
 typedef void (*sfq_map_callback)(ulong order, const struct sfq_value* val, void* userdata);
