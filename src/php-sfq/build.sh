@@ -85,6 +85,8 @@ EOF
   env NO_INTERACTION=1 make test
   [ $? != 0 ] && exit 1
 
+  cp -p modules/wrap_libsfq.so ..
+
   cat << EOF
 #
 # ALL DONE.

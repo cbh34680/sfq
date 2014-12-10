@@ -89,6 +89,15 @@ enum
 
 #define SFQ_QST_DEFAULT		(SFQ_QST_ACCEPT_ON | SFQ_QST_EXEC_ON)
 
+struct sfq_queue_create_option
+{
+	size_t filesize_limit;
+	size_t payloadsize_limit;
+	ushort procs_num;
+	ushort boota_proc_num;
+	questate_t questate;
+};
+
 /* */
 struct sfq_value
 {
@@ -107,8 +116,8 @@ struct sfq_value
 
 typedef void (*sfq_map_callback)(ulong order, const struct sfq_value* val, void* userdata);
 
-extern int sfq_init(const char* querootdir, const char* quename, size_t filesize_limit,
-	size_t payloadsize_limit, ushort procs_num, ushort boota_proc_num, questate_t questate);
+extern int sfq_init(const char* querootdir, const char* quename,
+	const struct sfq_queue_create_option* qco);
 
 extern int sfq_map(const char* querootdir, const char* quename,
 	sfq_map_callback callback, void* userdata);
