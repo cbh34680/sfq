@@ -68,6 +68,12 @@ typedef int			mode_t;
 #define optarg			NULL
 #define optind			(99)
 
+#define strerror_r(a, b, c)
+#define uuid_copy(a, b)
+#define uuid_unparse(a, b)
+#define uuid_generate_random(a)
+#define dirname(a)		(99)
+
 #define __func__		"__func__"
 
 
