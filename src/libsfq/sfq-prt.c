@@ -163,7 +163,7 @@ void sfq_print_e_header(const struct sfq_e_header* p)
 {
 	char uuid_s[36 + 1] = "";
 
-	uuid_unparse_upper(p->uuid, uuid_s);
+	uuid_unparse(p->uuid, uuid_s);
 
 	fprintf(stderr, "# [element]\n");
 	fprintf(stderr, "# element.eh_size             = %u\n",  p->eh_size);

@@ -18,7 +18,6 @@
 #include <fcntl.h>           /* For O_* constants */
 #include <signal.h>
 #include <math.h>
-#include <libgen.h>
 
 #ifdef WIN32
 	#include "win32-dummy-build.h"
@@ -31,6 +30,7 @@
 
 	#include <semaphore.h>
 	#include <wait.h>
+	#include <libgen.h>
 #endif
 
 #include "sfq.h"
