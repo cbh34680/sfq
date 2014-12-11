@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libsfq", "libsfq\libsfq.vcxproj", "{C8F3149F-1F8D-4C2F-8977-19DFA46E02B6}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sfqc", "sfqc\sfqc.vcxproj", "{2ADB4E5C-0D5B-46AC-BD7A-3668CF57335D}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C8F3149F-1F8D-4C2F-8977-19DFA46E02B6} = {C8F3149F-1F8D-4C2F-8977-19DFA46E02B6}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
