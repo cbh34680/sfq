@@ -66,6 +66,8 @@ SFQC_MAIN_INITIALIZE
 	qco.procs_num = procs_num;
 	qco.boota_proc_num = opt.boota_proc_num;
 	qco.questate = questate;
+	qco.queuser = opt.queuser;
+	qco.quegroup = opt.quegroup;
 
 	irc = sfq_init(opt.querootdir, opt.quename, &qco);
 

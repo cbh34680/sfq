@@ -182,15 +182,18 @@ perror("\t\tfreopen error");
 
 			if (path2)
 			{
-				char* dir = sfq_stradup(path2);
-				if (dir)
+				char* path2_copy = sfq_stradup(path2);
+				if (path2_copy)
 				{
-					if (dirname(dir))
+					char* dir = dirname(path2_copy);
+					if (dir)
 					{
+						char* cwd = getcwd(NULL, 0);
+
+fprintf(stderr, "\tmake directory(%s) dir [cwd=%s path=%s]\n", ext, cwd, dir);
 						if (sfq_mkdir_p(dir, 0700))
 						{
-fprintf(stderr, "\tre-open(%s) file [mode=%s path=%s] for specified log\n", ext, wmode, path2);
-
+fprintf(stderr, "\tfreopen(%s) file [cwd=%s path=%s mode=%s]\n", ext, cwd, path2, wmode);
 							if (freopen(path2, wmode, fp))
 							{
 								opened = path2;
@@ -204,6 +207,9 @@ perror("\t\tfreopen error");
 						{
 perror("\t\tmkdir");
 						}
+
+						free(cwd);
+						cwd = NULL;
 					}
 				}
 			}

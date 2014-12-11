@@ -1,5 +1,8 @@
 #include "sfq-lib.h"
 
+static bool pwd_nam2id(const char* queuser, const char* quegroup,
+	uid_t* queuserid_ptr, gid_t* quegroupid_ptr);
+
 int sfq_init(const char* querootdir, const char* quename, const struct sfq_queue_create_option* qco)
 {
 SFQ_LIB_INITIALIZE
@@ -14,6 +17,12 @@ SFQ_LIB_INITIALIZE
 	size_t elmseg_start_pos = 0;
 	bool b = false;
 
+	uid_t euid = (uid_t)-1;
+	gid_t egid = (uid_t)-1;
+
+	uid_t queuserid = (uid_t)-1;
+	gid_t quegroupid = (uid_t)-1;
+
 	struct sfq_file_header qfh;
 
 /* initialize */
@@ -21,13 +30,10 @@ SFQ_LIB_INITIALIZE
 	eh_size = sizeof(struct sfq_e_header);
 	pi_size = sizeof(struct sfq_process_info);
 
-	bzero(&qfh, qfh_size);
+	euid = geteuid();
+	egid = getegid();
 
-/* */
-	if (qco->procs_num < qco->boota_proc_num)
-	{
-		SFQ_FAIL(EA_OVERLIMIT, "bootable process must not be larger than process num");
-	}
+	bzero(&qfh, qfh_size);
 
 /*
 queue header の初期値を設定
@@ -39,7 +45,56 @@ queue header の初期値を設定
 	strcpy(qfh.last_qhd1.lastoper, "---");
 	strcpy(qfh.last_qhd2.lastoper, "---");
 
-/* check max process num */
+/*
+"-U", "-G" が有効なのは euid == 0(root) のときのみ
+*/
+	SFQ_UNSET_UID(queuserid);
+	SFQ_UNSET_GID(quegroupid);
+
+	b = pwd_nam2id(qco->queuser, qco->quegroup, &queuserid, &quegroupid);
+	if (! b)
+	{
+		SFQ_FAIL(EA_PWDNAME2ID, "pwd_nam2id");
+	}
+
+	if (SFQ_IS_ROOTUID(euid))
+	{
+/*
+root の場合、"-U" か "-G" の指定があるときのみ通過させる
+--> root.root のキューは作成できない
+*/
+		if ((! SFQ_ISSET_UID(queuserid)) && (! SFQ_ISSET_GID(quegroupid)))
+		{
+			SFQ_FAIL(EA_NOTPERMIT, "specify either the user or group");
+		}
+	}
+	else
+	{
+/*
+一般ユーザが "-U" "-G" を指定しても、euid, egid と同じであれば通過させる
+*/
+		if (SFQ_ISSET_UID(queuserid))
+		{
+			if (queuserid != euid)
+			{
+				SFQ_FAIL(EA_NOTPERMIT, "specified user, operation not permitted");
+			}
+		}
+
+		if (SFQ_ISSET_GID(quegroupid))
+		{
+			if (quegroupid != egid)
+			{
+				SFQ_FAIL(EA_NOTPERMIT, "specified group, operation not permitted");
+			}
+		}
+	}
+
+/* check process num */
+	if (qco->procs_num < qco->boota_proc_num)
+	{
+		SFQ_FAIL(EA_OVERLIMIT, "bootable process must not be larger than process num");
+	}
 
 	if (qco->procs_num)
 	{
@@ -140,5 +195,75 @@ SFQ_LIB_FINALIZE
 	qo = NULL;
 
 	return SFQ_LIB_RC();
+}
+
+static bool pwd_nam2id(const char* queuser, const char* quegroup,
+	uid_t* queuserid_ptr, gid_t* quegroupid_ptr)
+{
+	long sysmax = 0;
+	char* buf = NULL;
+	size_t bufsize = 0;
+
+SFQ_LIB_INITIALIZE
+
+	sysmax = sysconf(SFQ_MAX(_SC_GETPW_R_SIZE_MAX, _SC_GETGR_R_SIZE_MAX));
+	if (sysmax > 0)
+	{
+		bufsize = (size_t)sysmax;
+	}
+	else
+	{
+		bufsize = 1024U;
+	}
+
+	buf = alloca(bufsize);
+	if (! buf)
+	{
+		SFQ_FAIL(ES_MEMALLOC, "ALLOC(buf)");
+	}
+
+/* user */
+	if (queuser)
+	{
+		struct passwd pwd;
+		struct passwd *result;
+
+		getpwnam_r(queuser, &pwd, buf, bufsize, &result);
+		if (! result)
+		{
+			SFQ_FAIL(ES_MEMALLOC, "specified user not found");
+		}
+
+#ifdef SFQ_DEBUG_BUILD
+		fprintf(stderr, "user[%s] = %u\n", queuser, pwd.pw_uid);
+#endif
+
+		(*queuserid_ptr) = pwd.pw_uid;
+	}
+
+/* group */
+	if (quegroup)
+	{
+		struct group grp;
+		struct group *result;
+
+		getgrnam_r(quegroup, &grp, buf, bufsize, &result);
+		if (! result)
+		{
+			SFQ_FAIL(ES_MEMALLOC, "specified group not found");
+		}
+
+#ifdef SFQ_DEBUG_BUILD
+		fprintf(stderr, "group[%s] = %u\n", quegroup, grp.gr_gid);
+#endif
+
+		(*quegroupid_ptr) = grp.gr_gid;
+	}
+
+SFQ_LIB_CHECKPOINT
+
+SFQ_LIB_FINALIZE
+
+	return SFQ_LIB_IS_SUCCESS();
 }
 

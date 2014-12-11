@@ -680,7 +680,7 @@ bool sfq_seek_set_and_read(FILE* fp, off_t set_pos, void* mem, size_t mem_size)
 	}
 
 	orc = fseeko(fp, set_pos, SEEK_SET);
-	if (orc == -1)
+	if (orc == (off_t)-1)
 	{
 		return false;
 	}
@@ -715,7 +715,7 @@ bool sfq_seek_set_and_write(FILE* fp, off_t set_pos, const void* mem, size_t mem
 	}
 
 	orc = fseeko(fp, set_pos, SEEK_SET);
-	if (orc == -1)
+	if (orc == (off_t)-1)
 	{
 		return false;
 	}

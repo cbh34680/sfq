@@ -12,7 +12,7 @@
 #include <limits.h>
 #include <sys/stat.h>        /* For mode constants */
 #include <assert.h>
-#include <time.h>
+#include <stdarg.h>
 
 #include <errno.h>
 #include <fcntl.h>           /* For O_* constants */
@@ -31,9 +31,26 @@
 	#include <semaphore.h>
 	#include <wait.h>
 	#include <libgen.h>
+
+	#include <pwd.h>
+	#include <grp.h>
 #endif
 
 #include "sfq.h"
+
+/*
+uid = 0 は root になって uid_t の初期値には使えないから
+uid_t, gid_t はマクロを多用する
+*/
+#define SFQ_IS_ROOTUID(a)	( (a) == 0)
+
+#define SFQ_UNSET_UID(a)	( (a) = (uid_t)-1 )
+#define SFQ_UNSET_GID(a)	( (a) = (gid_t)-1 )
+
+#define SFQ_ISSET_UID(a)	( (a) != (uid_t)-1 )
+#define SFQ_ISSET_GID(a)	( (a) != (gid_t)-1 )
+
+#define SFQ_MAX(a, b)		(((a)>(b))?(a):(b))
 
 #define SFQ_LIB_INITIALIZE \
 	int fire_line__  = -1; \
@@ -58,7 +75,7 @@ SFQ_FAIL_CATCH_LABEL__:
 		struct tm tm_tmp__; \
 		time_t now__; \
 		char nowstr__[32] = ""; \
-		char fire_errstr__[128] = ""; \
+		char fire_errstr__[128] = "-----"; \
 		now__ = time(NULL); \
 		localtime_r(&now__, &tm_tmp__); \
 		strftime(nowstr__, sizeof(nowstr__), "%Y-%m-%d %H:%M:%S", &tm_tmp__); \
@@ -278,6 +295,15 @@ struct sfq_ioelm_buff
 	const char* serrpath;
 };
 
+struct sfq_eloop_params
+{
+	ushort slotno;
+	const char* om_querootdir;
+	const char* om_quename;
+	const char* om_queproclogdir;
+	const char* om_queexeclogdir;
+};
+
 extern void sfq_print_sizes(void);
 extern void sfq_print_qo(const struct sfq_queue_object* qo);
 extern void sfq_print_qf_header(const struct sfq_file_header*);
@@ -316,8 +342,7 @@ extern bool sfq_writeqfh(struct sfq_queue_object* qo, struct sfq_file_header* qf
 extern void sfq_output_reopen_4exec(FILE* fp, const time_t* now, const char* arg_wpath,
 	const char* logdir, const uuid_t uuid, ulong id, const char* ext, const char* env_key);
 
-extern int sfq_execwait(const char* om_querootdir, const char* om_quename,
-        ushort slotno, const char* om_queexeclogdir, struct sfq_value* val);
+extern int sfq_execwait(const struct sfq_eloop_params* elop, struct sfq_value* val);
 
 #endif
 

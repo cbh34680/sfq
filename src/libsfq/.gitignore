@@ -1,5 +1,6 @@
 /*.sh
 /*.so
+/*.exe
 /*.so.*
 /targetver.h
 /dllmain.cpp
@@ -14,3 +15,4 @@
 /*.user
 /a.out
 /?.c
+/err.c

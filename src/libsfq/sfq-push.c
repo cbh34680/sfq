@@ -1,11 +1,41 @@
 #include "sfq-lib.h"
 
+static char* concat_n(int n, ...)
+{
+	int i = 0;
+	size_t len = 0;
+	char* ret = NULL;
+
+	va_list list;
+
+	va_start(list, n);
+	for (i=0; i<n; i++) { len += strlen(va_arg(list, char*)); }
+	va_end(list);
+
+	ret = malloc(len + 1 /* '\0' */);
+	if (! ret)
+	{
+		return NULL;
+	}
+	ret[0] = '\0';
+
+	va_start(list, n);
+	for (i=0; i<n; i++) { strcat(ret, va_arg(list, char*)); }
+	va_end(list);
+
+	return ret;
+}
+
 int sfq_push(const char* querootdir, const char* quename, struct sfq_value* val)
 {
 SFQ_LIB_INITIALIZE
 
 	struct sfq_queue_object* qo = NULL;
 	struct sfq_process_info* procs = NULL;
+
+	char* pushwkdir = NULL;
+	char* full_soutpath = NULL;
+	char* full_serrpath = NULL;
 
 	bool b = false;
 
@@ -28,6 +58,13 @@ SFQ_LIB_INITIALIZE
 	bzero(&prev_eh, sizeof(prev_eh));
 	bzero(&ioeb, sizeof(ioeb));
 
+/* get current directory */
+	pushwkdir = getcwd(NULL, 0);
+	if (! pushwkdir)
+	{
+		SFQ_FAIL(ES_GETCWD, "getcwd");
+	}
+
 /* check argument */
 	if (! val)
 	{
@@ -36,27 +73,54 @@ SFQ_LIB_INITIALIZE
 
 	if (val->execpath)
 	{
-		if (val->execpath[0] == '\0')
-		{
-			val->execpath = NULL;
-		}
+		assert(val->execpath[0]);
 	}
 
 	if (val->execargs)
 	{
-		if (val->execargs[0] == '\0')
+		assert(val->execargs[0]);
+	}
+
+	if (val->soutpath)
+	{
+		assert(val->soutpath[0]);
+
+		if (val->soutpath[0] != '/')
 		{
-			val->execargs = NULL;
+			full_soutpath = concat_n(3, pushwkdir, "/", val->soutpath);
+			if (! full_soutpath)
+			{
+				SFQ_FAIL(EA_CONCAT_N, "pushwkdir/soutpath");
+			}
+#ifdef SFQ_DEBUG_BUILD
+fprintf(stderr, "soutpath [%s] --> [%s]\n", val->soutpath, full_soutpath);
+#endif
+			val->soutpath = full_soutpath;
+		}
+	}
+
+	if (val->serrpath)
+	{
+		assert(val->serrpath[0]);
+
+		if (val->serrpath[0] != '/')
+		{
+			full_serrpath = concat_n(3, pushwkdir, "/", val->serrpath);
+			if (! full_serrpath)
+			{
+				SFQ_FAIL(EA_CONCAT_N, "pushwkdir/serrpath");
+			}
+#ifdef SFQ_DEBUG_BUILD
+fprintf(stderr, "serrpath [%s] --> [%s]\n", val->serrpath, full_serrpath);
+#endif
+			val->serrpath = full_serrpath;
 		}
 	}
 
 /* payload_size auto detect (only null-term string) */
 	if (val->payload)
 	{
-		if (! val->payload_type)
-		{
-			SFQ_FAIL(EA_FUNCARG, "payload is unknown-type");
-		}
+		assert (val->payload_type);
 
 		if (val->payload_type & (SFQ_PLT_CHARARRAY | SFQ_PLT_NULLTERM))
 		{
@@ -315,6 +379,15 @@ questate は go_exec() に渡すので、ここで保存しておく
 	uuid_copy(val->uuid, ioeb.eh.uuid);
 
 SFQ_LIB_CHECKPOINT
+
+	free(pushwkdir);
+	pushwkdir = NULL;
+
+	free(full_soutpath);
+	full_soutpath = NULL;
+
+	free(full_serrpath);
+	full_serrpath = NULL;
 
 	free(procs);
 	procs = NULL;

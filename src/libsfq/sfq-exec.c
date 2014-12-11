@@ -102,6 +102,8 @@ SFQ_LIB_INITIALIZE
 		}
 	}
 
+	chdir("/");
+
 /* execvp() が成功すれば処理は戻らない */
 
 	execvp(argv[0], argv);
@@ -140,8 +142,7 @@ fprintf(stderr, "\tsoutpath == serrpath [%s], redirect stderr to /dev/null\n", s
 		serrpath, logdir, val->uuid, val->id, "err", "SFQ_SERRPATH");
 }
 
-static int child_write_dup_exec_exit(const char* om_quename,
-		ushort slotno, const char* om_queexeclogdir, struct sfq_value* val)
+static int child_write_dup_exec_exit(const struct sfq_eloop_params* elop, struct sfq_value* val)
 {
 SFQ_LIB_INITIALIZE
 
@@ -156,7 +157,7 @@ SFQ_LIB_INITIALIZE
 fprintf(stderr, "\tprepare exec\n");
 
 #ifdef SFQ_DEBUG_BUILD
-	assert(om_quename);
+	assert(elop->om_quename);
 	assert(val);
 #endif
 
@@ -226,7 +227,7 @@ fprintf(stderr, "\t\tpayload size = %zu\n", val->payload_size);
 	}
 
 	/* queue */
-	setenv("SFQ_QUENAME", om_quename, 0);
+	setenv("SFQ_QUENAME", elop->om_quename, 0);
 
 	/* id */
 	snprintf(env_ulong, sizeof(env_ulong), "%zu", val->id);
@@ -249,7 +250,7 @@ fprintf(stderr, "\t\tmetatext = %s\n", val->metatext);
 	}
 
 /* */
-	output_reopen_4exec(om_queexeclogdir, val);
+	output_reopen_4exec(elop->om_queexeclogdir, val);
 
 	sfq_free_value(val);
 
@@ -274,57 +275,52 @@ SFQ_LIB_FINALIZE
 	return SFQ_LIB_RC();
 }
 
-int sfq_execwait(const char* om_querootdir, const char* om_quename,
-	ushort slotno, const char* om_queexeclogdir, struct sfq_value* val)
+int sfq_execwait(const struct sfq_eloop_params* elop, struct sfq_value* val)
 {
-	pid_t pid = -1;
-
-/*
-親プロセスで SIGCHLD に対して SIG_IGN を設定ているので元に戻さない
-wait() 後にステータスが取得できない
-*/
-	signal(SIGCHLD, SIG_DFL);
+	pid_t pid = (pid_t)-1;
 
 	pid = fork();
-	if (pid < 0)
-	{
-/* fault */
-	}
-	else
-	{
 
-		if (pid == 0)
-		{
+	if (pid == 0)
+	{
 /* child */
-			child_write_dup_exec_exit(om_quename, slotno, om_queexeclogdir, val);
+/*
+親プロセスで無視していたシグナルを元に戻す
+*/
+		signal(SIGHUP,  SIG_DFL);
+		signal(SIGINT,  SIG_DFL);
+		signal(SIGQUIT, SIG_DFL);
 
-			sfq_free_value(val);
+		child_write_dup_exec_exit(elop, val);
+
+		sfq_free_value(val);
 
 /*
 exec() が成功すればここには来ない
 */
-			exit (SFQ_RC_EC_EXECFAIL);
-		}
-		else
-		{
+		exit (SFQ_RC_EC_EXECFAIL);
+	}
+	else if (pid > 0)
+	{
 /* parent */
-			int irc = 0;
-			int status = 0;
+		int irc = 0;
+		int status = 0;
 
 fprintf(stderr, "\tbefore wait child-process [pid=%d]\n", pid);
 
-			irc = waitpid(pid, &status, 0);
-
-			if (irc != -1)
+/*
+子プロセスの終了を待つ
+*/
+		irc = waitpid(pid, &status, 0);
+		if (irc != -1)
+		{
+			if (WIFEXITED(status))
 			{
-				if (WIFEXITED(status))
-				{
-					int exit_code = WEXITSTATUS(status);
+				int exit_code = WEXITSTATUS(status);
 
 fprintf(stderr, "\tafter wait child-process [pid=%d exit=%d]\n", pid, exit_code);
 
-					return exit_code;
-				}
+				return exit_code;
 			}
 		}
 	}

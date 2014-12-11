@@ -35,7 +35,7 @@ enum
 	SFQ_RC_W_TAKEOUT_STOPPED,
 	SFQ_RC_W_NOCHANGE_STATE,
 
-	SFQ_RC_FATAL_MIN		= 51,
+	SFQ_RC_FATAL_MIN		= 31,
 	SFQ_RC_UNKNOWN,
 	SFQ_RC_EA_FSIZESMALL,
 	SFQ_RC_EA_EXISTQUEUE,
@@ -53,7 +53,11 @@ enum
 	SFQ_RC_EA_PATHNOTEXIST,
 	SFQ_RC_EA_MKLOGDIR,
 	SFQ_RC_EA_CREATENAMES,
+	SFQ_RC_EA_PWDNAME2ID,
+	SFQ_RC_EA_NOTPERMIT,
+	SFQ_RC_EA_CONCAT_N,
 
+	SFQ_RC_SYSERR_MIN		= 71,
 	SFQ_RC_ES_MEMALLOC,
 	SFQ_RC_ES_FILEOPEN,
 	SFQ_RC_ES_FILEIO,
@@ -66,9 +70,10 @@ enum
 	SFQ_RC_ES_WRITE,
 	SFQ_RC_ES_MKDIR,
 	SFQ_RC_ES_REALPATH,
+	SFQ_RC_ES_GETCWD,
 
-	SFQ_RC_EC_EXECFAIL	= 119,
-	SFQ_RC_EC_FILENOTFOUND	= 127,
+	SFQ_RC_EC_EXECFAIL		= 119,
+	SFQ_RC_EC_FILENOTFOUND		= 127,
 };
 
 /* PayLoad Type: uchar */
@@ -98,6 +103,8 @@ struct sfq_queue_create_option
 	ushort procs_num;
 	ushort boota_proc_num;
 	questate_t questate;
+	const char* queuser;
+	const char* quegroup;
 };
 
 /* */
@@ -149,7 +156,8 @@ extern size_t sfq_payload_len(const struct sfq_value* val);
 
 /* stack allocate and string copy */
 #ifdef __GNUC__
-	#define sfq_stradup(org) ({ \
+	#define sfq_stradup(org) \
+		({ \
 			char* dst = NULL; \
 			if (org) { \
 				dst = alloca(strlen( (org) ) + 1); \
@@ -160,10 +168,10 @@ extern size_t sfq_payload_len(const struct sfq_value* val);
 			dst; \
 		})
 #else
-		#define sfq_stradup(org) \
-			sfq_safe_strcpy( alloca( strlen( (org) ) + 1 ), (org) )
+	#define sfq_stradup(org) \
+		sfq_safe_strcpy( alloca( strlen( (org) ) + 1 ), (org) )
 
-		extern char* sfq_safe_strcpy(char* dst, const char* org);
+	extern char* sfq_safe_strcpy(char* dst, const char* org);
 #endif
 
 #ifdef __cplusplus

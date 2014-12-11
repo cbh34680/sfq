@@ -1,7 +1,7 @@
 #include "sfq-lib.h"
 
-static bool update_procstate(const char* om_querootdir, const char* om_quename,
-	ushort slotno, sfq_uchar procstate, int TO_state, questate_t* questate_ptr)
+static bool update_procstate(const struct sfq_eloop_params* elop,
+	sfq_uchar procstate, int TO_state, questate_t* questate_ptr)
 {
 SFQ_LIB_INITIALIZE
 
@@ -19,7 +19,7 @@ SFQ_LIB_INITIALIZE
 	bzero(&qfh, sizeof(qfh));
 
 /* open queue-file */
-	qo = sfq_open_queue_rw(om_querootdir, om_quename);
+	qo = sfq_open_queue_rw(elop->om_querootdir, elop->om_quename);
 	if (! qo)
 	{
 		SFQ_FAIL(EA_OPENFILE, "sfq_open_queue");
@@ -32,13 +32,13 @@ SFQ_LIB_INITIALIZE
 		SFQ_FAIL(EA_READQFH, "sfq_readqfh");
 	}
 
-	if (qfh.qh.sval.procs_num <= slotno)
+	if (qfh.qh.sval.procs_num <= elop->slotno)
 	{
-		SFQ_FAIL(EA_FUNCARG, "qfh.qh.sval.procs_num <= i");
+		SFQ_FAIL(EA_FUNCARG, "qfh.qh.sval.procs_num <= elop->slotno");
 	}
 
 /* update process info */
-	proc = &procs[slotno];
+	proc = &procs[elop->slotno];
 
 	proc->procstate = procstate;
 	proc->updtime = qo->opentime;
@@ -105,8 +105,7 @@ SFQ_LIB_FINALIZE
 	return SFQ_LIB_IS_SUCCESS();
 }
 
-static void foreach_element(const char* om_querootdir, const char* om_quename,
-	ushort slotno, const char* om_queexeclogdir)
+static void foreach_element(const struct sfq_eloop_params* elop)
 {
 SFQ_LIB_INITIALIZE
 
@@ -122,15 +121,14 @@ SFQ_LIB_INITIALIZE
 fprintf(stderr, "#\n");
 fprintf(stderr, "# ppid    = %d\n", ppid);
 fprintf(stderr, "# pid     = %d\n", pid);
-fprintf(stderr, "# slotno  = %u\n", slotno);
-fprintf(stderr, "# root    = %s\n", om_querootdir);
-fprintf(stderr, "# queue   = %s\n", om_quename);
-fprintf(stderr, "# execlog = %s\n", om_queexeclogdir);
+fprintf(stderr, "# slotno  = %u\n", elop->slotno);
+fprintf(stderr, "# root    = %s\n", elop->om_querootdir);
+fprintf(stderr, "# queue   = %s\n", elop->om_quename);
+fprintf(stderr, "# execlog = %s\n", elop->om_queexeclogdir);
 fprintf(stderr, "#\n");
 
 	/* 状態を LOOPSTART に変更 */
-	b = update_procstate(om_querootdir, om_quename, slotno,
-		SFQ_PIS_LOOPSTART, 0, &questate);
+	b = update_procstate(elop, SFQ_PIS_LOOPSTART, 0, &questate);
 
 	if (! b)
 	{
@@ -152,7 +150,7 @@ fprintf(stderr, "loop(%zu) block-top [time=%zu]\n", loop, time(NULL));
 
 fprintf(stderr, "loop(%zu) attempt to shift\n", loop);
 
-		shift_rc = sfq_shift(om_querootdir, om_quename, &val);
+		shift_rc = sfq_shift(elop->om_querootdir, elop->om_quename, &val);
 		if (shift_rc == SFQ_RC_W_NOELEMENT)
 		{
 			/* no more element */
@@ -169,12 +167,12 @@ fprintf(stderr, "loop(%zu) no more element, break\n", loop);
 
 			uuid_unparse(val.uuid, uuid_s);
 
-fprintf(stderr, "loop(%zu) shift success [id=%zu pushtime=%zu uuid=%s]\n", loop, val.id, val.pushtime, uuid_s);
+fprintf(stderr, "loop(%zu) shift success [id=%zu pushtime=%zu uuid=%s]\n",
+	loop, val.id, val.pushtime, uuid_s);
 
 fprintf(stderr, "loop(%zu) attempt to exec [id=%zu]\n", loop, val.id);
 
-			irc = sfq_execwait(om_querootdir, om_quename,
-				slotno, om_queexeclogdir, &val);
+			irc = sfq_execwait(elop, &val);
 
 			if (irc == 0)
 			{
@@ -216,8 +214,7 @@ fprintf(stderr, "loop(%zu) shift fail [rc=%d]\n", loop, shift_rc);
 		sfq_free_value(&val);
 
 /* update to_*** */
-		b = update_procstate(om_querootdir, om_quename, slotno,
-			SFQ_PIS_TAKEOUT, TO_state, &questate);
+		b = update_procstate(elop, SFQ_PIS_TAKEOUT, TO_state, &questate);
 
 		if (! b)
 		{
@@ -233,7 +230,7 @@ SFQ_LIB_CHECKPOINT
 ここでの update_procstate() の失敗は無視するしかないが
 スロットが埋まったままになってしまうので、解除手段の検討が必要かも
 */
-	update_procstate(om_querootdir, om_quename, slotno, SFQ_PIS_DONE, 0, NULL);
+	update_procstate(elop, SFQ_PIS_DONE, 0, NULL);
 
 fprintf(stderr, "after loop [loop times=%zu]\n", loop);
 fprintf(stderr, "\n");
@@ -245,64 +242,78 @@ bool sfq_go_exec(const char* querootdir, const char* quename, ushort slotno, que
 {
 	pid_t pid = (pid_t)-1;
 
-	/* 子プロセスを wait() しない */
+/*
+子プロセスを wait() しない
+*/
 	signal(SIGCHLD, SIG_IGN);
 
 	pid = fork();
-	if (pid < 0)
+
+	if (pid == 0) 
 	{
-		/* fault create new-process */
-		return false;
-	}
-	else
-	{
-		if (pid == 0) 
-		{
 /* child process */
-			char* om_quename = NULL;
-			char* om_querootdir = NULL;
-			char* om_queproclogdir = NULL;
-			char* om_queexeclogdir = NULL;
+		struct sfq_open_names* om = NULL;
+		struct sfq_eloop_params elop;
 
-			struct sfq_open_names* om = NULL;
+/* */
+		bzero(&elop, sizeof(elop));
 
-			/* copy to stack */
-			om = sfq_alloc_open_names(querootdir, quename);
-			assert(om);
+		elop.slotno = slotno;
 
-			om_querootdir = sfq_stradup(om->querootdir);
-			assert(om_querootdir);
+/*
+子プロセスを wait() する
+*/
+		signal(SIGCHLD, SIG_DFL);
 
-			om_quename = sfq_stradup(om->quename);
-			assert(om_quename);
+/*
+いくつかのシグナルを無視してセッションリーダーになる
+*/
+		signal(SIGHUP,  SIG_IGN);
+		signal(SIGINT,  SIG_IGN);
+		signal(SIGQUIT, SIG_IGN);
 
-			om_queproclogdir = sfq_stradup(om->queproclogdir);
-			assert(om_queproclogdir);
+		setsid();
+/*
+アンマウントを邪魔しない
+*/
+		chdir("/");
 
-			om_queexeclogdir = sfq_stradup(om->queexeclogdir);
-			assert(om_queexeclogdir);
+/*
+ヒープに残しておくとメモリリークになるので、スタックに退避
+*/
+		/* copy to stack */
+		om = sfq_alloc_open_names(querootdir, quename);
+		assert(om);
 
-			sfq_free_open_names(om);
-			om = NULL;
+		elop.om_querootdir = sfq_stradup(om->querootdir);
+		assert(elop.om_querootdir);
+
+		elop.om_quename = sfq_stradup(om->quename);
+		assert(elop.om_quename);
+
+		elop.om_queproclogdir = sfq_stradup(om->queproclogdir);
+		assert(elop.om_queproclogdir);
+
+		elop.om_queexeclogdir = sfq_stradup(om->queexeclogdir);
+		assert(elop.om_queexeclogdir);
+
+		sfq_free_open_names(om);
+		om = NULL;
+
 
 /*
 ループ処理の標準出力、標準エラー出力先を切り替え
 */
-			sfq_reopen_4proc(om_queproclogdir, slotno, questate);
+		sfq_reopen_4proc(elop.om_queproclogdir, elop.slotno, questate);
 
 /*
 ループ処理の実行
 */
-			foreach_element(om_querootdir, om_quename, slotno, om_queexeclogdir);
+		foreach_element(&elop);
 
-			exit (EXIT_SUCCESS);
-		}
-		else
-		{
-/* parent process */
-		}
+		exit (EXIT_SUCCESS);
 	}
 
-	return true;
+	return (pid > 0) ? true : false;
 }
 
