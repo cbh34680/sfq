@@ -52,10 +52,10 @@ abstract class SfqClient implements SfqClientInterface
 
 class SfqClientLocal extends SfqClient
 {
-	private $querootdir;
 	private $quename;
+	private $querootdir;
 
-	function __construct($params)
+	function __construct($quename, $params)
 	{
 		if (! extension_loaded('wrap_libsfq'))
 		{
@@ -67,9 +67,9 @@ class SfqClientLocal extends SfqClient
 			$this->querootdir = $params['querootdir'];
 		}
 
-		if (isset($params['quename']))
+		if (isset($quename))
 		{
-			$this->quename = $params['quename'];
+			$this->quename = $quename;
 		}
 
 		parent::__construct();
@@ -140,7 +140,7 @@ class SfqClientLocal extends SfqClient
 
 class Sfq
 {
-	static function newClient($params=[])
+	static function newClient($quename=null, $params=[])
 	{
 		if (isset($params['host']))
 		{
@@ -152,7 +152,7 @@ class Sfq
 		{
 			// connect localhost
 
-			return new SfqClientLocal($params);
+			return new SfqClientLocal($quename, $params);
 		}
 	}
 

@@ -12,11 +12,12 @@
 #include <limits.h>
 #include <sys/stat.h>        /* For mode constants */
 #include <assert.h>
+#include <time.h>
+
 #include <errno.h>
 #include <fcntl.h>           /* For O_* constants */
 #include <signal.h>
 #include <math.h>
-
 #include <libgen.h>
 
 #ifdef WIN32
@@ -27,6 +28,7 @@
 	#include <dirent.h>
 	#include <unistd.h>
 	#include <alloca.h>
+
 	#include <semaphore.h>
 	#include <wait.h>
 #endif
@@ -51,9 +53,22 @@ SFQ_FAIL_CATCH_LABEL__:
 
 
 #define SFQ_LIB_FINALIZE \
-	if (fire_reason__[0]) { \
-		fprintf(stderr, "%s(%d):%s:r=%d e=%d: [%s]\n", \
-			__FILE__, fire_line__, __func__, fire_rc__, fire_errno__, fire_reason__); \
+	if (fire_reason__[0]) \
+	{ \
+		struct tm tm_tmp__; \
+		time_t now__; \
+		char nowstr__[32] = ""; \
+		char fire_errstr__[128] = ""; \
+		now__ = time(NULL); \
+		localtime_r(&now__, &tm_tmp__); \
+		strftime(nowstr__, sizeof(nowstr__), "%Y-%m-%d %H:%M:%S", &tm_tmp__); \
+		if (fire_errno__) { \
+			strerror_r(errno, fire_errstr__, sizeof(fire_errstr__)); \
+		} \
+		fprintf(stderr, "= %s =\n\t%s(%d)# %s\n\treason=%d [%s]\n\terrno=%d [%s]\n\n", \
+			nowstr__, __FILE__, fire_line__, __func__, \
+			fire_rc__, fire_reason__, \
+			fire_errno__, fire_errstr__); \
 	}
 
 

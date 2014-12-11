@@ -87,6 +87,14 @@ EOF
 
   cp -p modules/wrap_libsfq.so ..
 
+  cat << EOF > ../root.sh
+#!/bin/sh
+pushd $(readlink -f .)
+make install
+echo 'extension=wrap_libsfq.so' > /etc/php.d/wrap_libsfq.ini
+EOF
+  chmod a+x ../root.sh
+
   cat << EOF
 #
 # ALL DONE.
@@ -96,6 +104,10 @@ EOF
 #  1. (cd $(readlink -f .); make install)
 #  2. echo 'extension=wrap_libsfq.so' > /etc/php.d/wrap_libsfq.ini
 #  3. php -m | grep wrap_libsfq
+#
+# OR
+#
+#  $(readlink -f ..)/root.sh
 #
 EOF
 )

@@ -31,7 +31,7 @@ SFQ_LIB_INITIALIZE
 	semobj = sem_open(om->semname, O_CREAT, 0600, 1);
 	if (semobj == SEM_FAILED)
 	{
-		SFQ_FAIL(ES_SEMOPEN, "sem_open");
+		SFQ_FAIL(ES_SEMOPEN, "semaphore open error, check permission (e.g. /dev/shm%s)", om->semname);
 	}
 
 /* lock */
@@ -46,7 +46,7 @@ SFQ_LIB_INITIALIZE
 	fp = fopen(om->quefile, file_mode);
 	if (! fp)
 	{
-		SFQ_FAIL(ES_FILEOPEN, "file open error '%s'", om->quefile);
+		SFQ_FAIL(ES_FILEOPEN, "file open error '%s' (systemd[PrivateTmp=true] enable?)", om->quefile);
 	}
 
 /* create response */

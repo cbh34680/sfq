@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<extension name="wrap_libsfq" version="1.0.0" xmlns:xi="http://www.w3.org/2001/XInclude">
+<extension name="wrap_libsfq" version="0.11.0" xmlns:xi="http://www.w3.org/2001/XInclude">
   <summary>libsfq wrapper extension</summary>
   <description><?data
 This is wrap_libsfq PHP extension module.

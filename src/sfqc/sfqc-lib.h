@@ -8,6 +8,7 @@
 #include <limits.h>
 #include <sys/stat.h>
 #include <assert.h>
+#include <time.h>
 
 #include <stdarg.h>
 #include <ctype.h>
