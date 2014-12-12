@@ -160,14 +160,26 @@ class SFQueueClientLocal extends SFQueueClient
 // public:
 	function push_text($params)
 	{
-		$params['payload_type'] = (SFQ_PLT_CHARARRAY | SFQ_PLT_NULLTERM);
+		if (isset($params['payload']))
+		{
+			if (! isset($params['payload_type']))
+			{
+				$params['payload_type'] = (SFQ_PLT_CHARARRAY | SFQ_PLT_NULLTERM);
+			}
+		}
 
 		return $this->native_push_($params);
 	}
 
 	function push_binary($params)
 	{
-		$params['payload_type'] = (SFQ_PLT_BINARY);
+		if (isset($params['payload']))
+		{
+			if (! isset($params['payload_type']))
+			{
+				$params['payload_type'] = (SFQ_PLT_BINARY);
+			}
+		}
 
 		return $this->native_push_($params);
 	}

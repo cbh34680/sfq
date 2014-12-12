@@ -11,6 +11,7 @@ SFQ_LIB_INITIALIZE
 
 /* initialize */
 
+	errno = 0;
 	bzero(&qfh, sizeof(qfh));
 
 /* open queue-file */

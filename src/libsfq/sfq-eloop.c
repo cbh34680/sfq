@@ -16,6 +16,7 @@ SFQ_LIB_INITIALIZE
 	struct sfq_file_header qfh;
 
 /* initialize */
+	errno = 0;
 	bzero(&qfh, sizeof(qfh));
 
 /* open queue-file */

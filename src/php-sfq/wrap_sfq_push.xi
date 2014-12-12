@@ -4,6 +4,7 @@
     <code><?data
 // start
 	zval** entry = NULL;
+	int hnelm = 0;
 
 	int push_rc = SFQ_RC_UNKNOWN;
 	struct sfq_value val;
@@ -12,6 +13,12 @@
 	bzero(&val, sizeof(val));
 
 	zend_hash_internal_pointer_reset(ioparam_hash);
+
+	hnelm = zend_hash_num_elements(ioparam_hash);
+	if (hnelm == 0)
+	{
+		RETURN_FALSE;
+	}
 
 	while (zend_hash_get_current_data(ioparam_hash, (void**)&entry) == SUCCESS)
 	{

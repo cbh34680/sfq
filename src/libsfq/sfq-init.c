@@ -53,6 +53,8 @@ SFQ_LIB_INITIALIZE
 	struct sfq_file_header qfh;
 
 /* initialize */
+	errno = 0;
+
 	qfh_size = sizeof(qfh);
 	eh_size = sizeof(struct sfq_e_header);
 	pi_size = sizeof(struct sfq_process_info);

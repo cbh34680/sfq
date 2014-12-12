@@ -61,6 +61,8 @@ SFQ_LIB_INITIALIZE
 	struct sfq_ioelm_buff ioeb;
 
 /* initialize */
+	errno = 0;
+
 	eh_size = sizeof(struct sfq_e_header);
 
 	bzero(&qfh, sizeof(qfh));
