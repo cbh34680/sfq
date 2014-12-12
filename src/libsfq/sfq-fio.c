@@ -28,10 +28,15 @@ SFQ_LIB_INITIALIZE
 	}
 
 /* open semaphore */
-	semobj = sem_open(om->semname, O_CREAT, 0600, 1);
+/*
+本来は適切なパーミッションとすべきだが、マシンを再起動すると
+セマフォが消えてしまうので 0666 としておく。
+*/
+	semobj = sem_open(om->semname, O_CREAT, 0666, 1);
 	if (semobj == SEM_FAILED)
 	{
-		SFQ_FAIL(ES_SEMOPEN, "semaphore open error, check permission (e.g. /dev/shm%s)", om->semname);
+		SFQ_FAIL(ES_SEMOPEN, "semaphore open error, check permission (e.g. /dev/shm%s)",
+			om->semname);
 	}
 
 /* lock */
@@ -46,7 +51,8 @@ SFQ_LIB_INITIALIZE
 	fp = fopen(om->quefile, file_mode);
 	if (! fp)
 	{
-		SFQ_FAIL(ES_FILEOPEN, "file open error '%s' (systemd[PrivateTmp=true] enable?)", om->quefile);
+		SFQ_FAIL(ES_FILEOPEN, "file open error '%s' (systemd[PrivateTmp=true] enable?)",
+			om->quefile);
 	}
 
 /* create response */
@@ -117,93 +123,155 @@ struct sfq_queue_object* sfq_open_queue_ro(const char* querootdir, const char* q
 	return qo;
 }
 
-struct sfq_queue_object* sfq_create_queue(const char* querootdir, const char* quename)
+static bool mkdir_withUGW(const char* dir, const struct sfq_queue_create_params* qcp)
+{
+	int irc = -1;
+
+	mode_t mode = (mode_t)-1;
+
+SFQ_LIB_INITIALIZE
+
+	mode = (S_IRUSR | S_IWUSR | S_IXUSR);
+	if (qcp->chmod_GaW)
+	{
+		mode |= (S_IRGRP | S_IWGRP | S_IXGRP);
+	}
+
+	irc = mkdir(dir, mode);
+	if (irc != 0)
+	{
+		SFQ_FAIL(ES_MKDIR, "mkdir");
+	}
+
+	if (SFQ_ISSET_UID(qcp->queuserid) || SFQ_ISSET_GID(qcp->quegroupid))
+	{
+		irc = chown(dir, qcp->queuserid, qcp->quegroupid);
+		if (irc != 0)
+		{
+			SFQ_FAIL(ES_CHOWN, "chown");
+		}
+	}
+
+SFQ_LIB_CHECKPOINT
+
+SFQ_LIB_FINALIZE
+
+	return SFQ_LIB_IS_SUCCESS();
+}
+
+struct sfq_queue_object* sfq_create_queue(const struct sfq_queue_create_params* qcp)
 {
 SFQ_LIB_INITIALIZE
 
 	struct sfq_queue_object* qo = NULL;
-	struct sfq_open_names* chk_om = NULL;
+	struct sfq_open_names* om = NULL;
 
-	int irc = 0;
+	mode_t mode = 0;
+	bool b = false;
+
+	int irc = -1;
 	struct stat stbuf;
 
 /* */
-	chk_om = sfq_alloc_open_names(querootdir, quename);
-	if (! chk_om)
+	om = sfq_alloc_open_names(qcp->querootdir, qcp->quename);
+	if (! om)
 	{
 		SFQ_FAIL(EA_CREATENAMES, "sfq_alloc_open_names");
 	}
 
 /* queue-dir not exists */
-	irc = stat(chk_om->querootdir, &stbuf);
+	irc = stat(om->querootdir, &stbuf);
 	if (irc != 0)
 	{
 		/* already exists */
-		SFQ_FAIL(EA_PATHNOTEXIST, "dir not exist '%s'", chk_om->querootdir);
+		SFQ_FAIL(EA_PATHNOTEXIST, "dir not exist '%s'", om->querootdir);
 	}
 
 /* queue file, already exists */
-	irc = stat(chk_om->quedir, &stbuf);
+	irc = stat(om->quedir, &stbuf);
 	if (irc == 0)
 	{
 		/* already exists */
-		SFQ_FAIL(EA_EXISTQUEUE, "dir already exist '%s'", chk_om->quedir);
+		SFQ_FAIL(EA_EXISTQUEUE, "dir already exist '%s'", om->quedir);
 	}
 
 /* delete old lock */
-	irc = sem_unlink(chk_om->semname);
+	irc = sem_unlink(om->semname);
 	if (irc == -1)
 	{
 		if (errno != ENOENT)
 		{
-			SFQ_FAIL(ES_UNLINK, "sem_unlink");
+			SFQ_FAIL(ES_UNLINK,
+				"delete semaphore fault, check permission (e.g. /dev/shm%s)",
+				om->semname);
 		}
 	}
 
 /* make directories */
-	irc = mkdir(chk_om->quedir, 0700);
-	if (irc != 0)
+	b = mkdir_withUGW(om->quedir, qcp);
+	if (! b)
 	{
 		SFQ_FAIL(ES_MKDIR, "quedir");
 	}
 
-	irc = mkdir(chk_om->quelogdir, 0700);
-	if (irc != 0)
+	b = mkdir_withUGW(om->quelogdir, qcp);
+	if (! b)
 	{
 		SFQ_FAIL(ES_MKDIR, "quelogdir");
 	}
 
-	irc = mkdir(chk_om->queproclogdir, 0700);
-	if (irc != 0)
+	b = mkdir_withUGW(om->queproclogdir, qcp);
+	if (! b)
 	{
 		SFQ_FAIL(ES_MKDIR, "queproclogdir");
 	}
 
-	irc = mkdir(chk_om->queexeclogdir, 0700);
-	if (irc != 0)
+	b = mkdir_withUGW(om->queexeclogdir, qcp);
+	if (! b)
 	{
 		SFQ_FAIL(ES_MKDIR, "queexeclogdir");
 	}
 
-	sfq_free_open_names(chk_om);
-	chk_om = NULL;
-
 /* open queue (w) */
-	qo = open_queue_(querootdir, quename, "wb");
+	qo = open_queue_(om->querootdir, om->quename, "wb");
 	if (! qo)
 	{
 		SFQ_FAIL(EA_OPENFILE, "open_queue_");
 	}
 
+/* change owner/group and permission */
+
+	mode = (S_IRUSR | S_IWUSR | S_IXUSR);
+	if (qcp->chmod_GaW)
+	{
+		mode |= (S_IRGRP | S_IWGRP | S_IXGRP);
+	}
+
+	irc = chmod(qo->om->quefile, mode);
+	if (irc != 0)
+	{
+		SFQ_FAIL(ES_CHMOD, "chmod");
+	}
+
+	if (SFQ_ISSET_UID(qcp->queuserid) || SFQ_ISSET_GID(qcp->quegroupid))
+	{
+		irc = chown(qo->om->quefile, qcp->queuserid, qcp->quegroupid);
+		if (irc != 0)
+		{
+			SFQ_FAIL(ES_CHOWN, "chown");
+		}
+	}
+
+/* */
 	qo->file_openmode = (SFQ_FOM_WRITE);
 
 SFQ_LIB_CHECKPOINT
 
+	sfq_free_open_names(om);
+	om = NULL;
+
 	if (SFQ_LIB_IS_FAIL())
 	{
-		sfq_free_open_names(chk_om);
-		chk_om = NULL;
-
 		sfq_close_queue(qo);
 		qo = NULL;
 	}

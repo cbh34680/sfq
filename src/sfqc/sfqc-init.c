@@ -11,26 +11,26 @@ int main(int argc, char** argv)
 	ushort procs_num = 0;
 
 /* */
-	struct sfqc_init_option opt;
-	struct sfq_queue_create_option qco;
+	struct sfqc_program_args pgargs;
+	struct sfq_queue_init_params qip;
 
 SFQC_MAIN_INITIALIZE
 
-	bzero(&opt, sizeof(opt));
-	bzero(&qco, sizeof(qco));
+	bzero(&pgargs, sizeof(pgargs));
+	bzero(&qip, sizeof(qip));
 
 /* */
-	irc = sfqc_get_init_option(argc, argv, "D:N:S:L:B:U:G:oe", false, &opt);
+	irc = sfqc_parse_program_args(argc, argv, "D:N:S:L:B:U:G:oe", false, &pgargs);
 	if (irc != 0)
 	{
-		message = "get_init_option: parse error";
+		message = "parse_program_args: parse error";
 		jumppos = __LINE__;
 		goto EXIT_LABEL;
 	}
 
-	if (opt.soutpath)
+	if (pgargs.soutpath)
 	{
-		if (strcmp(opt.soutpath, "-") != 0)
+		if (strcmp(pgargs.soutpath, "-") != 0)
 		{
 			message = "'-o' is only allowed '-'";
 			jumppos = __LINE__;
@@ -40,9 +40,9 @@ SFQC_MAIN_INITIALIZE
 		questate |= SFQ_QST_STDOUT_ON;
 	}
 
-	if (opt.serrpath)
+	if (pgargs.serrpath)
 	{
-		if (strcmp(opt.serrpath, "-") != 0)
+		if (strcmp(pgargs.serrpath, "-") != 0)
 		{
 			message = "'-e' is only allowed '-'";
 			jumppos = __LINE__;
@@ -57,19 +57,19 @@ SFQC_MAIN_INITIALIZE
 
 --> 今後転送キューを作成した場合にスロットが 0 だとマズい
 */
-	procs_num = (opt.boota_proc_num > SFQC_RESERVE_SLOT_MIN)
-		? opt.boota_proc_num : SFQC_RESERVE_SLOT_MIN;
+	procs_num = (pgargs.boota_proc_num > SFQC_RESERVE_SLOT_MIN)
+		? pgargs.boota_proc_num : SFQC_RESERVE_SLOT_MIN;
 
 //
-	qco.filesize_limit = opt.filesize_limit;
-	qco.payloadsize_limit = opt.payloadsize_limit;
-	qco.procs_num = procs_num;
-	qco.boota_proc_num = opt.boota_proc_num;
-	qco.questate = questate;
-	qco.queuser = opt.queuser;
-	qco.quegroup = opt.quegroup;
+	qip.filesize_limit = pgargs.filesize_limit;
+	qip.payloadsize_limit = pgargs.payloadsize_limit;
+	qip.procs_num = procs_num;
+	qip.boota_proc_num = pgargs.boota_proc_num;
+	qip.questate = questate;
+	qip.queuser = pgargs.queuser;
+	qip.quegroup = pgargs.quegroup;
 
-	irc = sfq_init(opt.querootdir, opt.quename, &qco);
+	irc = sfq_init(pgargs.querootdir, pgargs.quename, &qip);
 
 	if (irc != SFQ_RC_SUCCESS)
 	{
@@ -87,7 +87,7 @@ EXIT_LABEL:
 		fprintf(stderr, "%s(%d): %s\n", __FILE__, jumppos, message);
 	}
 
-	sfqc_free_init_option(&opt);
+	sfqc_free_program_args(&pgargs);
 
 SFQC_MAIN_FINALIZE
 

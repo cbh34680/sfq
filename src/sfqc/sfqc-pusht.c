@@ -1,10 +1,10 @@
 #include "sfqc-lib.h"
 
-struct sfqc_init_option opt;
+struct sfqc_program_args pgargs;
 
 void release_heap()
 {
-	sfqc_free_init_option(&opt);
+	sfqc_free_program_args(&pgargs);
 }
 
 int main(int argc, char** argv)
@@ -21,21 +21,21 @@ int main(int argc, char** argv)
 
 SFQC_MAIN_INITIALIZE
 
-	bzero(&opt, sizeof(opt));
+	bzero(&pgargs, sizeof(pgargs));
 
 /* */
-	irc = sfqc_get_init_option(argc, argv, "D:N:o:e:f:x:a:m:t:q", false, &opt);
+	irc = sfqc_parse_program_args(argc, argv, "D:N:o:e:f:x:a:m:t:q", false, &pgargs);
 	if (irc != 0)
 	{
-		message = "get_init_option: parse error";
+		message = "parse_program_args: parse error";
 		jumppos = __LINE__;
 		goto EXIT_LABEL;
 	}
 
 
-	if (opt.inputfile)
+	if (pgargs.inputfile)
 	{
-		if (strcmp(opt.inputfile, "-") == 0)
+		if (strcmp(pgargs.inputfile, "-") == 0)
 		{
 /* read from stdin */
 			irc = sfqc_readstdin(&mem, NULL);
@@ -49,7 +49,7 @@ SFQC_MAIN_INITIALIZE
 		else
 		{
 /* read from file */
-			irc = sfqc_readfile(opt.inputfile, &mem, NULL);
+			irc = sfqc_readfile(pgargs.inputfile, &mem, NULL);
 			if (irc != 0)
 			{
 				message = "can't read file";
@@ -58,15 +58,15 @@ SFQC_MAIN_INITIALIZE
 			}
 		}
 
-		free((char*)opt.textdata);
-		opt.textdata = (char*)mem;
+		free((char*)pgargs.textdata);
+		pgargs.textdata = (char*)mem;
 	}
 
-	irc = sfq_push_text(opt.querootdir, opt.quename,
-		opt.execpath, opt.execargs, opt.metatext,
-		opt.soutpath, opt.serrpath,
+	irc = sfq_push_text(pgargs.querootdir, pgargs.quename,
+		pgargs.execpath, pgargs.execargs, pgargs.metatext,
+		pgargs.soutpath, pgargs.serrpath,
 		NULL,
-		opt.textdata);
+		pgargs.textdata);
 
 	if (irc != SFQ_RC_SUCCESS)
 	{
@@ -98,7 +98,7 @@ EXIT_LABEL:
 	free(mem);
 	mem = NULL;
 
-	if (! opt.quiet)
+	if (! pgargs.quiet)
 	{
 		if (message)
 		{
@@ -106,7 +106,7 @@ EXIT_LABEL:
 		}
 	}
 
-	sfqc_free_init_option(&opt);
+	sfqc_free_program_args(&pgargs);
 
 SFQC_MAIN_FINALIZE
 

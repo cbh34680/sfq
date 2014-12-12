@@ -40,23 +40,23 @@ int main(int argc, char** argv)
 	ulong cnt = 0;
 
 /* */
-	struct sfqc_init_option opt;
+	struct sfqc_program_args pgargs;
 
 /* */
 SFQC_MAIN_INITIALIZE
 
-	bzero(&opt, sizeof(opt));
+	bzero(&pgargs, sizeof(pgargs));
 
 /* */
-	irc = sfqc_get_init_option(argc, argv, "D:N:", false, &opt);
+	irc = sfqc_parse_program_args(argc, argv, "D:N:", false, &pgargs);
 	if (irc != 0)
 	{
-		message = "get_init_option: parse error";
+		message = "parse_program_args: parse error";
 		jumppos = __LINE__;
 		goto EXIT_LABEL;
 	}
 
-	irc = sfq_map(opt.querootdir, opt.quename, print_element, &cnt);
+	irc = sfq_map(pgargs.querootdir, pgargs.quename, print_element, &cnt);
 	if (irc != SFQ_RC_SUCCESS)
 	{
 		if (irc != SFQ_RC_W_NOELEMENT)
@@ -82,7 +82,7 @@ SFQC_MAIN_INITIALIZE
 
 EXIT_LABEL:
 
-	sfqc_free_init_option(&opt);
+	sfqc_free_program_args(&pgargs);
 
 	if (message)
 	{

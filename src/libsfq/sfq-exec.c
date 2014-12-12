@@ -102,8 +102,6 @@ SFQ_LIB_INITIALIZE
 		}
 	}
 
-	chdir("/");
-
 /* execvp() が成功すれば処理は戻らない */
 
 	execvp(argv[0], argv);
@@ -290,6 +288,9 @@ int sfq_execwait(const struct sfq_eloop_params* elop, struct sfq_value* val)
 		signal(SIGHUP,  SIG_DFL);
 		signal(SIGINT,  SIG_DFL);
 		signal(SIGQUIT, SIG_DFL);
+
+		umask(0);
+		chdir("/");
 
 		child_write_dup_exec_exit(elop, val);
 

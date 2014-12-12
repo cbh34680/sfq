@@ -71,6 +71,8 @@ enum
 	SFQ_RC_ES_MKDIR,
 	SFQ_RC_ES_REALPATH,
 	SFQ_RC_ES_GETCWD,
+	SFQ_RC_ES_CHMOD,
+	SFQ_RC_ES_CHOWN,
 
 	SFQ_RC_EC_EXECFAIL		= 119,
 	SFQ_RC_EC_FILENOTFOUND		= 127,
@@ -96,7 +98,7 @@ enum
 
 #define SFQ_QST_DEFAULT		(SFQ_QST_ACCEPT_ON | SFQ_QST_TAKEOUT_ON | SFQ_QST_EXEC_ON)
 
-struct sfq_queue_create_option
+struct sfq_queue_init_params
 {
 	size_t filesize_limit;
 	size_t payloadsize_limit;
@@ -126,7 +128,7 @@ struct sfq_value
 typedef void (*sfq_map_callback)(ulong order, const struct sfq_value* val, void* userdata);
 
 extern int sfq_init(const char* querootdir, const char* quename,
-	const struct sfq_queue_create_option* qco);
+	const struct sfq_queue_init_params* qip);
 
 extern int sfq_map(const char* querootdir, const char* quename,
 	sfq_map_callback callback, void* userdata);

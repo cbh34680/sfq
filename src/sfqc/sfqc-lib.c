@@ -179,27 +179,27 @@ EXIT_LABEL:
 }
 
 /* プログラム引数の解析 */
-void sfqc_free_init_option(struct sfqc_init_option* p)
+void sfqc_free_program_args(struct sfqc_program_args* pgargs)
 {
-	if (! p)
+	if (! pgargs)
 	{
 		return;
 	}
 
-	free((char*)p->querootdir);
-	free((char*)p->quename);
-	free((char*)p->queuser);
-	free((char*)p->quegroup);
-	free((char*)p->execpath);
-	free((char*)p->execargs);
-	free((char*)p->metatext);
-	free((char*)p->textdata);
-	free((char*)p->inputfile);
-	free((char*)p->soutpath);
-	free((char*)p->serrpath);
-	free((char*)p->printmethod);
+	free((char*)pgargs->querootdir);
+	free((char*)pgargs->quename);
+	free((char*)pgargs->queuser);
+	free((char*)pgargs->quegroup);
+	free((char*)pgargs->execpath);
+	free((char*)pgargs->execargs);
+	free((char*)pgargs->metatext);
+	free((char*)pgargs->textdata);
+	free((char*)pgargs->inputfile);
+	free((char*)pgargs->soutpath);
+	free((char*)pgargs->serrpath);
+	free((char*)pgargs->printmethod);
 
-	bzero(p, sizeof(struct sfqc_init_option));
+	bzero(pgargs, sizeof(*pgargs));
 }
 
 int get_ul_bytesize(const char* str, unsigned long* ul_ptr, char** e_ptr)
@@ -263,17 +263,18 @@ int get_ul_bytesize(const char* str, unsigned long* ul_ptr, char** e_ptr)
 	return 0;
 }
 
-#define RESET_STR(org, p, MEMBER) \
-	char* c = strdup(org); \
+#define RESET_STR(org_, MEMBER_) \
+	char* c = strdup(org_); \
 	if (! c) { \
 		snprintf(message, sizeof(message), "'%c': mem alloc", opt); \
 		jumppos = __LINE__; \
 		goto EXIT_LABEL; \
 	} \
-	free((char*)p->MEMBER); \
-	p->MEMBER = c;
+	free((char*)pgargs->MEMBER_); \
+	pgargs->MEMBER_ = c;
 
-int sfqc_get_init_option(int argc, char** argv, const char* optstring, bool use_rest, struct sfqc_init_option* p)
+int sfqc_parse_program_args(int argc, char** argv, const char* optstring,
+	bool use_rest, struct sfqc_program_args* pgargs)
 {
 	int irc = 1;
 	int opt = 0;
@@ -281,10 +282,10 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, bool use_
 	int jumppos = -1;
 	char message[128] = "";
 
-	assert(p);
+	assert(pgargs);
 
 /* */
-	bzero(p, sizeof(*p));
+	bzero(pgargs, sizeof(*pgargs));
 
 	while ((opt = getopt(argc, argv, optstring)) != -1)
 	{
@@ -303,7 +304,7 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, bool use_
 					goto EXIT_LABEL;
 				}
 
-				p->filesize_limit = ul;
+				pgargs->filesize_limit = ul;
 
 				break;
 			}
@@ -320,7 +321,7 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, bool use_
 					goto EXIT_LABEL;
 				}
 
-				p->payloadsize_limit = ul;
+				pgargs->payloadsize_limit = ul;
 
 				break;
 			}
@@ -342,32 +343,31 @@ int sfqc_get_init_option(int argc, char** argv, const char* optstring, bool use_
 					snprintf(message, sizeof(message), "'%c': size over (%u)", opt, USHRT_MAX);
 				}
 
-				p->boota_proc_num = (ushort)ul;
+				pgargs->boota_proc_num = (ushort)ul;
 
 				break;
 			}
 
-			case 'N': { RESET_STR(optarg, p, quename);	break; } // QUEUE 名
-			case 'D': { RESET_STR(optarg, p, querootdir);	break; } // QUEUE ディレクトリ
-			case 'U': { RESET_STR(optarg, p, queuser);	break; } // QUEUE ユーザ
-			case 'G': { RESET_STR(optarg, p, quegroup);	break; } // QUEUE グループ
-
-			case 'x': { RESET_STR(optarg, p, execpath);	break; } // exec() パス
-			case 'a': { RESET_STR(optarg, p, execargs);	break; } // exec() 引数 (カンマ区切り)
-			case 't': { RESET_STR(optarg, p, textdata);	break; } // データ# テキスト
-			case 'f': { RESET_STR(optarg, p, inputfile);	break; } // データ# ファイル名
-			case 'm': { RESET_STR(optarg, p, metatext);	break; } // メタ情報
-			case 'p': { RESET_STR(optarg, p, printmethod);	break; } // pop, shift の出力方法
+			case 'N': { RESET_STR(optarg, quename);		break; } // QUEUE 名
+			case 'D': { RESET_STR(optarg, querootdir);	break; } // QUEUE ディレクトリ
+			case 'U': { RESET_STR(optarg, queuser);		break; } // QUEUE ユーザ
+			case 'G': { RESET_STR(optarg, quegroup);	break; } // QUEUE グループ
+			case 'x': { RESET_STR(optarg, execpath);	break; } // exec() パス
+			case 'a': { RESET_STR(optarg, execargs);	break; } // exec() 引数 (カンマ区切り)
+			case 't': { RESET_STR(optarg, textdata);	break; } // データ# テキスト
+			case 'f': { RESET_STR(optarg, inputfile);	break; } // データ# ファイル名
+			case 'm': { RESET_STR(optarg, metatext);	break; } // メタ情報
+			case 'p': { RESET_STR(optarg, printmethod);	break; } // pop, shift の出力方法
 
 			// 標準出力のリダイレクト先
-			case 'o': { RESET_STR(optarg ? optarg : "-", p, soutpath); break; }
+			case 'o': { RESET_STR(optarg ? optarg : "-", soutpath); break; }
 
 			// 標準エラーのリダイレクト先
-			case 'e': { RESET_STR(optarg ? optarg : "-", p, serrpath); break; }
+			case 'e': { RESET_STR(optarg ? optarg : "-", serrpath); break; }
 
 			case 'q':
 			{
-				p->quiet = true;
+				pgargs->quiet = true;
 				break;
 			}
 
@@ -395,21 +395,21 @@ EXIT_LABEL:
 			fprintf(stderr, "%s(%d): %s\n", __FILE__, jumppos, message);
 		}
 
-		sfqc_free_init_option(p);
+		sfqc_free_program_args(pgargs);
 
 		return irc;
 	}
 
-	if (p->filesize_limit == 0)
+	if (pgargs->filesize_limit == 0)
 	{
 		/* default 256MB */
-		p->filesize_limit = (256 * 1024 * 1024);
+		pgargs->filesize_limit = (256 * 1024 * 1024);
 	}
 
 	if (use_rest)
 	{
-		p->commands = (const char**)&argv[optind];
-		p->command_num = argc - optind;
+		pgargs->commands = (const char**)&argv[optind];
+		pgargs->command_num = argc - optind;
 	}
 	else
 	{

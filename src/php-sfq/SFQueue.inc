@@ -1,6 +1,6 @@
 <?php
 
-class SfqClientException extends Exception
+class SFQueueClientException extends Exception
 {
 	static $mesgmap =
 	[
@@ -28,7 +28,7 @@ class SfqClientException extends Exception
 	}
 }
 
-interface SfqClientInterface
+interface SFQueueClientInterface
 {
 	public function push_text($params);
 	public function push_binary($params);
@@ -36,7 +36,7 @@ interface SfqClientInterface
 	public function shift();
 }
 
-abstract class SfqClient implements SfqClientInterface
+abstract class SFQueueClient implements SFQueueClientInterface
 {
 	function __construct()
 	{
@@ -50,7 +50,7 @@ abstract class SfqClient implements SfqClientInterface
 	}
 }
 
-class SfqClientLocal extends SfqClient
+class SFQueueClientLocal extends SFQueueClient
 {
 	private $quename;
 	private $querootdir;
@@ -59,7 +59,7 @@ class SfqClientLocal extends SfqClient
 	{
 		if (! extension_loaded('wrap_libsfq'))
 		{
-			throw new SfqClientException(1010);
+			throw new SFQueueClientException(1010);
 		}
 
 		if (isset($params['querootdir']))
@@ -79,7 +79,7 @@ class SfqClientLocal extends SfqClient
 	{
 		if ($rc > SFQ_RC_FATAL_MIN)
 		{
-			throw new SfqClientException(2000 + $rc, "native error rc={$rc}");
+			throw new SFQueueClientException(2000 + $rc, "native error rc={$rc}");
 		}
 
 		$this->lastError_ = $rc;
@@ -138,7 +138,7 @@ class SfqClientLocal extends SfqClient
 	}
 }
 
-class Sfq
+class SFQueue
 {
 	static function newClient($quename=null, $params=[])
 	{
@@ -146,13 +146,13 @@ class Sfq
 		{
 			// connect remote host
 
-			throw new SfqClientException(1030);
+			throw new SFQueueClientException(1030);
 		}
 		else
 		{
 			// connect localhost
 
-			return new SfqClientLocal($quename, $params);
+			return new SFQueueClientLocal($quename, $params);
 		}
 	}
 
@@ -166,7 +166,7 @@ if (isset($argv))
 	if (realpath($argv[0]) == __FILE__)
 	{
 	// local
-		$sfqc = Sfq::newClient();
+		$sfqc = SFQueue::newClient();
 
 		var_dump($sfqc->pop());
 		echo "# rc= " . $sfqc->lastError() . PHP_EOL . PHP_EOL;
@@ -192,7 +192,7 @@ if (isset($argv))
 			],
 		];
 
-#		$sfqc = Sfq::newClient($copt);
+#		$sfqc = SFQueue::newClient($copt);
 	}
 }
 

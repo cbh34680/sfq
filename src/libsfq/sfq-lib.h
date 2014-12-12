@@ -34,6 +34,7 @@
 
 	#include <pwd.h>
 	#include <grp.h>
+	#include <sys/capability.h>
 #endif
 
 #include "sfq.h"
@@ -122,37 +123,18 @@ SFQ_FAIL_CATCH_LABEL__:
 
 #define SFQ_MAGICSTR			"sfq"
 
-#define SFQ_QUEUE_FILENAME		"queue.dat"
+#define SFQ_QUEUE_FILENAME		"data.sfq"
 #define SFQ_QUEUE_LOGDIRNAME		"logs"
 #define SFQ_QUEUE_PROC_LOGDIRNAME	"proc"
 #define SFQ_QUEUE_EXEC_LOGDIRNAME	"exec"
 
 #define SFQ_ALIGN_MARGIN(e)		(((( (e) / 8 ) + (( (e) % 8) ? 1 : 0)) * 8) - (e) )
 
-/* */
-struct sfq_open_names
-{
-	char* quename;
-	char* querootdir;
-
-	char* quedir;
-	char* quefile;
-	char* quelogdir;
-	char* queproclogdir;
-	char* queexeclogdir;
-	char* semname;
-};
-
-struct sfq_queue_object
-{
-	struct sfq_open_names* om;
-
-	sem_t* semobj;
-	FILE* fp;
-	time_t opentime;
-
-	sfq_uchar file_openmode;
-};
+/* --------------------------------------------------------------
+ *
+ * 定数定義
+ *
+ */
 
 /* file open mode */
 enum
@@ -185,8 +167,8 @@ enum
 /* --------------------------------------------------------------
  *
  * ファイルに保存される構造体 (8 byte alignment)
+ *
  */
-
 struct sfq_process_info
 {
 	pid_t ppid;			/* 4 */
@@ -283,7 +265,36 @@ struct sfq_e_header
 	size_t elmsize_;		/* 8 ... for debug, set by sfq_copy_val2ioeb() */
 };
 
-/* helper */
+/* --------------------------------------------------------------
+ *
+ * 関数へのパラメータ構造体
+ *
+ */
+
+struct sfq_open_names
+{
+	char* quename;
+	char* querootdir;
+
+	char* quedir;
+	char* quefile;
+	char* quelogdir;
+	char* queproclogdir;
+	char* queexeclogdir;
+	char* semname;
+};
+
+struct sfq_queue_object
+{
+	struct sfq_open_names* om;
+
+	sem_t* semobj;
+	FILE* fp;
+	time_t opentime;
+
+	sfq_uchar file_openmode;
+};
+
 struct sfq_ioelm_buff
 {
 	struct sfq_e_header eh;
@@ -304,6 +315,20 @@ struct sfq_eloop_params
 	const char* om_queexeclogdir;
 };
 
+struct sfq_queue_create_params
+{
+	const char* quename;
+	const char* querootdir;
+	uid_t queuserid;
+	gid_t quegroupid;
+	bool chmod_GaW;
+};
+
+/* --------------------------------------------------------------
+ *
+ * 関数プロトタイプ
+ *
+ */
 extern void sfq_print_sizes(void);
 extern void sfq_print_qo(const struct sfq_queue_object* qo);
 extern void sfq_print_qf_header(const struct sfq_file_header*);
@@ -317,7 +342,7 @@ extern void sfq_free_ioelm_buff(struct sfq_ioelm_buff* ioeb);
 extern void sfq_free_open_names(struct sfq_open_names* om);
 extern void sfq_reopen_4proc(const char* logdir, ushort slotno, questate_t questate);
 
-extern struct sfq_queue_object* sfq_create_queue(const char* querootdir, const char* quename);
+extern struct sfq_queue_object* sfq_create_queue(const struct sfq_queue_create_params* qcp);
 extern struct sfq_queue_object* sfq_open_queue_rw(const char* querootdir, const char* quename);
 extern struct sfq_queue_object* sfq_open_queue_ro(const char* querootdir, const char* quename);
 extern struct sfq_open_names* sfq_alloc_open_names(const char* querootdir, const char* quename);

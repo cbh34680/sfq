@@ -47,7 +47,7 @@
 
 
 /* プログラム引数 */
-struct sfqc_init_option
+struct sfqc_program_args
 {
 	const char* querootdir;		/* D */
 	const char* quename;		/* N */
@@ -89,10 +89,10 @@ typedef int (*sfq_takeoutfunc_t)(const char* querootdir, const char* quename, st
 
 extern int sfqc_takeout(int argc, char** argv, sfq_takeoutfunc_t takeoutfunc);
 
-extern int sfqc_get_init_option(int argc, char** argv, const char* optstring,
-	bool use_rest, struct sfqc_init_option* p);
+extern int sfqc_parse_program_args(int argc, char** argv, const char* optstring,
+	bool use_rest, struct sfqc_program_args* pgargs);
 
-extern void sfqc_free_init_option(struct sfqc_init_option* p);
+extern void sfqc_free_program_args(struct sfqc_program_args* pgargs);
 
 extern char** sfqc_split(char* params_str, char c_delim);
 extern int sfqc_readstdin(sfq_byte** mem_ptr, size_t* memsize_ptr);

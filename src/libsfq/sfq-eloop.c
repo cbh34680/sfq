@@ -277,6 +277,7 @@ bool sfq_go_exec(const char* querootdir, const char* quename, ushort slotno, que
 アンマウントを邪魔しない
 */
 		chdir("/");
+		umask(0);
 
 /*
 ヒープに残しておくとメモリリークになるので、スタックに退避

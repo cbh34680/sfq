@@ -521,26 +521,26 @@ int sfqc_takeout(int argc, char** argv, sfq_takeoutfunc_t takeoutfunc)
 	uint printmethod = 0;
 
 /* */
-	struct sfqc_init_option opt;
+	struct sfqc_program_args pgargs;
 	struct sfq_value val;
 	struct sfq_value pval;
 
 SFQC_MAIN_INITIALIZE
 
-	bzero(&opt, sizeof(opt));
+	bzero(&pgargs, sizeof(pgargs));
 	bzero(&val, sizeof(val));
 	bzero(&pval, sizeof(pval));
 
 /* */
-	irc = sfqc_get_init_option(argc, argv, "D:N:p:q", false, &opt);
+	irc = sfqc_parse_program_args(argc, argv, "D:N:p:q", false, &pgargs);
 	if (irc != 0)
 	{
-		message = "get_init_option: parse error";
+		message = "parse_program_args: parse error";
 		jumppos = __LINE__;
 		goto EXIT_LABEL;
 	}
 
-	irc = parse_printmethod(opt.printmethod, &printmethod);
+	irc = parse_printmethod(pgargs.printmethod, &printmethod);
 	if (irc != 0)
 	{
 		message = "parse_printmethod";
@@ -548,7 +548,7 @@ SFQC_MAIN_INITIALIZE
 		goto EXIT_LABEL;
 	}
 
-	irc = takeoutfunc(opt.querootdir, opt.quename, &val);
+	irc = takeoutfunc(pgargs.querootdir, pgargs.quename, &val);
 	if (irc != 0)
 	{
 		message = "takeout";
@@ -617,7 +617,7 @@ EXIT_LABEL:
 	}
 	else
 	{
-		if (! opt.quiet)
+		if (! pgargs.quiet)
 		{
 			if (message)
 			{
@@ -626,7 +626,7 @@ EXIT_LABEL:
 		}
 	}
 
-	sfqc_free_init_option(&opt);
+	sfqc_free_program_args(&pgargs);
 
 SFQC_MAIN_FINALIZE
 

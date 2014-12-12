@@ -27,5 +27,11 @@ echo "* ls -l [output]"
 ls -l output-*.bin
 echo
 
+echo "* cmp input output"
+cmp $EXTSO output-sfq_pop.bin
+echo $?
+cmp $EXTSO output-sfq_shift.bin
+echo $?
+
 exit 0
 

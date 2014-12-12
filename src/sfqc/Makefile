@@ -38,7 +38,7 @@ CFLAGSL  = $(CFLAGS) -fPIC
 LDFLAGS  = -Wall -shared
 
 LIBDIRS  = -L. -L../libsfq -L../../lib
-LIBS     = -lsfqc -lsfq -lpthread -lm -luuid -ljansson
+LIBS     = -lsfqc -lsfq -lpthread -lm -luuid -ljansson -lcap
 
 #
 all: $(TARGET)

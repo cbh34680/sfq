@@ -1,10 +1,10 @@
 #include "sfqc-lib.h"
 
-struct sfqc_init_option opt;
+struct sfqc_program_args pgargs;
 
 void release_heap()
 {
-	sfqc_free_init_option(&opt);
+	sfqc_free_program_args(&pgargs);
 }
 
 struct noun_bit_set
@@ -61,31 +61,31 @@ int main(int argc, char** argv)
 	int bit_on = 0;
 
 /* */
-	struct sfqc_init_option opt;
+	struct sfqc_program_args pgargs;
 
 SFQC_MAIN_INITIALIZE
 
-	bzero(&opt, sizeof(opt));
+	bzero(&pgargs, sizeof(pgargs));
 
 	atexit(release_heap);
 
 /* */
-	irc = sfqc_get_init_option(argc, argv, "D:N:", true, &opt);
+	irc = sfqc_parse_program_args(argc, argv, "D:N:", true, &pgargs);
 	if (irc != 0)
 	{
-		message = "get_init_option: parse error";
+		message = "parse_program_args: parse error";
 		jumppos = __LINE__;
 		goto EXIT_LABEL;
 	}
 
-	if (opt.command_num != 2)
+	if (pgargs.command_num != 2)
 	{
 		message = "specify the command (noun verb)";
 		jumppos = __LINE__;
 		goto EXIT_LABEL;
 	}
 
-	irc = sfq_get_questate(opt.querootdir, opt.quename, &questate);
+	irc = sfq_get_questate(pgargs.querootdir, pgargs.quename, &questate);
 	if (irc != SFQ_RC_SUCCESS)
 	{
 		message = "sfq_get_questate";
@@ -93,7 +93,7 @@ SFQC_MAIN_INITIALIZE
 		goto EXIT_LABEL;
 	}
 
-	bit_on = get_off_on(opt.commands, &modify_bit);
+	bit_on = get_off_on(pgargs.commands, &modify_bit);
 	if (bit_on == -1)
 	{
 		message = "unknown command";
@@ -132,7 +132,7 @@ SFQC_MAIN_INITIALIZE
 
 	questate ^= modify_bit;
 
-	irc = sfq_set_questate(opt.querootdir, opt.quename, questate);
+	irc = sfq_set_questate(pgargs.querootdir, pgargs.quename, questate);
 	if (irc != SFQ_RC_SUCCESS)
 	{
 		message = "sfq_set_questate";
@@ -144,7 +144,7 @@ SFQC_MAIN_INITIALIZE
 
 EXIT_LABEL:
 
-	sfqc_free_init_option(&opt);
+	sfqc_free_program_args(&pgargs);
 
 	if (message)
 	{
