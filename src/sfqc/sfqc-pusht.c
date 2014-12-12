@@ -24,7 +24,7 @@ SFQC_MAIN_INITIALIZE
 	bzero(&pgargs, sizeof(pgargs));
 
 /* */
-	irc = sfqc_parse_program_args(argc, argv, "D:N:o:e:f:x:a:m:t:q", false, &pgargs);
+	irc = sfqc_parse_program_args(argc, argv, "D:N:o:e:f:x:a:m:qv:", false, &pgargs);
 	if (irc != 0)
 	{
 		message = "parse_program_args: parse error";

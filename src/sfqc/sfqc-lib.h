@@ -58,7 +58,7 @@ struct sfqc_program_args
 	const char* quegroup;		/* G */
 	const char* execpath;		/* x */
 	const char* execargs;		/* a */
-	const char* textdata;		/* t */
+	const char* textdata;		/* v */
 	const char* metatext;		/* m */
 	const char* inputfile;		/* f */
 	const char* soutpath;		/* o */

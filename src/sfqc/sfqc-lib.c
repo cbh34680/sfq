@@ -354,7 +354,7 @@ int sfqc_parse_program_args(int argc, char** argv, const char* optstring,
 			case 'G': { RESET_STR(optarg, quegroup);	break; } // QUEUE グループ
 			case 'x': { RESET_STR(optarg, execpath);	break; } // exec() パス
 			case 'a': { RESET_STR(optarg, execargs);	break; } // exec() 引数 (カンマ区切り)
-			case 't': { RESET_STR(optarg, textdata);	break; } // データ# テキスト
+			case 'v': { RESET_STR(optarg, textdata);	break; } // データ# テキスト
 			case 'f': { RESET_STR(optarg, inputfile);	break; } // データ# ファイル名
 			case 'm': { RESET_STR(optarg, metatext);	break; } // メタ情報
 			case 'p': { RESET_STR(optarg, printmethod);	break; } // pop, shift の出力方法
