@@ -1,5 +1,15 @@
 <?php
 
+// 
+interface SFQueueClientInterface
+{
+	public function push_text($params);
+	public function push_binary($params);
+	public function pop();
+	public function shift();
+}
+
+//
 class SFQueueClientException extends Exception
 {
 	static $mesgmap =
@@ -8,33 +18,28 @@ class SFQueueClientException extends Exception
 		1010	=> 'extension(wrap_libsfq) is not loaded', 
 		1020	=> 'it has not yet been initialized',
 		1030	=> 'it does not yet implemented', 
+		1040	=> 'illegal argument type exception', 
 	];
 
 	function __construct($code, $mesg=null)
 	{
-		if (! isset($mesg))
+		if (is_null($mesg))
 		{
-			if (isset(self::$mesgmap[$code]))
-			{
-				$mesg = self::$mesgmap[$code];
-			}
-		}
-
-		if (! isset($mesg))
-		{
-			$mesg = "unknown code ({$code})";
+			$mesg = self::c2m($code);
 		}
 
 		parent::__construct($mesg, $code);
 	}
-}
 
-interface SFQueueClientInterface
-{
-	public function push_text($params);
-	public function push_binary($params);
-	public function pop();
-	public function shift();
+	static function c2m($code)
+	{
+		if (isset(self::$mesgmap[$code]))
+		{
+			return self::$mesgmap[$code];
+		}
+
+		return "unknown code ({$code})";
+	}
 }
 
 abstract class SFQueueClient implements SFQueueClientInterface
@@ -61,7 +66,7 @@ abstract class SFQueueClient implements SFQueueClientInterface
 	protected function throwException($code, $mesg=null)
 	{
 		$this->lastError_ = $code;
-		$this->lastMessage_ = $mesg;
+		$this->lastMessage_ = $mesg ? $mesg : SFQueueClientException::c2m($code);
 
 		if ($this->throwException_)
 		{
@@ -133,11 +138,18 @@ class SFQueueClientLocal extends SFQueueClient
 
 	private function native_push_($params)
 	{
-		$rc = wrap_sfq_push($this->querootdir_, $this->quename_, $params);
-
-		if ($this->isNativeSuccess_($rc))
+		if (is_array($params))
 		{
-			return $params['uuid'];
+			$rc = wrap_sfq_push($this->querootdir_, $this->quename_, $params);
+
+			if ($this->isNativeSuccess_($rc))
+			{
+				return $params['uuid'];
+			}
+		}
+		else
+		{
+			$this->throwException(1040);
 		}
 
 		return false;
@@ -195,21 +207,66 @@ class SFQueueClientLocal extends SFQueueClient
 	}
 }
 
+class SFQueueClientRemote extends SFQueueClient
+{
+	function __construct($quename, $params, $throwException)
+	{
+		parent::__construct($quename, $throwException);
+	}
+
+	function push_text($params)
+	{
+		$this->throwException(1030);
+	}
+
+	function push_binary($params)
+	{
+		$this->throwException(1030);
+	}
+
+	function pop()
+	{
+		$this->throwException(1030);
+	}
+
+	function shift()
+	{
+		$this->throwException(1030);
+	}
+}
+
 class SFQueue
 {
 	static function newClient($quename=null, $params=[])
 	{
+var_dump($params);
 		if (isset($params['host']))
 		{
 			// connect remote host
 
-			throw new SFQueueClientException(1030);
+			return new SFQueueClientRemote($quename, $params, true);
 		}
 		else
 		{
 			// connect localhost
 
 			return new SFQueueClientLocal($quename, $params, true);
+		}
+	}
+
+	static function newClientNotThrow($quename=null, $params=[])
+	{
+		if (isset($params['host']))
+		{
+			// connect remote host
+
+			return new SFQueueClientRemote($quename, $params, false);
+		}
+		else
+		{
+			// connect localhost
+
+			return new SFQueueClientLocal($quename, $params, false);
 		}
 	}
 
@@ -222,37 +279,85 @@ if (isset($argv))
 {
 	if (realpath($argv[0]) == __FILE__)
 	{
-	// local (throw exception)
-		try
+		$test = function($sfqc)
 		{
-			$sfqc = SFQueue::newClient();
+			$sres = function() use ($sfqc)
+			{
+				echo "! e= " . $sfqc->lastError() . PHP_EOL;
+				echo "! m= " . $sfqc->lastMessage() . PHP_EOL;
+				echo PHP_EOL;
+			};
+
+			//
+			$cn = get_class($sfqc);
+			echo '/ ' . str_repeat('-', 80) . PHP_EOL;
+
+			echo <<< EOS
+/
+/ Class Name = [{$cn}]
+/
+
+EOS;
+			echo '/ ' . str_repeat('-', 80) . PHP_EOL;
 
 			var_dump($sfqc->pop());
-			echo "# rc= " . $sfqc->lastError() . PHP_EOL . PHP_EOL;
+			$sres();
 
 			var_dump($sfqc->push_text(['payload'=>'aaa 1 bbb', 'execpath'=>'']));
-			echo "# rc= " . $sfqc->lastError() . PHP_EOL . PHP_EOL;
+			$sres();
 
 			var_dump($sfqc->push_text(['payload'=>'ccc 2 ddd']));
-			echo "# rc= " . $sfqc->lastError() . PHP_EOL . PHP_EOL;
+			$sres();
 
 			var_dump($sfqc->pop());
-			echo "# rc= " . $sfqc->lastError() . PHP_EOL . PHP_EOL;
+			$sres();
 
 			var_dump($sfqc->shift());
-			echo "# rc= " . $sfqc->lastError() . PHP_EOL . PHP_EOL;
+			$sres();
 
 			var_dump($sfqc->push_text(['payload'=>'ccc 3 ddd']));
-			echo "# rc= " . $sfqc->lastError() . PHP_EOL . PHP_EOL;
-		}
-		catch (Exception $ex)
-		{
-			echo 'CODE:' . $ex->getCode() . PHP_EOL;
-			echo 'MESG:' . $ex->getMessage() . PHP_EOL;
-		}
+			$sres();
 
-	// remote
-/*
+			var_dump($sfqc->push_text(1));
+			$sres();
+
+			echo "! ALL DONE." . PHP_EOL;
+		};
+
+		$etest = function($sfqc) use ($test)
+		{
+			try
+			{
+				$test($sfqc);
+			}
+			catch (Exception $ex)
+			{
+				$AST = str_repeat('*', 25);
+
+				echo "{$AST} EXCEPTION {$AST}" . PHP_EOL;
+
+				echo 'CODE: ' . $ex->getCode() . PHP_EOL;
+				echo 'MESG: ' . $ex->getMessage() . PHP_EOL;
+				echo 'FILE: ' . $ex->getFile() . PHP_EOL;
+				echo 'LINE: ' . $ex->getLine() . PHP_EOL;
+				echo PHP_EOL;
+				echo '[TRACE]' . PHP_EOL;
+				echo $ex->getTraceAsString();
+				echo PHP_EOL;
+			}
+		};
+
+	// local (throw exception)
+
+		$etest(SFQueue::newClient());
+		echo PHP_EOL;
+
+	// local (not throw exception)
+
+		$test(SFQueue::newClientNotThrow());
+		echo PHP_EOL;
+
+	// remote (throw exception)
 		$copt = [
 			'host' => 'localhost',
 			'port' => [
@@ -261,8 +366,13 @@ if (isset($argv))
 			],
 		];
 
-		$sfqc = SFQueue::newClient($copt);
-*/
+		$etest(SFQueue::newClient(null, $copt));
+		echo PHP_EOL;
+
+	// remote (not throw exception)
+
+		$test(SFQueue::newClientNotThrow(null, $copt));
+		echo PHP_EOL;
 	}
 }
 
