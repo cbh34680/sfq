@@ -10,6 +10,8 @@ SFQ_LIB_INITIALIZE
 	sem_t* semobj = NULL;
 	FILE* fp = NULL;
 
+	mode_t save_umask = (mode_t)-1;
+
 	int irc = 0;
 	bool locked = false;
 
@@ -25,6 +27,8 @@ SFQ_LIB_INITIALIZE
 	{
 		SFQ_FAIL(EA_CREATENAMES, "sfq_alloc_open_names");
 	}
+
+	save_umask = umask(0);
 
 /* open semaphore */
 /*
@@ -61,6 +65,7 @@ SFQ_LIB_INITIALIZE
 		SFQ_FAIL(ES_MEMALLOC, "malloc(locked_file)");
 	}
 
+	qo->save_umask = save_umask;
 	qo->om = om;
 	qo->semobj = semobj;
 	qo->fp = fp;
@@ -91,6 +96,11 @@ SFQ_LIB_CHECKPOINT
 
 		free(qo);
 		qo = NULL;
+
+		if (save_umask != (mode_t)-1)
+		{
+			umask(save_umask);
+		}
 	}
 
 SFQ_LIB_FINALIZE
@@ -158,8 +168,7 @@ chown() を実行すると sticky-bit が外れるので
 --> オプショナルな感があるので、失敗しても無視
 */
 
-	irc = chmod(dir, dir_perm);
-printf("chmod ret %d\n", irc);
+	chmod(dir, dir_perm);
 
 SFQ_LIB_CHECKPOINT
 
@@ -309,6 +318,11 @@ void sfq_close_queue(struct sfq_queue_object* qo)
 	}
 
 	sfq_free_open_names(qo->om);
+
+	if (qo->save_umask != (mode_t)-1)
+	{
+		umask(qo->save_umask);
+	}
 
 	free(qo);
 }

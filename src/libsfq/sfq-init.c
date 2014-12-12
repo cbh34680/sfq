@@ -49,8 +49,6 @@ SFQ_LIB_INITIALIZE
 	gid_t quegroupid = (uid_t)-1;
 	bool chmod_GaW = false;
 
-	mode_t umask_save = (mode_t)-1;
-
 	struct sfq_queue_create_params qcp;
 	struct sfq_file_header qfh;
 
@@ -192,8 +190,6 @@ root の場合、"-U" か "-G" の指定があるときのみ通過させる
 	}
 
 /* open queue-file */
-	umask_save = umask(0);
-
 	qcp.querootdir = querootdir;
 	qcp.quename = quename;
 	qcp.queuserid = queuserid;
@@ -205,9 +201,6 @@ root の場合、"-U" か "-G" の指定があるときのみ通過させる
 	{
 		SFQ_FAIL(EA_OPENFILE, "sfq_create_queue");
 	}
-
-	umask(umask_save);
-	umask_save = (mode_t)-1;
 
 	if (procs)
 	{
@@ -258,11 +251,6 @@ root の場合、"-U" か "-G" の指定があるときのみ通過させる
 	sfq_print_qf_header(&qfh);
 
 SFQ_LIB_CHECKPOINT
-
-	if (umask_save != (mode_t)-1)
-	{
-		umask(umask_save);
-	}
 
 SFQ_LIB_FINALIZE
 

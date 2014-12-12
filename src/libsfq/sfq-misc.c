@@ -394,16 +394,6 @@ bool sfq_copy_ioeb2val(const struct sfq_ioelm_buff* ioeb, struct sfq_value* val)
 		val->metatext = ioeb->metatext;
 	}
 
-	if (ioeb->eh.payload_size)
-	{
-		assert(ioeb->eh.payload_type);
-		assert(ioeb->payload);
-
-		val->payload_size = ioeb->eh.payload_size;
-		val->payload_type = ioeb->eh.payload_type;
-		val->payload = ioeb->payload;
-	}
-
 	if (ioeb->eh.soutpath_size)
 	{
 		assert(ioeb->soutpath);
@@ -414,6 +404,16 @@ bool sfq_copy_ioeb2val(const struct sfq_ioelm_buff* ioeb, struct sfq_value* val)
 	{
 		assert(ioeb->serrpath);
 		val->serrpath = ioeb->serrpath;
+	}
+
+	if (ioeb->eh.payload_size)
+	{
+		assert(ioeb->eh.payload_type);
+		assert(ioeb->payload);
+
+		val->payload_size = ioeb->eh.payload_size;
+		val->payload_type = ioeb->eh.payload_type;
+		val->payload = ioeb->payload;
 	}
 
 	return true;

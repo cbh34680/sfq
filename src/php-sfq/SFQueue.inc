@@ -4,9 +4,10 @@ class SFQueueClientException extends Exception
 {
 	static $mesgmap =
 	[
+		0	=> 'it has not yet been set',
 		1010	=> 'extension(wrap_libsfq) is not loaded', 
-		1020	=> 'call unknown method', 
-		1030	=> 'It does not yet implemented', 
+		1020	=> 'it has not yet been initialized',
+		1030	=> 'it does not yet implemented', 
 	];
 
 	function __construct($code, $mesg=null)
@@ -38,60 +39,103 @@ interface SFQueueClientInterface
 
 abstract class SFQueueClient implements SFQueueClientInterface
 {
-	function __construct()
+	function __construct($quename, $throwException)
 	{
+		$this->quename_ = $quename;
+		$this->throwException_ = $throwException;
+
+		$this->initialized_ = true;
+		$this->notInitialized_ = false;
 	}
 
-	protected $lastError_;
+// protected:
+	protected $initialized_ = false;
+	protected $notInitialized_ = true;
 
+	protected $quename_;
+	protected $throwException_;
+
+	protected $lastError_ = 0;
+	protected $lastMessage_ = '';
+
+	protected function throwException($code, $mesg=null)
+	{
+		$this->lastError_ = $code;
+		$this->lastMessage_ = $mesg;
+
+		if ($this->throwException_)
+		{
+			throw new SFQueueClientException($code, $mesg);
+		}
+	}
+
+// public:
 	public function lastError()
 	{
 		return $this->lastError_;
+	}
+
+	public function lastMessage()
+	{
+		return $this->lastMessage_;
 	}
 }
 
 class SFQueueClientLocal extends SFQueueClient
 {
-	private $quename;
-	private $querootdir;
+	private $querootdir_;
 
-	function __construct($quename, $params)
+	function __construct($quename, $params, $throwException)
 	{
-		if (! extension_loaded('wrap_libsfq'))
+		if (extension_loaded('wrap_libsfq'))
 		{
-			throw new SFQueueClientException(1010);
-		}
+			if (isset($params['querootdir']))
+			{
+				$querootdir_ = $params['querootdir'];
+			}
 
-		if (isset($params['querootdir']))
+			if (isset($quename))
+			{
+				$quename_ = $quename;
+			}
+
+			parent::__construct($quename, $throwException);
+		}
+		else
 		{
-			$this->querootdir = $params['querootdir'];
+			$this->throwException(1010);
 		}
-
-		if (isset($quename))
-		{
-			$this->quename = $quename;
-		}
-
-		parent::__construct();
 	}
 
-	private function isSuccess($rc)
+// private:
+	private function isNativeSuccess_($rc)
 	{
-		if ($rc > SFQ_RC_FATAL_MIN)
+		$ret = false;
+
+		if ($this->notInitialized_)
 		{
-			throw new SFQueueClientException(2000 + $rc, "native error rc={$rc}");
+			$this->throwException(1020);
+		}
+		else
+		{
+			if ($rc == SFQ_RC_SUCCESS)
+			{
+				$ret = true;
+			}
+			else if ($rc > SFQ_RC_FATAL_MIN)
+			{
+				$this->throwException(2000 + $rc, "native error rc={$rc}");
+			}
 		}
 
-		$this->lastError_ = $rc;
-
-		return ($rc == SFQ_RC_SUCCESS);
+		return $ret;
 	}
 
-	private function push($params)
+	private function native_push_($params)
 	{
-		$rc = wrap_sfq_push($this->querootdir, $this->quename, $params);
+		$rc = wrap_sfq_push($this->querootdir_, $this->quename_, $params);
 
-		if ($this->isSuccess($rc))
+		if ($this->isNativeSuccess_($rc))
 		{
 			return $params['uuid'];
 		}
@@ -99,27 +143,13 @@ class SFQueueClientLocal extends SFQueueClient
 		return false;
 	}
 
-	function push_text($params)
-	{
-		$params['payload_type'] = (SFQ_PLT_CHARARRAY | SFQ_PLT_NULLTERM);
-
-		return $this->push($params);
-	}
-
-	function push_binary($params)
-	{
-		$params['payload_type'] = (SFQ_PLT_BINARY);
-
-		return $this->push($params);
-	}
-
-	private function takeout($funcname)
+	private function native_takeout_($funcname)
 	{
 		$param = [];
 
-		$rc = wrap_sfq_takeout($this->querootdir, $this->quename, $param, $funcname);
+		$rc = wrap_sfq_takeout($this->querootdir_, $this->quename_, $param, $funcname);
 
-		if ($this->isSuccess($rc))
+		if ($this->isNativeSuccess_($rc))
 		{
 			return $param;
 		}
@@ -127,14 +157,29 @@ class SFQueueClientLocal extends SFQueueClient
 		return false;
 	}
 
+// public:
+	function push_text($params)
+	{
+		$params['payload_type'] = (SFQ_PLT_CHARARRAY | SFQ_PLT_NULLTERM);
+
+		return $this->native_push_($params);
+	}
+
+	function push_binary($params)
+	{
+		$params['payload_type'] = (SFQ_PLT_BINARY);
+
+		return $this->native_push_($params);
+	}
+
 	function pop()
 	{
-		return $this->takeout('sfq_pop');
+		return $this->native_takeout_('sfq_pop');
 	}
 
 	function shift()
 	{
-		return $this->takeout('sfq_shift');
+		return $this->native_takeout_('sfq_shift');
 	}
 }
 
@@ -152,7 +197,7 @@ class SFQueue
 		{
 			// connect localhost
 
-			return new SFQueueClientLocal($quename, $params);
+			return new SFQueueClientLocal($quename, $params, true);
 		}
 	}
 
@@ -165,25 +210,37 @@ if (isset($argv))
 {
 	if (realpath($argv[0]) == __FILE__)
 	{
-	// local
-		$sfqc = SFQueue::newClient();
+	// local (throw exception)
+		try
+		{
+			$sfqc = SFQueue::newClient();
 
-		var_dump($sfqc->pop());
-		echo "# rc= " . $sfqc->lastError() . PHP_EOL . PHP_EOL;
+			var_dump($sfqc->pop());
+			echo "# rc= " . $sfqc->lastError() . PHP_EOL . PHP_EOL;
 
-		var_dump($sfqc->push_text(['payload'=>'aaa 1 bbb', 'execpath'=>'']));
-		echo "# rc= " . $sfqc->lastError() . PHP_EOL . PHP_EOL;
+			var_dump($sfqc->push_text(['payload'=>'aaa 1 bbb', 'execpath'=>'']));
+			echo "# rc= " . $sfqc->lastError() . PHP_EOL . PHP_EOL;
 
-		var_dump($sfqc->push_text(['payload'=>'ccc 2 ddd']));
-		echo "# rc= " . $sfqc->lastError() . PHP_EOL . PHP_EOL;
+			var_dump($sfqc->push_text(['payload'=>'ccc 2 ddd']));
+			echo "# rc= " . $sfqc->lastError() . PHP_EOL . PHP_EOL;
 
-		var_dump($sfqc->pop());
-		echo "# rc= " . $sfqc->lastError() . PHP_EOL . PHP_EOL;
+			var_dump($sfqc->pop());
+			echo "# rc= " . $sfqc->lastError() . PHP_EOL . PHP_EOL;
 
-		var_dump($sfqc->shift());
-		echo "# rc= " . $sfqc->lastError() . PHP_EOL . PHP_EOL;
+			var_dump($sfqc->shift());
+			echo "# rc= " . $sfqc->lastError() . PHP_EOL . PHP_EOL;
+
+			var_dump($sfqc->push_text(['payload'=>'ccc 3 ddd']));
+			echo "# rc= " . $sfqc->lastError() . PHP_EOL . PHP_EOL;
+		}
+		catch (Exception $ex)
+		{
+			echo 'CODE:' . $ex->getCode() . PHP_EOL;
+			echo 'MESG:' . $ex->getMessage() . PHP_EOL;
+		}
 
 	// remote
+/*
 		$copt = [
 			'host' => 'localhost',
 			'port' => [
@@ -192,7 +249,8 @@ if (isset($argv))
 			],
 		];
 
-#		$sfqc = SFQueue::newClient($copt);
+		$sfqc = SFQueue::newClient($copt);
+*/
 	}
 }
 

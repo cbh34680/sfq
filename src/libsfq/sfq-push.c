@@ -26,6 +26,15 @@ static char* concat_n(int n, ...)
 	return ret;
 }
 
+#define STR_SET_NULL_IFEMPTY(a) \
+	if ( (a) ) \
+	{ \
+		if ( (a)[0] == '\0' ) \
+		{ \
+			(a) = NULL; \
+		} \
+	}
+
 int sfq_push(const char* querootdir, const char* quename, struct sfq_value* val)
 {
 SFQ_LIB_INITIALIZE
@@ -71,20 +80,22 @@ SFQ_LIB_INITIALIZE
 		SFQ_FAIL(EA_FUNCARG, "val is null");
 	}
 
-	if (val->execpath)
-	{
-		assert(val->execpath[0]);
-	}
+/*
+str[0] == '\0' のときは str に NULL を設定
 
-	if (val->execargs)
-	{
-		assert(val->execargs[0]);
-	}
+--> 空文字列は存在しない状態にする
+*/
+	STR_SET_NULL_IFEMPTY(val->execpath);
+	STR_SET_NULL_IFEMPTY(val->execargs);
+	STR_SET_NULL_IFEMPTY(val->metatext);
+	STR_SET_NULL_IFEMPTY(val->soutpath);
+	STR_SET_NULL_IFEMPTY(val->serrpath);
 
+/*
+ログ関連は相対パスから絶対パスに変換
+*/
 	if (val->soutpath)
 	{
-		assert(val->soutpath[0]);
-
 		if ((val->soutpath[0] != '/') && (strcmp(val->soutpath, "-") != 0))
 		{
 			full_soutpath = concat_n(3, pushwkdir, "/", val->soutpath);
@@ -92,17 +103,13 @@ SFQ_LIB_INITIALIZE
 			{
 				SFQ_FAIL(EA_CONCAT_N, "pushwkdir/soutpath");
 			}
-#ifdef SFQ_DEBUG_BUILD
-fprintf(stderr, "soutpath [%s] --> [%s]\n", val->soutpath, full_soutpath);
-#endif
+
 			val->soutpath = full_soutpath;
 		}
 	}
 
 	if (val->serrpath)
 	{
-		assert(val->serrpath[0]);
-
 		if ((val->serrpath[0] != '/') && (strcmp(val->serrpath, "-") != 0))
 		{
 			full_serrpath = concat_n(3, pushwkdir, "/", val->serrpath);
@@ -110,31 +117,49 @@ fprintf(stderr, "soutpath [%s] --> [%s]\n", val->soutpath, full_soutpath);
 			{
 				SFQ_FAIL(EA_CONCAT_N, "pushwkdir/serrpath");
 			}
-#ifdef SFQ_DEBUG_BUILD
-fprintf(stderr, "serrpath [%s] --> [%s]\n", val->serrpath, full_serrpath);
-#endif
+
 			val->serrpath = full_serrpath;
 		}
 	}
 
-/* payload_size auto detect (only null-term string) */
+/*
+payload, payload_size, payload_type は必ず同期する
+*/
 	if (val->payload)
 	{
-		assert (val->payload_type);
-
-		if (val->payload_type & (SFQ_PLT_CHARARRAY | SFQ_PLT_NULLTERM))
+		if (! val->payload_type)
 		{
-			/* is null-term string*/
+			SFQ_FAIL(EA_NOTPAYLOADTYPE, "payload_type is not set");
+		}
 
-			if (! val->payload_size)
+		if (! val->payload_size)
+		{
+			if (val->payload_type & (SFQ_PLT_CHARARRAY | SFQ_PLT_NULLTERM))
 			{
-				/* auto detect */
+/*
+null-term 文字列の場合に payload_size が未設定の場合は自動算出
+*/
+
 				val->payload_size = strlen((char*)val->payload) + 1;
+			}
+			else
+			{
+				SFQ_FAIL(EA_NOTPAYLOADSIZE, "payload_size is not set");
 			}
 		}
 	}
+	else
+	{
+		if (val->payload_size)
+		{
+			SFQ_FAIL(EA_NOTPAYLOAD, "payload is not set [size=%zu]", val->payload_size);
+		}
+	}
 
-	if ((! val->execpath) && (! val->execargs) && (! val->payload_size))
+/*
+push 可能条件の判定
+*/
+	if ((! val->execpath) && (! val->execargs) && (! val->payload))
 	{
 		SFQ_FAIL(EA_FUNCARG, "no input data");
 	}
@@ -183,9 +208,12 @@ questate は go_exec() に渡すので、ここで保存しておく
 	/* 最終 id を加算 */
 	qfh.qh.dval.elm_lastid++;
 
-	/* id, pushtime はここで生成する */
+/*
+id, pushtime, uuid はここで生成する
+*/
 	ioeb.eh.id = qfh.qh.dval.elm_lastid;
 	ioeb.eh.pushtime = qo->opentime;
+	uuid_generate_random(ioeb.eh.uuid);
 
 /* set cursor to pushable-pos */
 	if (qfh.qh.dval.elm_next_shift_pos == qfh.qh.dval.elm_new_push_pos)
@@ -298,8 +326,6 @@ questate は go_exec() に渡すので、ここで保存しておく
 		}
 	}
 
-	uuid_generate_random(ioeb.eh.uuid);
-
 #ifdef SFQ_DEBUG_BUILD
 	sfq_print_e_header(&ioeb.eh);
 #endif
@@ -374,7 +400,7 @@ questate は go_exec() に渡すので、ここで保存しておく
 	}
 
 /*
-正常時に呼び出し元に uuid を返却する
+正常時には呼び出し元に uuid を返却する
 */
 	uuid_copy(val->uuid, ioeb.eh.uuid);
 
