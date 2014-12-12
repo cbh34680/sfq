@@ -9,6 +9,8 @@ https://github.com/dotcloud/lxc/blob/master/src/lxc/caps.c
 static bool caps_isset(cap_value_t cap)
 {
 	bool ret = false;
+
+#ifdef __GNUC__
 	cap_t cap_p = NULL;
 
 	cap_p = cap_get_pid(getpid());
@@ -25,6 +27,7 @@ static bool caps_isset(cap_value_t cap)
 
 		cap_free(cap_p);
 	}
+#endif
 
 	return ret;
 }

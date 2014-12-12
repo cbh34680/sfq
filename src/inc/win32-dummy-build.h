@@ -20,6 +20,9 @@ typedef unsigned int		uint;
 typedef unsigned char		bool;
 typedef long			ssize_t;
 typedef int			mode_t;
+typedef int			uid_t;
+typedef int			gid_t;
+typedef int			cap_value_t;
 
 #define true			(1)
 #define false			(0)
@@ -73,6 +76,33 @@ typedef int			mode_t;
 #define uuid_unparse(a, b)
 #define uuid_generate_random(a)
 #define dirname(a)		(99)
+
+#define CAP_CHOWN		(99)
+
+#define S_IRUSR			(99)
+#define S_IWUSR			(99)
+#define S_IXUSR			(99)
+#define S_ISGID			(99)
+#define S_IRGRP			(99)
+#define S_IWGRP			(99)
+#define S_IXGRP			(99)
+
+#define SIGHUP			(99)
+#define SIGQUIT			(99)
+
+#define umask(a)		(99)
+#define chdir(a)		(99)
+#define setsid()		(99)
+#define chown(a)		(99)
+#define geteuid(a)		(99)
+#define getegid(a)		(99)
+
+#define getpwnam_r(a, b, c, d, e)	(99)
+#define getgrnam_r(a, b, c, d, e)	(99)
+#define fchmod(a, b)			(99)
+
+struct passwd { int pw_uid; };
+struct group { int gr_gid; };
 
 #define __func__		"__func__"
 
