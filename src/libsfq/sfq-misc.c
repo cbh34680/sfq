@@ -834,7 +834,7 @@ void sfq_free_open_names(struct sfq_open_names* om)
 /*
 http://nion.modprobe.de/blog/archives/357-Recursive-directory-creation.html
 */
-bool sfq_mkdir_p(const char *arg, mode_t mode)
+bool sfq_mkdir_p(const char *arg, mode_t perm)
 {
 	char* dir = NULL;
 	char *p = NULL;
@@ -858,7 +858,7 @@ bool sfq_mkdir_p(const char *arg, mode_t mode)
 		if(*p == '/')
 		{
 			*p = '\0';
-			if (mkdir(dir, mode) == -1)
+			if (mkdir(dir, perm) == -1)
 			{
 				if (errno != EEXIST)
 				{
@@ -869,7 +869,7 @@ bool sfq_mkdir_p(const char *arg, mode_t mode)
 		}
 	}
 
-	if (mkdir(dir, mode) == -1)
+	if (mkdir(dir, perm) == -1)
 	{
 		if (errno != EEXIST)
 		{

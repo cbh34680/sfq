@@ -255,10 +255,15 @@ bool sfq_go_exec(const char* querootdir, const char* quename, ushort slotno, que
 		struct sfq_open_names* om = NULL;
 		struct sfq_eloop_params elop;
 
+		mode_t dir_perm = (S_ISGID | S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP);
+		mode_t file_perm = (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
+
 /* */
 		bzero(&elop, sizeof(elop));
 
 		elop.slotno = slotno;
+		elop.dir_perm = dir_perm;
+		elop.file_perm = file_perm;
 
 /*
 子プロセスを wait() する
@@ -301,11 +306,10 @@ bool sfq_go_exec(const char* querootdir, const char* quename, ushort slotno, que
 		sfq_free_open_names(om);
 		om = NULL;
 
-
 /*
 ループ処理の標準出力、標準エラー出力先を切り替え
 */
-		sfq_reopen_4proc(elop.om_queproclogdir, elop.slotno, questate);
+		sfq_reopen_4proc(elop.om_queproclogdir, elop.slotno, questate, file_perm);
 
 /*
 ループ処理の実行

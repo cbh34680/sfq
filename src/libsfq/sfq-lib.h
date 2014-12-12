@@ -123,7 +123,7 @@ SFQ_FAIL_CATCH_LABEL__:
 
 #define SFQ_MAGICSTR			"sfq"
 
-#define SFQ_QUEUE_FILENAME		"data.sfq"
+#define SFQ_QUEUE_FILENAME		"queue.dat"
 #define SFQ_QUEUE_LOGDIRNAME		"logs"
 #define SFQ_QUEUE_PROC_LOGDIRNAME	"proc"
 #define SFQ_QUEUE_EXEC_LOGDIRNAME	"exec"
@@ -273,15 +273,15 @@ struct sfq_e_header
 
 struct sfq_open_names
 {
-	char* quename;
-	char* querootdir;
+	const char* quename;
+	const char* querootdir;
 
-	char* quedir;
-	char* quefile;
-	char* quelogdir;
-	char* queproclogdir;
-	char* queexeclogdir;
-	char* semname;
+	const char* quedir;
+	const char* quefile;
+	const char* quelogdir;
+	const char* queproclogdir;
+	const char* queexeclogdir;
+	const char* semname;
 };
 
 struct sfq_queue_object
@@ -292,7 +292,7 @@ struct sfq_queue_object
 	FILE* fp;
 	time_t opentime;
 
-	sfq_uchar file_openmode;
+	sfq_uchar queue_openmode;
 };
 
 struct sfq_ioelm_buff
@@ -309,10 +309,15 @@ struct sfq_ioelm_buff
 struct sfq_eloop_params
 {
 	ushort slotno;
-	const char* om_querootdir;
+
 	const char* om_quename;
+	const char* om_querootdir;
+
 	const char* om_queproclogdir;
 	const char* om_queexeclogdir;
+
+	mode_t dir_perm;
+	mode_t file_perm;
 };
 
 struct sfq_queue_create_params
@@ -340,7 +345,7 @@ extern void sfq_close_queue(struct sfq_queue_object* qo);
 extern void sfq_qh_init_pos(struct sfq_q_header*);
 extern void sfq_free_ioelm_buff(struct sfq_ioelm_buff* ioeb);
 extern void sfq_free_open_names(struct sfq_open_names* om);
-extern void sfq_reopen_4proc(const char* logdir, ushort slotno, questate_t questate);
+extern void sfq_reopen_4proc(const char* logdir, ushort slotno, questate_t questate, mode_t file_perm);
 
 extern struct sfq_queue_object* sfq_create_queue(const struct sfq_queue_create_params* qcp);
 extern struct sfq_queue_object* sfq_open_queue_rw(const char* querootdir, const char* quename);
@@ -365,7 +370,8 @@ extern bool sfq_writeqfh(struct sfq_queue_object* qo, struct sfq_file_header* qf
 	const struct sfq_process_info* procs, const char* lastoper);
 
 extern void sfq_output_reopen_4exec(FILE* fp, const time_t* now, const char* arg_wpath,
-	const char* logdir, const uuid_t uuid, ulong id, const char* ext, const char* env_key);
+	const char* logdir, const uuid_t uuid, ulong id, const char* ext, const char* env_key,
+	mode_t dir_perm, mode_t file_perm);
 
 extern int sfq_execwait(const struct sfq_eloop_params* elop, struct sfq_value* val);
 

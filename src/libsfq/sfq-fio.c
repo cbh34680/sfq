@@ -1,7 +1,6 @@
 #include "sfq-lib.h"
 
-static struct sfq_queue_object* open_queue_(const char* querootdir, const char* quename,
-	const char* file_mode)
+static struct sfq_queue_object* open_queue_(const char* querootdir, const char* quename, const char* fopen_mode)
 {
 SFQ_LIB_INITIALIZE
 
@@ -15,9 +14,9 @@ SFQ_LIB_INITIALIZE
 	bool locked = false;
 
 /* check argument */
-	if (! file_mode)
+	if (! fopen_mode)
 	{
-		SFQ_FAIL(EA_FUNCARG, "arg(file_mode) is null");
+		SFQ_FAIL(EA_FUNCARG, "arg(fopen_mode) is null");
 	}
 
 /* create names */
@@ -48,7 +47,7 @@ SFQ_LIB_INITIALIZE
 	locked = true;
 
 /* open queue-file */
-	fp = fopen(om->quefile, file_mode);
+	fp = fopen(om->quefile, fopen_mode);
 	if (! fp)
 	{
 		SFQ_FAIL(ES_FILEOPEN, "file open error '%s' (systemd[PrivateTmp=true] enable?)",
@@ -105,7 +104,7 @@ struct sfq_queue_object* sfq_open_queue_rw(const char* querootdir, const char* q
 
 	if (qo)
 	{
-		qo->file_openmode = (SFQ_FOM_READ | SFQ_FOM_WRITE);
+		qo->queue_openmode = (SFQ_FOM_READ | SFQ_FOM_WRITE);
 	}
 
 	return qo;
@@ -117,7 +116,7 @@ struct sfq_queue_object* sfq_open_queue_ro(const char* querootdir, const char* q
 
 	if (qo)
 	{
-		qo->file_openmode = (SFQ_FOM_READ);
+		qo->queue_openmode = (SFQ_FOM_READ);
 	}
 
 	return qo;
@@ -127,17 +126,17 @@ static bool mkdir_withUGW(const char* dir, const struct sfq_queue_create_params*
 {
 	int irc = -1;
 
-	mode_t mode = (mode_t)-1;
+	mode_t dir_perm = (mode_t)-1;
 
 SFQ_LIB_INITIALIZE
 
-	mode = (S_IRUSR | S_IWUSR | S_IXUSR);
+	dir_perm = (S_IRUSR | S_IWUSR | S_IXUSR);
 	if (qcp->chmod_GaW)
 	{
-		mode |= (S_IRGRP | S_IWGRP | S_IXGRP);
+		dir_perm |= (S_ISGID | S_IRGRP | S_IWGRP | S_IXGRP);
 	}
 
-	irc = mkdir(dir, mode);
+	irc = mkdir(dir, dir_perm);
 	if (irc != 0)
 	{
 		SFQ_FAIL(ES_MKDIR, "mkdir");
@@ -151,6 +150,16 @@ SFQ_LIB_INITIALIZE
 			SFQ_FAIL(ES_CHOWN, "chown");
 		}
 	}
+
+/*
+chown() を実行すると sticky-bit が外れるので
+改めて chmod を実行する。
+
+--> オプショナルな感があるので、失敗しても無視
+*/
+
+	irc = chmod(dir, dir_perm);
+printf("chmod ret %d\n", irc);
 
 SFQ_LIB_CHECKPOINT
 
@@ -166,7 +175,7 @@ SFQ_LIB_INITIALIZE
 	struct sfq_queue_object* qo = NULL;
 	struct sfq_open_names* om = NULL;
 
-	mode_t mode = 0;
+	mode_t file_perm = 0;
 	bool b = false;
 
 	int irc = -1;
@@ -241,13 +250,13 @@ SFQ_LIB_INITIALIZE
 
 /* change owner/group and permission */
 
-	mode = (S_IRUSR | S_IWUSR | S_IXUSR);
+	file_perm = (S_IRUSR | S_IWUSR | S_IXUSR);
 	if (qcp->chmod_GaW)
 	{
-		mode |= (S_IRGRP | S_IWGRP | S_IXGRP);
+		file_perm |= (S_IRGRP | S_IWGRP | S_IXGRP);
 	}
 
-	irc = chmod(qo->om->quefile, mode);
+	irc = chmod(qo->om->quefile, file_perm);
 	if (irc != 0)
 	{
 		SFQ_FAIL(ES_CHMOD, "chmod");
@@ -263,7 +272,7 @@ SFQ_LIB_INITIALIZE
 	}
 
 /* */
-	qo->file_openmode = (SFQ_FOM_WRITE);
+	qo->queue_openmode = (SFQ_FOM_WRITE);
 
 SFQ_LIB_CHECKPOINT
 
@@ -422,7 +431,7 @@ SFQ_LIB_INITIALIZE
 		}
 	}
 
-	if (qo->file_openmode & SFQ_FOM_WRITE)
+	if (qo->queue_openmode & SFQ_FOM_WRITE)
 	{
         	qfh->last_qhd2 = qfh->last_qhd1;
         	qfh->last_qhd1 = qfh->qh.dval;

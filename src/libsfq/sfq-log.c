@@ -21,7 +21,7 @@ static void uuid2subdir(const uuid_t uuid, char* subdir, size_t subdir_size)
 	);
 }
 
-static char* alloc_wpath_4exec(const char* logdir, const uuid_t uuid, ulong id, const char* ext)
+static const char* mkdir_and_alloc_wpath_4exec(const char* logdir, const uuid_t uuid, ulong id, const char* ext, mode_t dir_perm)
 {
 	char subdir[47 + 1];
 
@@ -48,7 +48,7 @@ static char* alloc_wpath_4exec(const char* logdir, const uuid_t uuid, ulong id, 
 		}
 		else
 		{
-			if (sfq_mkdir_p(outdir, 0700))
+			if (sfq_mkdir_p(outdir, dir_perm))
 			{
 				/* go next */
 			}
@@ -62,23 +62,52 @@ static char* alloc_wpath_4exec(const char* logdir, const uuid_t uuid, ulong id, 
 
 	if (outdir)
 	{
-		/* "/proc/sys/kernel/pid_max" ... プロセス番号最大 */
+		const char* basename = "std";
 
-		/* "dir/ppid-pid.{out,err}\0" */
+		/* "dir/0.{out,err}\0" */
 		size_t wpath_size =
 		(
-			strlen(outdir)			+ /* outdir */
-			1				+ /* "/"    */
-			SFQ_PLUSINTSTR_WIDTH(id)	+ /* id     */
-			1				+ /* "."    */
-			strlen(ext)			+ /* ext    */
-			1				  /* "\0"   */
+			strlen(outdir)		+ /* outdir */
+			1			+ /* "/"    */
+			strlen(basename)	+ /* "std"  */
+			1			+ /* "."    */
+			strlen(ext)		+ /* ext    */
+			1			  /* "\0"   */
 		);
 
 		wpath = malloc(wpath_size);
 		if (wpath)
 		{
-			snprintf(wpath, wpath_size, "%s/%zu.%s", outdir, id, ext);
+			const char* idfn = "id.txt";
+			char* idfpath = NULL;
+
+			size_t idfpath_size =
+			(
+				strlen(outdir)		+ /* outdir   */
+				1			+ /* "/"      */
+				strlen(idfn)		+ /* "id.txt" */
+				1			  /* "\0"     */
+			);
+
+			idfpath = alloca(idfpath_size);
+			if (idfpath)
+			{
+				FILE* idfp = NULL;
+
+				snprintf(idfpath, idfpath_size, "%s/%s", outdir, idfn);
+
+				idfp = fopen(idfpath, "w");
+				if (idfp)
+				{
+					fprintf(idfp, "%zu\n", id);
+
+					fclose(idfp);
+					idfp = NULL;
+				}
+			}
+
+/* */
+			snprintf(wpath, wpath_size, "%s/%s.%s", outdir, basename, ext);
 		}
 	}
 
@@ -86,14 +115,18 @@ static char* alloc_wpath_4exec(const char* logdir, const uuid_t uuid, ulong id, 
 }
 
 void sfq_output_reopen_4exec(FILE* fp, const time_t* now, const char* arg_wpath,
-	const char* logdir, const uuid_t uuid, ulong id, const char* ext, const char* env_key)
+	const char* logdir, const uuid_t uuid, ulong id, const char* ext, const char* env_key,
+	mode_t dir_perm, mode_t file_perm)
 {
+	int irc = -1;
 	const char* opened = NULL;
 
 fprintf(stderr, "\tattempt to re-open(%s) file\n", ext);
 
-	if (arg_wpath && (arg_wpath[0] != '\0'))
+	if (arg_wpath)
 	{
+ 		assert(arg_wpath[0]);
+
 /* len(arg_wpath) > 0 */
 
 		if (strcmp(arg_wpath, "-") == 0)
@@ -102,16 +135,37 @@ fprintf(stderr, "\tattempt to re-open(%s) file\n", ext);
 
 			if (logdir)
 			{
-				char* wpath = NULL;
+				const char* freopen_path = NULL;
 
-				wpath = alloc_wpath_4exec(logdir, uuid, id, ext);
-				if (wpath)
+fprintf(stderr, "\tmkdir(%s) [perm=%x] for default log\n", ext, dir_perm);
+				freopen_path = mkdir_and_alloc_wpath_4exec(logdir, uuid, id, ext, dir_perm);
+
+				if (freopen_path)
 				{
-fprintf(stderr, "\tre-open(%s) file [mode=wb path=%s] for default log\n", ext, wpath);
+fprintf(stderr, "\tfreopen(%s) file [mode=wb path=%s]\n", ext, freopen_path);
 
-					if (freopen(wpath, "wb", fp))
+/*
+freopen_path は uuid をパスに含んでいるので重複しない
+--> "wb" で開く
+*/
+					if (freopen(freopen_path, "wb", fp))
 					{
-						opened = sfq_stradup(wpath);
+						int fd = -1;
+
+						fd = fileno(fp);
+						if (fd != -1)
+						{
+fprintf(stderr, "\tchmod(%s) [perm=%x path=%s]\n", ext, file_perm, freopen_path);
+							irc = fchmod(fd, file_perm);
+
+							if (irc != 0)
+							{
+perror("\t\tfchmod");
+								/* ignore errors */
+							}
+						}
+
+						opened = sfq_stradup(freopen_path);
 					}
 					else
 					{
@@ -119,18 +173,24 @@ perror("\t\tfreopen error");
 					}
 				}
 
-				free(wpath);
-				wpath = NULL;
+				free((char*)freopen_path);
+				freopen_path = NULL;
 			}
 		}
 		else
 		{
-			char wmode[] = "wb";
-			const char* path1 = NULL;
-			const char* path2 = NULL;
+			char freopen_mode[] = "wb";
+
+			const char* parse_path = NULL;
+			const char* freopen_path = NULL;
 
 			if (strlen(arg_wpath) >= 3)
 			{
+/*
+ファイルを開くモード (a, w) を指定できるように、"-e", "-o" は指定されたパスを解析する。
+
+"-e a,path/to/file.txt" のように最初の 2 文字が "a,", "w," であった場合は freopen() へのパラメータとする
+*/
 				if (arg_wpath[1] == ',')
 				{
 					switch (arg_wpath[0])
@@ -140,63 +200,88 @@ perror("\t\tfreopen error");
 						{
 							/* "a,X", "w,X" "a,XYZ" "w,xyz" ... */
 
-							wmode[0] = arg_wpath[0];
-							path1 = &arg_wpath[2];
+							freopen_mode[0] = arg_wpath[0];
+							parse_path = &arg_wpath[2];
 
 							break;
 						}
 					}
 				}
-
-				if (! path1)
-				{
-					path1 = arg_wpath;
-				}
-			}
-			else
-			{
-				path1 = arg_wpath;
 			}
 
-			if (strchr(path1, '%'))
+			if (! parse_path)
 			{
-				struct tm tmp_tm;
+				parse_path = arg_wpath;
+			}
 
-				if (localtime_r(now, &tmp_tm))
+			if (strchr(parse_path, '%'))
+			{
+				struct tm tmbuf;
+
+/*
+"-e mylog/%Y/%m/%d/%H%M%S.log" のように指定されていたとき (パスに "%" を含むとき)
+は strftime() による変換を試みる
+*/
+				if (localtime_r(now, &tmbuf))
 				{
 					char tmp_s[BUFSIZ];
 					size_t wsize = 0;
 
-					wsize = strftime(tmp_s, sizeof(tmp_s), path1, &tmp_tm);
+					wsize = strftime(tmp_s, sizeof(tmp_s), parse_path, &tmbuf);
 
 					if (wsize != 0)
 					{
-						path2 = tmp_s;
+						freopen_path = tmp_s;
 					}
 				}
 			}
 			else
 			{
-				path2 = path1;
+				freopen_path = parse_path;
 			}
 
-			if (path2)
+			if (freopen_path)
 			{
-				char* path2_copy = sfq_stradup(path2);
-				if (path2_copy)
+				char* freopen_path_copy = sfq_stradup(freopen_path);
+				if (freopen_path_copy)
 				{
-					char* dir = dirname(path2_copy);
+					char* dir = dirname(freopen_path_copy);
 					if (dir)
 					{
 						char* cwd = getcwd(NULL, 0);
 
-fprintf(stderr, "\tmake directory(%s) dir [cwd=%s path=%s]\n", ext, cwd, dir);
-						if (sfq_mkdir_p(dir, 0700))
+fprintf(stderr, "\tsfq_mkdir_p(%s) dir [cwd=%s path=%s perm=%x]\n", ext, cwd, dir, dir_perm);
+
+						if (sfq_mkdir_p(dir, dir_perm))
 						{
-fprintf(stderr, "\tfreopen(%s) file [cwd=%s path=%s mode=%s]\n", ext, cwd, path2, wmode);
-							if (freopen(path2, wmode, fp))
+							bool firstOpen = false;
+							struct stat stbuf;
+
+							firstOpen = (stat(freopen_path, &stbuf) == 0) ? false : true;
+
+fprintf(stderr, "\tfreopen(%s) file [cwd=%s path=%s mode=%s first=%d]\n", ext, cwd, freopen_path, freopen_mode, firstOpen);
+
+							if (freopen(freopen_path, freopen_mode, fp))
 							{
-								opened = path2;
+								if (firstOpen)
+								{
+									int fd = -1;
+
+									fd = fileno(fp);
+									if (fd != -1)
+									{
+fprintf(stderr, "\tchmod(%s) [perm=%x path=%s]\n", ext, file_perm, freopen_path);
+										irc = fchmod(fd, file_perm);
+
+										if (irc != 0)
+										{
+perror("\t\tfchmod");
+											/* ignore errors */
+										}
+									}
+								}
+
+								opened = freopen_path;
 							}
 							else
 							{
@@ -238,13 +323,15 @@ fprintf(stderr, "\tre-open(%s) [mode=wb path=/dev/null]\n", ext);
 	}
 }
 
-static bool output_reopen_4proc(FILE* fp, const char* logdir, ushort slotno, const char* ext)
+static bool output_reopen_4proc(FILE* fp, const char* logdir, ushort slotno, const char* ext, mode_t file_perm)
 {
 	char* wpath = NULL;
 	size_t wpath_size = 0;
+	struct stat stbuf;
 
 	/* "dir/slotno.{out,err}\0" */
-	wpath_size = (
+	wpath_size =
+	(
 		strlen(logdir)			+ /* logdir */
 		1				+ /* "/"    */
 		SFQ_PLUSINTSTR_WIDTH(slotno)	+ /* slotno */
@@ -256,10 +343,28 @@ static bool output_reopen_4proc(FILE* fp, const char* logdir, ushort slotno, con
 	wpath = alloca(wpath_size);
 	if (wpath)
 	{
+		bool firstOpen = false;
+
 		snprintf(wpath, wpath_size, "%s/%u.%s", logdir, slotno, ext);
+
+		firstOpen = (stat(wpath, &stbuf) == 0) ? false : true;
 
 		if (freopen(wpath, "at", fp))
 		{
+			if (firstOpen)
+			{
+/*
+最初に開いたときはパーミッションを変更する
+*/
+				int fd = -1;
+
+				fd = fileno(fp);
+				if (fd != -1)
+				{
+					fchmod(fd, file_perm);
+				}
+			}
+
 			return true;
 		}
 	}
@@ -267,7 +372,7 @@ static bool output_reopen_4proc(FILE* fp, const char* logdir, ushort slotno, con
 	return false;
 }
 
-void sfq_reopen_4proc(const char* logdir, ushort slotno, questate_t questate)
+void sfq_reopen_4proc(const char* logdir, ushort slotno, questate_t questate, mode_t file_perm)
 {
 	bool sout_ok = false;
 	bool serr_ok = false;
@@ -280,7 +385,7 @@ void sfq_reopen_4proc(const char* logdir, ushort slotno, questate_t questate)
 		/* stdout */
 		if (questate & SFQ_QST_STDOUT_ON)
 		{
-			if (output_reopen_4proc(stdout, logdir, slotno, "out"))
+			if (output_reopen_4proc(stdout, logdir, slotno, "out", file_perm))
 			{
 				sout_ok = true;
 			}
@@ -289,7 +394,7 @@ void sfq_reopen_4proc(const char* logdir, ushort slotno, questate_t questate)
 		/* stderr */
 		if (questate & SFQ_QST_STDERR_ON)
 		{
-			if (output_reopen_4proc(stderr, logdir, slotno, "err"))
+			if (output_reopen_4proc(stderr, logdir, slotno, "err", file_perm))
 			{
 				serr_ok = true;
 			}

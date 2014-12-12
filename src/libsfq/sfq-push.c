@@ -85,7 +85,7 @@ SFQ_LIB_INITIALIZE
 	{
 		assert(val->soutpath[0]);
 
-		if (val->soutpath[0] != '/')
+		if ((val->soutpath[0] != '/') && (strcmp(val->soutpath, "-") != 0))
 		{
 			full_soutpath = concat_n(3, pushwkdir, "/", val->soutpath);
 			if (! full_soutpath)
@@ -103,7 +103,7 @@ fprintf(stderr, "soutpath [%s] --> [%s]\n", val->soutpath, full_soutpath);
 	{
 		assert(val->serrpath[0]);
 
-		if (val->serrpath[0] != '/')
+		if ((val->serrpath[0] != '/') && (strcmp(val->serrpath, "-") != 0))
 		{
 			full_serrpath = concat_n(3, pushwkdir, "/", val->serrpath);
 			if (! full_serrpath)

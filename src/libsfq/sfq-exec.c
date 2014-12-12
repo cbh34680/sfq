@@ -111,7 +111,7 @@ SFQ_LIB_CHECKPOINT
 SFQ_LIB_FINALIZE
 }
 
-static void output_reopen_4exec(const char* logdir, const struct sfq_value* val)
+static void output_reopen_4exec(const char* logdir, const struct sfq_value* val, mode_t dir_perm, mode_t file_perm)
 {
 	time_t now = time(NULL);
 
@@ -122,22 +122,25 @@ static void output_reopen_4exec(const char* logdir, const struct sfq_value* val)
 	{
 		if (strcmp(soutpath, serrpath) == 0)
 		{
+			if (strcmp(soutpath, "-") != 0)
+			{
 /*
 標準出力先と標準エラー出力先が同じファイル名
 */
 fprintf(stderr, "\tsoutpath == serrpath [%s], redirect stderr to /dev/null\n", soutpath);
 
-			serrpath = NULL;
+				serrpath = NULL;
+			}
 		}
 	}
 
 /* stdout */
 	sfq_output_reopen_4exec(stdout, &now,
-		soutpath, logdir, val->uuid, val->id, "out", "SFQ_SOUTPATH");
+		soutpath, logdir, val->uuid, val->id, "out", "SFQ_SOUTPATH", dir_perm, file_perm);
 
 /* stderr */
 	sfq_output_reopen_4exec(stderr, &now,
-		serrpath, logdir, val->uuid, val->id, "err", "SFQ_SERRPATH");
+		serrpath, logdir, val->uuid, val->id, "err", "SFQ_SERRPATH", dir_perm, file_perm);
 }
 
 static int child_write_dup_exec_exit(const struct sfq_eloop_params* elop, struct sfq_value* val)
@@ -248,7 +251,7 @@ fprintf(stderr, "\t\tmetatext = %s\n", val->metatext);
 	}
 
 /* */
-	output_reopen_4exec(elop->om_queexeclogdir, val);
+	output_reopen_4exec(elop->om_queexeclogdir, val, elop->dir_perm, elop->file_perm);
 
 	sfq_free_value(val);
 
