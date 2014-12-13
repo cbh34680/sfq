@@ -282,18 +282,20 @@ struct sfq_open_names
 	const char* queproclogdir;
 	const char* queexeclogdir;
 	const char* semname;
+
 };
 
 struct sfq_queue_object
 {
 	struct sfq_open_names* om;
 
-	mode_t save_umask;
-	sem_t* semobj;
 	FILE* fp;
 	time_t opentime;
 
 	sfq_uchar queue_openmode;
+
+	mode_t save_umask;
+	sighandler_t save_sighandler;
 };
 
 struct sfq_ioelm_buff

@@ -1,5 +1,74 @@
 #include "sfq-lib.h"
 
+static sem_t* global_semobj_ = NULL;
+
+static void release_semaphore(bool unlock)
+{
+	if (global_semobj_)
+	{
+		if (unlock)
+		{
+			sem_post(global_semobj_);
+		}
+		sem_close(global_semobj_);
+		global_semobj_ = NULL;
+	}
+}
+
+static bool lock_semaphore(const char* semname)
+{
+	int irc = -1;
+	bool locked = false;
+
+SFQ_LIB_INITIALIZE
+
+	if (global_semobj_)
+	{
+/*
+TODO: !!!!
+
+後で name=>semobj のようなマップごとにチェックするように変更
+*/
+		SFQ_FAIL(EA_SEMEXISTS, "lock_semaphore double call (name=%s)", semname);
+	}
+
+/* open semaphore */
+/*
+本来は適切なパーミッションとすべきだが、マシンを再起動すると
+セマフォが消えてしまうので 0666 としておく。
+*/
+	global_semobj_ = sem_open(semname, O_CREAT, 0666, 1);
+	if (global_semobj_ == SEM_FAILED)
+	{
+		SFQ_FAIL(ES_SEMOPEN, "semaphore open error, check permission (e.g. /dev/shm%s)", semname);
+	}
+
+	irc = sem_wait(global_semobj_);
+	if (irc == -1)
+	{
+		SFQ_FAIL(ES_SEMIO, "sem_wait");
+	}
+	locked = true;
+
+SFQ_LIB_CHECKPOINT
+
+	if (SFQ_LIB_IS_FAIL())
+	{
+		release_semaphore(locked);
+	}
+
+SFQ_LIB_FINALIZE
+
+	return SFQ_LIB_IS_SUCCESS();
+}
+
+
+/*
+static void unlock_semaphore_sighandler(int signo)
+{
+}
+*/
+
 static struct sfq_queue_object* open_queue_(const char* querootdir, const char* quename, const char* fopen_mode)
 {
 SFQ_LIB_INITIALIZE
@@ -7,12 +76,12 @@ SFQ_LIB_INITIALIZE
 	struct sfq_queue_object* qo = NULL;
 
 	struct sfq_open_names* om = NULL;
-	sem_t* semobj = NULL;
 	FILE* fp = NULL;
 
 	mode_t save_umask = (mode_t)-1;
+	sighandler_t save_sighandler = SIG_ERR;
 
-	int irc = 0;
+	bool b = false;
 	bool locked = false;
 
 /* check argument */
@@ -28,25 +97,22 @@ SFQ_LIB_INITIALIZE
 		SFQ_FAIL(EA_CREATENAMES, "sfq_alloc_open_names");
 	}
 
+/* ignore SIGINT until close-queue */
+/*
+	save_sighandler = signal(SIGINT, unlock_semaphore_sighandler);
+	if (save_sighandler == SIG_ERR)
+	{
+		SFQ_FAIL(ES_SIGNAL, "ignore SIGINT");
+	}
+*/
+
 	save_umask = umask(0);
 
-/* open semaphore */
-/*
-本来は適切なパーミッションとすべきだが、マシンを再起動すると
-セマフォが消えてしまうので 0666 としておく。
-*/
-	semobj = sem_open(om->semname, O_CREAT, 0666, 1);
-	if (semobj == SEM_FAILED)
-	{
-		SFQ_FAIL(ES_SEMOPEN, "semaphore open error, check permission (e.g. /dev/shm%s)",
-			om->semname);
-	}
-
 /* lock */
-	irc = sem_wait(semobj);
-	if (irc == -1)
+	b = lock_semaphore(om->semname);
+	if (! b)
 	{
-		SFQ_FAIL(ES_SEMIO, "sem_wait");
+		SFQ_FAIL(EA_LOCKSEMAPHORE, "lock_semaphore");
 	}
 	locked = true;
 
@@ -65,11 +131,11 @@ SFQ_LIB_INITIALIZE
 		SFQ_FAIL(ES_MEMALLOC, "malloc(locked_file)");
 	}
 
-	qo->save_umask = save_umask;
 	qo->om = om;
-	qo->semobj = semobj;
 	qo->fp = fp;
 	qo->opentime = time(NULL);
+	qo->save_umask = save_umask;
+	qo->save_sighandler = save_sighandler;
 
 SFQ_LIB_CHECKPOINT
 
@@ -81,15 +147,7 @@ SFQ_LIB_CHECKPOINT
 			fp = NULL;
 		}
 
-		if (semobj)
-		{
-			if (locked)
-			{
-				sem_post(semobj);
-			}
-			sem_close(semobj);
-			semobj = NULL;
-		}
+		release_semaphore(locked);
 
 		sfq_free_open_names(om);
 		om = NULL;
@@ -101,11 +159,48 @@ SFQ_LIB_CHECKPOINT
 		{
 			umask(save_umask);
 		}
+
+		if (save_sighandler != SIG_ERR)
+		{
+			signal(SIGINT, save_sighandler);
+		}
 	}
 
 SFQ_LIB_FINALIZE
 
 	return qo;
+}
+
+void sfq_close_queue(struct sfq_queue_object* qo)
+{
+	if (! qo)
+	{
+		return;
+	}
+
+	if (qo->fp)
+	{
+		fclose(qo->fp);
+	}
+
+	release_semaphore(true);
+
+	sfq_free_open_names(qo->om);
+
+	if (qo->save_umask != (mode_t)-1)
+	{
+		umask(qo->save_umask);
+	}
+
+	if (qo->save_sighandler)
+	{
+		if (qo->save_sighandler != SIG_ERR)
+		{
+			signal(SIGINT, qo->save_sighandler);
+		}
+	}
+
+	free(qo);
 }
 
 struct sfq_queue_object* sfq_open_queue_rw(const char* querootdir, const char* quename)
@@ -297,34 +392,6 @@ SFQ_LIB_CHECKPOINT
 SFQ_LIB_FINALIZE
 
 	return qo;
-}
-
-void sfq_close_queue(struct sfq_queue_object* qo)
-{
-	if (! qo)
-	{
-		return;
-	}
-
-	if (qo->fp)
-	{
-		fclose(qo->fp);
-	}
-
-	if (qo->semobj)
-	{
-		sem_post(qo->semobj);
-		sem_close(qo->semobj);
-	}
-
-	sfq_free_open_names(qo->om);
-
-	if (qo->save_umask != (mode_t)-1)
-	{
-		umask(qo->save_umask);
-	}
-
-	free(qo);
 }
 
 bool sfq_writeqfh(struct sfq_queue_object* qo, struct sfq_file_header* qfh,
