@@ -3,7 +3,7 @@
 unalias -a
 cd $(dirname $(readlink -f "$0"))
 
-EXTSO='../wrap_libsfq/modules/wrap_libsfq.so'
+EXTSO='../../wrap_libsfq/modules/wrap_libsfq.so'
 [ ! -f ${EXTSO} ] && echo "extension file not found" && exit 1
 
 PHPOPT=''
@@ -32,6 +32,8 @@ cmp $EXTSO output-sfq_pop.bin
 echo $?
 cmp $EXTSO output-sfq_shift.bin
 echo $?
+
+rm -f output-*.bin
 
 exit 0
 

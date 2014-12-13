@@ -102,7 +102,9 @@ SFQ_LIB_INITIALIZE
 		}
 	}
 
-/* execvp() が成功すれば処理は戻らない */
+/*
+execvp() が成功すれば処理は戻らない
+*/
 
 	execvp(argv[0], argv);
 

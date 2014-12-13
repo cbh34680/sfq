@@ -2,6 +2,7 @@
 /*.so
 /*.exe
 /*.so.*
+/*.php
 /targetver.h
 /dllmain.cpp
 /libsfq.cpp
