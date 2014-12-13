@@ -4,6 +4,7 @@
 ?>
 <html>
 <body>
+<a href="https://github.com/cbh34680/sfq/blob/master/src/php-sfq/web-sample/<?= basename(__FILE__) ?>" target="_blank">source</a><br />
 <?php
 try
 {
