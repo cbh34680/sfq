@@ -24,6 +24,7 @@ for ($i=0; $i<5; $i++)
 // child
 		$cont = true;
 
+/*
 		$hndl = function ($signo) use (&$cont)
 		{
 			$cont = false;
@@ -33,6 +34,7 @@ for ($i=0; $i<5; $i++)
 		pcntl_signal(SIGINT, $hndl);
 		pcntl_signal(SITERM, $hndl);
 		pcntl_signal(SIGUSR1, $hndl);
+*/
 
 		try
 		{
