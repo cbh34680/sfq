@@ -100,9 +100,11 @@ typedef int			cap_value_t;
 #define getpwnam_r(a, b, c, d, e)	(99)
 #define getgrnam_r(a, b, c, d, e)	(99)
 #define fchmod(a, b)			(99)
+#define gettimeofday(a, b)		(99)
 
 struct passwd { int pw_uid; };
 struct group { int gr_gid; };
+struct timeval { int tv_sec; };
 
 #define __func__		"__func__"
 
