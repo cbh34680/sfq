@@ -9,9 +9,10 @@
 try
 {
 	$reqv = [
-		'execpath' =>'env',
-		'soutpath' => '-',
-		'serrpath' => '-',
+		'payload'     =>'date;date;date',
+		'payload_size' => 10,
+		'soutpath'     => '-',
+		'serrpath'     => '-',
 	];
 
 	$sfqc = SFQueue::newClient('webque-1');

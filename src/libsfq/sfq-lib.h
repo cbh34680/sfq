@@ -374,6 +374,8 @@ extern void sfq_output_reopen_4exec(FILE* fp, const time_t* now, const char* arg
 	const char* logdir, const uuid_t uuid, ulong id, const char* ext, const char* env_key,
 	mode_t dir_perm, mode_t file_perm);
 
+extern void sfq_write_execrc(const char* logdir, const uuid_t uuid, int rc);
+
 extern int sfq_execwait(const struct sfq_eloop_params* elop, struct sfq_value* val);
 
 #endif

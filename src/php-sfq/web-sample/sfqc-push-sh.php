@@ -8,8 +8,22 @@
 <?php
 try
 {
+	$shcmd =<<< END_DOC
+date
+echo
+find /var/tmp/webque-1/ -type f -ls | tail -5
+echo
+id
+echo
+pwd
+echo
+umask
+echo
+ulimit -a
+END_DOC;
+
 	$reqv = [
-		'execpath' =>'env',
+		'payload'  => $shcmd,
 		'soutpath' => '-',
 		'serrpath' => '-',
 	];

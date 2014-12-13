@@ -9,6 +9,7 @@ try
 {
 	$reqv = [
 		'payload' => date('Y-m-d H:i:s'),
+		'metatext' => @$_SERVER['REMOTE_ADDR'],
 	];
 
 	$sfqc = SFQueue::newClient('webque-0');

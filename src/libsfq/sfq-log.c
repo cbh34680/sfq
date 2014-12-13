@@ -21,7 +21,47 @@ static void uuid2subdir(const uuid_t uuid, char* subdir, size_t subdir_size)
 	);
 }
 
-static const char* mkdir_and_alloc_wpath_4exec(const char* logdir, const uuid_t uuid, ulong id, const char* ext, mode_t dir_perm)
+void sfq_write_execrc(const char* logdir, const uuid_t uuid, int rc)
+{
+	const char* rcfn = "rc.txt";
+	char* rcfpath = NULL;
+	size_t rcfpath_size = 0;
+
+	char subdir[47 + 1];
+
+	uuid2subdir(uuid, subdir, sizeof(subdir));
+
+	/* "logdir/subdir\0" */
+	rcfpath_size =
+	(
+		strlen(logdir)		+ /* logdir */
+		1			+ /* "/"    */
+		strlen(subdir)		+ /* subdir */
+		1			+ /* "/"    */
+		strlen(rcfn)		+ /* rcfn   */
+		1			  /* "\0"   */
+	);
+
+	rcfpath = alloca(rcfpath_size);
+	if (rcfpath)
+	{
+		FILE* rcfp = NULL;
+
+		snprintf(rcfpath, rcfpath_size, "%s/%s/%s", logdir, subdir, rcfn);
+
+		rcfp = fopen(rcfpath, "wt");
+		if (rcfp)
+		{
+			fprintf(rcfp, "%d\n", rc);
+
+			fclose(rcfp);
+			rcfp = NULL;
+		}
+	}
+}
+
+static const char* mkdir_and_alloc_wpath_4exec(const char* logdir, const uuid_t uuid,
+	ulong id, const char* ext, mode_t dir_perm)
 {
 	char subdir[47 + 1];
 
@@ -51,6 +91,8 @@ static const char* mkdir_and_alloc_wpath_4exec(const char* logdir, const uuid_t 
 			if (sfq_mkdir_p(outdir, dir_perm))
 			{
 				/* go next */
+
+				setenv("SFQ_EXECLOGDIR", outdir, 0);
 			}
 			else
 			{
@@ -80,9 +122,13 @@ static const char* mkdir_and_alloc_wpath_4exec(const char* logdir, const uuid_t 
 		{
 			const char* idfn = "id.txt";
 			char* idfpath = NULL;
+			size_t idfpath_size = 0;
 
-			size_t idfpath_size =
-			(
+/* set return value */
+			snprintf(wpath, wpath_size, "%s/%s.%s", outdir, basename, ext);
+
+/* write [id] to file("id.txt") */
+			idfpath_size = (
 				strlen(outdir)		+ /* outdir   */
 				1			+ /* "/"      */
 				strlen(idfn)		+ /* "id.txt" */
@@ -96,18 +142,24 @@ static const char* mkdir_and_alloc_wpath_4exec(const char* logdir, const uuid_t 
 
 				snprintf(idfpath, idfpath_size, "%s/%s", outdir, idfn);
 
-				idfp = fopen(idfpath, "w");
-				if (idfp)
+				if (stat(idfpath, &stbuf) == 0)
 				{
-					fprintf(idfp, "%zu\n", id);
+					/* go next */
+				}
+				else
+				{
+					idfp = fopen(idfpath, "w");
+					if (idfp)
+					{
+						fprintf(idfp, "%zu\n", id);
 
-					fclose(idfp);
-					idfp = NULL;
+						fclose(idfp);
+						idfp = NULL;
+
+						setenv("SFQ_IDFILEPATH", idfpath, 0);
+					}
 				}
 			}
-
-/* */
-			snprintf(wpath, wpath_size, "%s/%s.%s", outdir, basename, ext);
 		}
 	}
 
