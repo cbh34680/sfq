@@ -261,7 +261,6 @@ fprintf(stderr, "\t\tmetatext = %s\n", val->metatext);
 /*
 exec() が成功すればここには来ない
 */
-	//SFQ_FAIL(EC_EXECFAIL, "execapp");
 
 SFQ_LIB_CHECKPOINT
 
@@ -323,6 +322,7 @@ fprintf(stderr, "\tbefore wait child-process [pid=%d]\n", pid);
 				int exit_code = WEXITSTATUS(status);
 
 fprintf(stderr, "\tafter wait child-process [pid=%d exit=%d]\n", pid, exit_code);
+				sfq_write_execrc(elop->om_queexeclogdir, val->uuid, exit_code);
 
 				return exit_code;
 			}

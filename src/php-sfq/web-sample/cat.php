@@ -3,15 +3,15 @@
 	printHeaders();
 
 	$uuid = @$_GET['uuid'];
-	$ext = @$_GET['ext'];
+	$file = @$_GET['file'];
 
-	if ($uuid && $ext)
+	if ($uuid && $file)
 	{
-		if (preg_match('/^[0-9A-Za-z-]+$/', $uuid) && in_array($ext, ['out', 'err']))
+		if (preg_match('/^[0-9A-Za-z-]+$/', $uuid) && preg_match('/^[0-9A-Za-z-]+\.[a-z]{3}/', $file))
 		{
 			if (preg_match_all('/../', implode(explode('-', $uuid)), $matches))
 			{
-				$log = '/var/tmp/webque-1/logs/exec/' . implode('/', $matches[0]) . '/std.' . $ext;
+				$path = '/var/tmp/webque-1/logs/exec/' . implode('/', $matches[0]) . '/' . $file;
 			}
 		}
 	}
@@ -22,13 +22,13 @@
 </head>
 <body>
 <i>uuid:</i> <?= $uuid ?><br />
-<i>ext:</i> <?= $ext ?><br />
-<i>file:</i> <? if (isset($log)) { echo "{$log} (ts=" . date('y/m/d H:i:s', filemtime($log)) . ")"; } ?><br />
+<i>file:</i> <?= $file ?><br />
+<i>path:</i> <? if (isset($path)) { echo "{$path} (ts=" . date('y/m/d H:i:s', filemtime($path)) . ")"; } ?><br />
 <br />
 <hr />
 <blockquote>
 <pre>
-<? if (isset($log)) { readfile($log); } ?>
+<? if (isset($path)) { readfile($path); } ?>
 </pre>
 </blockquote>
 <hr />
