@@ -138,16 +138,45 @@ fprintf(stderr, "#\n");
 
 fprintf(stderr, "before loop [questate=%u]\n", questate);
 
-	while ((shift_rc == SFQ_RC_SUCCESS) && (questate & SFQ_QST_EXEC_ON))
+	for (loop=1; (shift_rc == SFQ_RC_SUCCESS) && (questate & SFQ_QST_EXEC_ON); loop++)
 	{
 		struct sfq_value val;
 		int TO_state = SFQ_TOS_NONE;
 
+		struct timeval tvbuf;
+		time_t bttime = 0;
+		char bttime_s[32] = "";
+
+		char uuid_s[36 + 1] = "";
+		int execrc = 0;
+
+/* */
 		bzero(&val, sizeof(val));
 
-		loop++;
+		if (gettimeofday(&tvbuf, NULL) == 0)
+		{
+			struct tm tmbuf;
 
-fprintf(stderr, "loop(%zu) block-top [time=%zu]\n", loop, time(NULL));
+			if (localtime_r(&tvbuf.tv_sec, &tmbuf))
+			{
+				char* fmt = NULL;
+
+				strftime(bttime_s, sizeof(bttime_s), "%y-%m-%d %H:%M:%S", &tmbuf);
+
+				fmt = sfq_alloc_concat_n(2, bttime_s, " %03d");
+				if (fmt)
+				{
+					snprintf(bttime_s, sizeof(bttime_s), fmt, (tvbuf.tv_usec / 1000));
+
+					free(fmt);
+					fmt = NULL;
+				}
+			}
+
+			bttime = tvbuf.tv_sec;
+		}
+
+fprintf(stderr, "loop(%zu) block-top [time=%zu time_s=%s]\n", loop, bttime, bttime_s);
 
 fprintf(stderr, "loop(%zu) attempt to shift\n", loop);
 
@@ -163,9 +192,7 @@ fprintf(stderr, "loop(%zu) no more element, break\n", loop);
 
 		if (shift_rc == SFQ_RC_SUCCESS)
 		{
-			int irc = 0;
-			char uuid_s[36 + 1] = "";
-
+/* */
 			uuid_unparse(val.uuid, uuid_s);
 
 fprintf(stderr, "loop(%zu) shift success [id=%zu pushtime=%zu uuid=%s]\n",
@@ -173,34 +200,34 @@ fprintf(stderr, "loop(%zu) shift success [id=%zu pushtime=%zu uuid=%s]\n",
 
 fprintf(stderr, "loop(%zu) attempt to exec [id=%zu]\n", loop, val.id);
 
-			irc = sfq_execwait(elop, &val);
+			execrc = sfq_execwait(elop, &val);
 
-			if (irc == 0)
+			if (execrc == 0)
 			{
 				/* execapp() exit(== 0) */
 				TO_state = SFQ_TOS_SUCCESS;
 fprintf(stderr, "loop(%zu) exec success\n", loop);
 			}
-			else if (irc == SFQ_RC_EC_EXECFAIL)
+			else if (execrc == SFQ_RC_EC_EXECFAIL)
 			{
 				TO_state = SFQ_TOS_CANTEXEC;
 fprintf(stderr, "loop(%zu) exec fail\n", loop);
 			}
-			else if (irc > 0)
+			else if (execrc > 0)
 			{
 				/* execapp() exit(<> 0) */
 /*
 1 - 127 のユーザが使える exit-code
 */
 				TO_state = SFQ_TOS_APPEXIT_NON0;
-fprintf(stderr, "loop(%zu) exec app exit non-zero [rc=%d]\n", loop, irc);
+fprintf(stderr, "loop(%zu) exec app exit non-zero [rc=%d]\n", loop, execrc);
 			}
 			else
 			{
 /* 不明 */
 				/* can not execapp() */
 				TO_state = SFQ_TOS_CANTEXEC;
-fprintf(stderr, "loop(%zu) exec fail unknown-cause [rc=%d]\n", loop, irc);
+fprintf(stderr, "loop(%zu) exec fail unknown-cause [rc=%d]\n", loop, execrc);
 			}
 		}
 		else
@@ -212,6 +239,8 @@ fprintf(stderr, "loop(%zu) exec fail unknown-cause [rc=%d]\n", loop, irc);
 fprintf(stderr, "loop(%zu) shift fail [rc=%d]\n", loop, shift_rc);
 		}
 
+printf("%s\t%d\t%s\t%zu\t%zu\t%d\n", bttime_s, shift_rc, uuid_s, val.id, val.pushtime, execrc);
+
 		sfq_free_value(&val);
 
 /* update to_*** */
@@ -222,7 +251,7 @@ fprintf(stderr, "loop(%zu) shift fail [rc=%d]\n", loop, shift_rc);
 			SFQ_FAIL(EA_UPDSTATUS, "loop increment");
 		}
 
-fprintf(stderr, "loop(%zu) block-bottom [time=%zu questate=%u]\n", loop, time(NULL), questate);
+fprintf(stderr, "loop(%zu) block-bottom [questate=%u]\n", loop, questate);
 	}
 
 SFQ_LIB_CHECKPOINT

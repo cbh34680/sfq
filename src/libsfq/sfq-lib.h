@@ -363,6 +363,7 @@ extern bool sfq_go_exec(const char* querootdir, const char* quename, ushort slot
 extern bool sfq_copy_ioeb2val(const struct sfq_ioelm_buff* ioeb, struct sfq_value* val);
 extern bool sfq_copy_val2ioeb(const struct sfq_value* val, struct sfq_ioelm_buff* ioeb);
 extern bool sfq_mkdir_p(const char *arg, mode_t mode);
+extern char* sfq_alloc_concat_n(int n, ...);
 
 extern bool sfq_readqfh(struct sfq_queue_object* qo,
 	struct sfq_file_header* qfh, struct sfq_process_info** procs_ptr);
@@ -373,6 +374,8 @@ extern bool sfq_writeqfh(struct sfq_queue_object* qo, struct sfq_file_header* qf
 extern void sfq_output_reopen_4exec(FILE* fp, const time_t* now, const char* arg_wpath,
 	const char* logdir, const uuid_t uuid, ulong id, const char* ext, const char* env_key,
 	mode_t dir_perm, mode_t file_perm);
+
+extern void sfq_write_execrc(const char* logdir, const uuid_t uuid, int rc);
 
 extern int sfq_execwait(const struct sfq_eloop_params* elop, struct sfq_value* val);
 

@@ -880,3 +880,29 @@ bool sfq_mkdir_p(const char *arg, mode_t perm)
 	return true;
 }
 
+char* sfq_alloc_concat_n(int n, ...)
+{
+	int i = 0;
+	size_t len = 0;
+	char* ret = NULL;
+
+	va_list list;
+
+	va_start(list, n);
+	for (i=0; i<n; i++) { len += strlen(va_arg(list, char*)); }
+	va_end(list);
+
+	ret = malloc(len + 1 /* '\0' */);
+	if (! ret)
+	{
+		return NULL;
+	}
+	ret[0] = '\0';
+
+	va_start(list, n);
+	for (i=0; i<n; i++) { strcat(ret, va_arg(list, char*)); }
+	va_end(list);
+
+	return ret;
+}
+

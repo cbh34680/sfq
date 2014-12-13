@@ -4,25 +4,26 @@
 ?>
 <html>
 <body>
+<a href="https://github.com/cbh34680/sfq/blob/master/src/php-sfq/web-sample/<?= basename(__FILE__) ?>" target="_blank">source</a><br />
 <?php
 try
 {
 	$reqv = [
 		'payload'  => file_get_contents('/etc/hosts'),
-		'execpath' =>'cat',
-		'execargs' =>'-n',
+		'execpath' => 'cat',
+		'execargs' => '-n',
 		'soutpath' => '-',
 		'serrpath' => '-',
 	];
 
 	$sfqc = SFQueue::newClient('webque-1');
-	$resp = $sfqc->push_binary($reqv);
+	$uuid = $sfqc->push_binary($reqv);
 
-	if ($resp)
+	if ($uuid)
 	{
-		if (preg_match_all('/../', implode(explode('-', $resp)), $matches))
+		if (preg_match_all('/../', implode(explode('-', $uuid)), $matches))
 		{
-			$log = '/var/tmp/webque-1/logs/exec/' . implode('/', $matches[0]) . '/std.out';
+			$dir = '/var/tmp/webque-1/logs/exec/' . implode('/', $matches[0]);
 		}
 	}
 }
@@ -41,6 +42,13 @@ MESG: <?= $ex->getMessage() ?><br />
 <? if (isset($reqv)) { var_dump($reqv); } ?>
 <?= var_dump(@$resp) ?>
 </pre>
-<? if (isset($log)) { echo "<hr /><i>see</i>: {$log}" . PHP_EOL; } ?>
+<? if (isset($dir)) : ?>
+<hr />
+<i><a href='cat.php?uuid=<?= $uuid ?>&file=id.txt'  target='_blank'>see</a></i>: <?= $dir?>/id.txt<br />
+<i><a href='cat.php?uuid=<?= $uuid ?>&file=std.out' target='_blank'>see</a></i>: <?= $dir?>/std.out<br />
+<i><a href='cat.php?uuid=<?= $uuid ?>&file=std.err' target='_blank'>see</a></i>: <?= $dir?>/std.err<br />
+<i><a href='cat.php?uuid=<?= $uuid ?>&file=rc.txt'  target='_blank'>see</a></i>: <?= $dir?>/rc.txt<br />
+<? endif ?>
 </body>
 </html>
+

@@ -1,31 +1,5 @@
 #include "sfq-lib.h"
 
-static char* concat_n(int n, ...)
-{
-	int i = 0;
-	size_t len = 0;
-	char* ret = NULL;
-
-	va_list list;
-
-	va_start(list, n);
-	for (i=0; i<n; i++) { len += strlen(va_arg(list, char*)); }
-	va_end(list);
-
-	ret = malloc(len + 1 /* '\0' */);
-	if (! ret)
-	{
-		return NULL;
-	}
-	ret[0] = '\0';
-
-	va_start(list, n);
-	for (i=0; i<n; i++) { strcat(ret, va_arg(list, char*)); }
-	va_end(list);
-
-	return ret;
-}
-
 #define STR_SET_NULL_IFEMPTY(a) \
 	if ( (a) ) \
 	{ \
@@ -100,7 +74,7 @@ str[0] == '\0' のときは str に NULL を設定
 	{
 		if ((val->soutpath[0] != '/') && (strcmp(val->soutpath, "-") != 0))
 		{
-			full_soutpath = concat_n(3, pushwkdir, "/", val->soutpath);
+			full_soutpath = sfq_alloc_concat_n(3, pushwkdir, "/", val->soutpath);
 			if (! full_soutpath)
 			{
 				SFQ_FAIL(EA_CONCAT_N, "pushwkdir/soutpath");
@@ -114,7 +88,7 @@ str[0] == '\0' のときは str に NULL を設定
 	{
 		if ((val->serrpath[0] != '/') && (strcmp(val->serrpath, "-") != 0))
 		{
-			full_serrpath = concat_n(3, pushwkdir, "/", val->serrpath);
+			full_serrpath = sfq_alloc_concat_n(3, pushwkdir, "/", val->serrpath);
 			if (! full_serrpath)
 			{
 				SFQ_FAIL(EA_CONCAT_N, "pushwkdir/serrpath");
