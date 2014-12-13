@@ -39,6 +39,6 @@ MESG: <?= $ex->getMessage() ?><br />
 <? if (isset($reqv)) { var_dump($reqv); } ?>
 <?= var_dump(@$resp) ?>
 </pre>
-<? if (isset($log)) { echo "<hr /><i>see</i>: {$log}" . PHP_EOL; } ?>
+<? if (isset($log)) { echo "<hr /><i><a href='cat.php?uuid={$resp}&ext=out' target='_blank'>see</a></i>: {$log}" . PHP_EOL; } ?>
 </body>
 </html>
