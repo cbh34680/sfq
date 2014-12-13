@@ -123,7 +123,7 @@ SFQ_FAIL_CATCH_LABEL__:
 
 #define SFQ_MAGICSTR			"sfq"
 
-#define SFQ_QUEUE_FILENAME		"queue.dat"
+#define SFQ_QUEUE_FILENAME		"data.sfq"
 #define SFQ_QUEUE_LOGDIRNAME		"logs"
 #define SFQ_QUEUE_PROC_LOGDIRNAME	"proc"
 #define SFQ_QUEUE_EXEC_LOGDIRNAME	"exec"

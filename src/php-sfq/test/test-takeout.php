@@ -10,14 +10,14 @@ foreach (['sfq_pop', 'sfq_shift'] as $func)
 	{
 		$id = $ioparam['id'];
 		$uuid = $ioparam['uuid'];
-		$execpath = $ioparam['execpath'];
-		$execargs = $ioparam['execargs'];
-		$metatext = $ioparam['metatext'];
-		$soutpath = $ioparam['soutpath'];
-		$serrpath = $ioparam['serrpath'];
-		$payload_size = $ioparam['payload_size'];
-		$payload_type = $ioparam['payload_type'];
-		$payload = $ioparam['payload'];
+		$execpath = @$ioparam['execpath'];
+		$execargs = @$ioparam['execargs'];
+		$metatext = @$ioparam['metatext'];
+		$soutpath = @$ioparam['soutpath'];
+		$serrpath = @$ioparam['serrpath'];
+		$payload_size = @$ioparam['payload_size'];
+		$payload_type = @$ioparam['payload_type'];
+		$payload = @$ioparam['payload'];
 
 		if ($payload)
 		{
