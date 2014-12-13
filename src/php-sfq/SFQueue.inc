@@ -239,7 +239,6 @@ class SFQueue
 {
 	static function newClient($quename=null, $params=[])
 	{
-var_dump($params);
 		if (isset($params['host']))
 		{
 			// connect remote host
