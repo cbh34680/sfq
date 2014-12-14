@@ -104,6 +104,8 @@ SFQ_LIB_INITIALIZE
 	int slotno = -1;
 	bool b = false;
 
+	bool forceLeakQueue = false;
+
 	struct sfq_file_header qfh;
 
 /* initialize */
@@ -114,6 +116,20 @@ SFQ_LIB_INITIALIZE
 	if (! qo)
 	{
 		SFQ_FAIL(EA_OPENFILE, "sfq_open_queue");
+	}
+
+/* */
+	if (questate & SFQ_QST_DEV_SEMLOCK_ON)
+	{
+/*
+!! デバッグ用 !!
+
+セマフォをロッセしたままにする
+--> メモリリークは発生する
+*/
+		forceLeakQueue = true;
+
+		SFQ_FAIL(DEV_SEMLOCK, "lock semaphore [%s] (for develop)\n", qo->om->semname);
 	}
 
 /* read queue header */
@@ -176,8 +192,15 @@ SFQ_LIB_FINALIZE
 	free(procs);
 	procs = NULL;
 
-	sfq_close_queue(qo);
-	qo = NULL;
+	if (forceLeakQueue)
+	{
+		/* for Debug */
+	}
+	else
+	{
+		sfq_close_queue(qo);
+		qo = NULL;
+	}
 
 	if (slotno != -1)
 	{

@@ -22,6 +22,8 @@ int get_off_on(const char* cms[2], questate_t* bit_ptr)
 		{ "accept",	SFQ_QST_ACCEPT_ON },
 		{ "takeout",	SFQ_QST_TAKEOUT_ON },
 		{ "exec",	SFQ_QST_EXEC_ON },
+
+		{ "semlock",	SFQ_QST_DEV_SEMLOCK_ON },
 	};
 
 	const char* off_on[] = { "off", "on" };
