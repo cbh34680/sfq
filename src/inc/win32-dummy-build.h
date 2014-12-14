@@ -106,6 +106,8 @@ struct passwd { int pw_uid; };
 struct group { int gr_gid; };
 struct timeval { int tv_sec; };
 
+typedef void (*sighandler_t)(int);
+
 #define __func__		"__func__"
 
 
