@@ -1,6 +1,6 @@
 
 CC        = gcc
-OBJS      = sfq-fio.o sfq-init.o sfq-info.o sfq-prt.o sfq-misc.o sfq-push.o sfq-pop.o sfq-shift.o sfq-map.o sfq-clear.o sfq-exec.o sfq-eloop.o sfq-log.o
+OBJS      = sfq-fio.o sfq-sem.o sfq-init.o sfq-info.o sfq-prt.o sfq-misc.o sfq-push.o sfq-pop.o sfq-shift.o sfq-map.o sfq-clear.o sfq-exec.o sfq-eloop.o sfq-log.o
 TARGET    = libsfq.so
 
 INCDIRS   = -I. -I../inc

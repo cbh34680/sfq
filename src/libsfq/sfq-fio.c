@@ -1,88 +1,34 @@
 #include "sfq-lib.h"
 
-static sem_t* global_semobj_ = NULL;
-
-static void release_semaphore(bool unlock)
-{
-	if (global_semobj_)
-	{
-		if (unlock)
-		{
-			sem_post(global_semobj_);
-		}
-		sem_close(global_semobj_);
-		global_semobj_ = NULL;
-	}
-}
-
-static bool lock_semaphore(const char* semname)
-{
-	int irc = -1;
-	bool locked = false;
-
-SFQ_LIB_INITIALIZE
-
-	if (global_semobj_)
-	{
 /*
-TODO: !!!!
-
-後で name=>semobj のようなマップごとにチェックするように変更
+セマフォのロックを解除するシグナルハンドラ
 */
-		SFQ_FAIL(EA_SEMEXISTS, "lock_semaphore double call (name=%s)", semname);
-	}
-
-/* open semaphore */
-/*
-本来は適切なパーミッションとすべきだが、マシンを再起動すると
-セマフォが消えてしまうので 0666 としておく。
-*/
-	global_semobj_ = sem_open(semname, O_CREAT, 0666, 1);
-	if (global_semobj_ == SEM_FAILED)
-	{
-		SFQ_FAIL(ES_SEMOPEN, "semaphore open error, check permission (e.g. /dev/shm%s)", semname);
-	}
-
-	irc = sem_wait(global_semobj_);
-	if (irc == -1)
-	{
-		SFQ_FAIL(ES_SEMIO, "sem_wait");
-	}
-	locked = true;
-
-SFQ_LIB_CHECKPOINT
-
-	if (SFQ_LIB_IS_FAIL())
-	{
-		release_semaphore(locked);
-	}
-
-SFQ_LIB_FINALIZE
-
-	return SFQ_LIB_IS_SUCCESS();
-}
-
-
-/*
 static void unlock_semaphore_sighandler(int signo)
 {
-}
-*/
+	signal(signo, SIG_IGN);
 
-static struct sfq_queue_object* open_queue_(const char* querootdir, const char* quename, const char* fopen_mode)
+	sfq_unlock_semaphore(NULL);
+	raise(signo);
+
+	signal(signo, SIG_DFL);
+}
+
+static struct sfq_queue_object* open_queue_(const char* querootdir, const char* quename,
+	const char* fopen_mode)
 {
 SFQ_LIB_INITIALIZE
 
 	struct sfq_queue_object* qo = NULL;
-
 	struct sfq_open_names* om = NULL;
 	FILE* fp = NULL;
 
 	mode_t save_umask = (mode_t)-1;
-	sighandler_t save_sighandler = SIG_ERR;
+
+	sighandler_t save_handler_SIGINT = NULL;
+	sighandler_t save_handler_SIGTERM = NULL;
+	sighandler_t save_handler_SIGHUP = NULL;
 
 	bool b = false;
-	bool locked = false;
 
 /* check argument */
 	if (! fopen_mode)
@@ -97,24 +43,36 @@ SFQ_LIB_INITIALIZE
 		SFQ_FAIL(EA_CREATENAMES, "sfq_alloc_open_names");
 	}
 
-/* ignore SIGINT until close-queue */
-/*
-	save_sighandler = signal(SIGINT, unlock_semaphore_sighandler);
-	if (save_sighandler == SIG_ERR)
-	{
-		SFQ_FAIL(ES_SIGNAL, "ignore SIGINT");
-	}
-*/
-
 	save_umask = umask(0);
 
-/* lock */
-	b = lock_semaphore(om->semname);
+/* lock semaphore */
+	b = sfq_lock_semaphore(om->semname);
 	if (! b)
 	{
-		SFQ_FAIL(EA_LOCKSEMAPHORE, "lock_semaphore");
+		SFQ_FAIL(EA_LOCKSEMAPHORE, "sfq_lock_semaphore");
 	}
-	locked = true;
+
+/* regist signal handlers */
+	/* SIGINT */
+	save_handler_SIGINT = signal(SIGINT, unlock_semaphore_sighandler);
+	if (save_handler_SIGINT == SIG_ERR)
+	{
+		SFQ_FAIL(ES_SIGNAL, "change SIGINT handler");
+	}
+
+	/* SIGTERM */
+	save_handler_SIGTERM = signal(SIGTERM, unlock_semaphore_sighandler);
+	if (save_handler_SIGTERM == SIG_ERR)
+	{
+		SFQ_FAIL(ES_SIGNAL, "change SIGTERM handler");
+	}
+
+	/* SIGHUP */
+	save_handler_SIGHUP = signal(SIGHUP, unlock_semaphore_sighandler);
+	if (save_handler_SIGHUP == SIG_ERR)
+	{
+		SFQ_FAIL(ES_SIGNAL, "change SIGHUP handler");
+	}
 
 /* open queue-file */
 	fp = fopen(om->quefile, fopen_mode);
@@ -135,7 +93,10 @@ SFQ_LIB_INITIALIZE
 	qo->fp = fp;
 	qo->opentime = time(NULL);
 	qo->save_umask = save_umask;
-	qo->save_sighandler = save_sighandler;
+
+	qo->save_handler_SIGINT = save_handler_SIGINT;
+	qo->save_handler_SIGTERM = save_handler_SIGTERM;
+	qo->save_handler_SIGHUP = save_handler_SIGHUP;
 
 SFQ_LIB_CHECKPOINT
 
@@ -147,23 +108,53 @@ SFQ_LIB_CHECKPOINT
 			fp = NULL;
 		}
 
-		release_semaphore(locked);
+/* un-regist signal handlers */
+		/* SIGINT */
+		if (save_handler_SIGINT)
+		{
+			if (save_handler_SIGINT != SIG_ERR)
+			{
+				signal(SIGINT, save_handler_SIGINT);
+			}
+			save_handler_SIGINT = NULL;
+		}
 
-		sfq_free_open_names(om);
-		om = NULL;
+		/* SIGTERM */
+		if (save_handler_SIGTERM)
+		{
+			if (save_handler_SIGTERM != SIG_ERR)
+			{
+				signal(SIGTERM, save_handler_SIGTERM);
+			}
+			save_handler_SIGTERM = NULL;
+		}
 
-		free(qo);
-		qo = NULL;
+		/* SIGHUP */
+		if (save_handler_SIGHUP)
+		{
+			if (save_handler_SIGHUP != SIG_ERR)
+			{
+				signal(SIGHUP, save_handler_SIGHUP);
+			}
+			save_handler_SIGHUP = NULL;
+		}
+
+		if (om)
+		{
+/* release semaphore */
+			sfq_unlock_semaphore(om->semname);
+
+			sfq_free_open_names(om);
+			om = NULL;
+		}
 
 		if (save_umask != (mode_t)-1)
 		{
 			umask(save_umask);
 		}
 
-		if (save_sighandler != SIG_ERR)
-		{
-			signal(SIGINT, save_sighandler);
-		}
+		free(qo);
+		qo = NULL;
 	}
 
 SFQ_LIB_FINALIZE
@@ -181,23 +172,51 @@ void sfq_close_queue(struct sfq_queue_object* qo)
 	if (qo->fp)
 	{
 		fclose(qo->fp);
+		qo->fp = NULL;
 	}
 
-	release_semaphore(true);
+/* SIGINT */
+	if (qo->save_handler_SIGINT)
+	{
+		if (qo->save_handler_SIGINT != SIG_ERR)
+		{
+			signal(SIGINT, qo->save_handler_SIGINT);
+		}
+		qo->save_handler_SIGINT = NULL;
+	}
 
-	sfq_free_open_names(qo->om);
+/* SIGTERM */
+	if (qo->save_handler_SIGTERM)
+	{
+		if (qo->save_handler_SIGTERM != SIG_ERR)
+		{
+			signal(SIGTERM, qo->save_handler_SIGTERM);
+		}
+		qo->save_handler_SIGTERM = NULL;
+	}
+
+/* SIGHUP */
+	if (qo->save_handler_SIGHUP)
+	{
+		if (qo->save_handler_SIGHUP != SIG_ERR)
+		{
+			signal(SIGHUP, qo->save_handler_SIGHUP);
+		}
+		qo->save_handler_SIGHUP = NULL;
+	}
+
+	if (qo->om)
+	{
+		sfq_unlock_semaphore(qo->om->semname);
+
+		sfq_free_open_names(qo->om);
+		qo->om = NULL;
+	}
 
 	if (qo->save_umask != (mode_t)-1)
 	{
 		umask(qo->save_umask);
-	}
-
-	if (qo->save_sighandler)
-	{
-		if (qo->save_sighandler != SIG_ERR)
-		{
-			signal(SIGINT, qo->save_sighandler);
-		}
+		qo->save_umask = (mode_t)-1;
 	}
 
 	free(qo);

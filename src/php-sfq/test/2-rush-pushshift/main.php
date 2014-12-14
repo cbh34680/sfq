@@ -24,7 +24,6 @@ for ($i=0; $i<5; $i++)
 // child
 		$cont = true;
 
-/*
 		$hndl = function ($signo) use (&$cont)
 		{
 			$cont = false;
@@ -32,20 +31,19 @@ for ($i=0; $i<5; $i++)
 
 		pcntl_signal(SIGHUP, $hndl);
 		pcntl_signal(SIGINT, $hndl);
-		pcntl_signal(SITERM, $hndl);
-		pcntl_signal(SIGUSR1, $hndl);
-*/
+		pcntl_signal(SIGTERM, $hndl);
 
 		try
 		{
 			$sfqc = SFQueue::newClient();
 
+			echo "c-{$i}) while start" . PHP_EOL;
 			while ($cont)
 			{
-				echo "PSH({$i}) ";
+#echo "PSH({$i}) ";
 				$sfqc->push_binary(['payload'=>"{$i}"]);
 
-				echo "PSH({$i}) ";
+#echo "PSH({$i}) ";
 				$sfqc->push_binary(['payload'=>"{$i}"]);
 
 				$v = $sfqc->shift();
@@ -54,9 +52,11 @@ for ($i=0; $i<5; $i++)
 					$payload = $v['payload'];
 					$eq = ($i == $payload) ? '=' : '*';
 
-					echo "SHF({$i})({$payload}){$eq} ";
+#echo "SHF({$i})({$payload}){$eq} ";
 				}
 			}
+
+			echo "c-{$i}) while end" . PHP_EOL;
 		}
 		catch (Exception $e)
 		{
@@ -70,8 +70,7 @@ for ($i=0; $i<5; $i++)
 	}
 }
 
-unset($sfqc);
-
+/*
 echo "*" . PHP_EOL;
 echo "* stop when you press the [Enter]." . PHP_EOL;
 echo "*" . PHP_EOL;
@@ -91,10 +90,13 @@ echo "! send stop signal to child process" . PHP_EOL;
 
 foreach ($childs as $key=>$pid)
 {
-	echo "\tsend kill to pid={$pid}" . PHP_EOL;
-	posix_kill($pid, SIGUSR1);
+	$sendsig = SIGINT;
+
+	echo "\tsend kill to pid={$pid} send={$sendsig}" . PHP_EOL;
+	posix_kill($pid, $sendsig);
 }
 echo PHP_EOL;
+*/
 
 #
 echo "! wait for exit of child processs" . PHP_EOL;
@@ -107,9 +109,23 @@ while (count($childs))
 
 		if (($res == -1) || ($res > 0))
 		{
-			echo "\texit pid={$pid} status={$status}" . PHP_EOL;
-
 			unset($childs[$key]);
+
+			//
+			echo "\tfinish child pid={$pid} status={$status}" . PHP_EOL;
+
+			if (pcntl_wifexited($status))
+			{
+				echo "\t\tcause=exit exit-status=" . pcntl_wexitstatus($status) . PHP_EOL;
+			}
+			else if (pcntl_wifstopped($status))
+			{
+				echo "\t\tcause=stop stop-signo=" . pcntl_wstopsig($status) . PHP_EOL;
+			}
+			else if (pcntl_wifsignaled($status))
+			{
+				echo "\t\tcause=signal term-signo=" . pcntl_wtermsig($status) . PHP_EOL;
+			}
 		}
 	}
 

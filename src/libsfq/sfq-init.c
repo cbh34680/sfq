@@ -3,38 +3,11 @@
 static bool pwd_nam2id(const char* queuser, const char* quegroup,
 	uid_t* queuserid_ptr, gid_t* quegroupid_ptr);
 
-/*
-https://github.com/dotcloud/lxc/blob/master/src/lxc/caps.c
-*/
-static bool caps_isset(cap_value_t cap)
-{
-	bool ret = false;
-
-#ifdef __GNUC__
-	cap_t cap_p = NULL;
-
-	cap_p = cap_get_pid(getpid());
-	if (cap_p)
-	{
-		int irc = -1;
-		cap_flag_value_t flag = 0;
-
-		irc = cap_get_flag(cap_p, cap, CAP_EFFECTIVE, &flag);
-		if (irc == 0)
-		{
-			ret = (flag == CAP_SET);
-		}
-
-		cap_free(cap_p);
-	}
-#endif
-
-	return ret;
-}
+static bool caps_isset(cap_value_t cap);
 
 int sfq_init(const char* querootdir, const char* quename, const struct sfq_queue_init_params* qip)
 {
-SFQ_LIB_INITIALIZE
+SFQ_ENTP_INITIALIZE
 
 	struct sfq_queue_object* qo = NULL;
 	struct sfq_process_info* procs = NULL;
@@ -257,7 +230,7 @@ root の場合、"-U" か "-G" の指定があるときのみ通過させる
 
 SFQ_LIB_CHECKPOINT
 
-SFQ_LIB_FINALIZE
+SFQ_ENTP_FINALIZE
 
 	sfq_close_queue(qo);
 	qo = NULL;
@@ -333,5 +306,34 @@ SFQ_LIB_CHECKPOINT
 SFQ_LIB_FINALIZE
 
 	return SFQ_LIB_IS_SUCCESS();
+}
+
+/*
+https://github.com/dotcloud/lxc/blob/master/src/lxc/caps.c
+*/
+static bool caps_isset(cap_value_t cap)
+{
+	bool ret = false;
+
+#ifdef __GNUC__
+	cap_t cap_p = NULL;
+
+	cap_p = cap_get_pid(getpid());
+	if (cap_p)
+	{
+		int irc = -1;
+		cap_flag_value_t flag = 0;
+
+		irc = cap_get_flag(cap_p, cap, CAP_EFFECTIVE, &flag);
+		if (irc == 0)
+		{
+			ret = (flag == CAP_SET);
+		}
+
+		cap_free(cap_p);
+	}
+#endif
+
+	return ret;
 }
 

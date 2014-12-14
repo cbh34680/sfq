@@ -39,10 +39,36 @@
 
 #include "sfq.h"
 
-/*
-uid = 0 は root になって uid_t の初期値には使えないから
-uid_t, gid_t はマクロを多用する
-*/
+/* --------------------------------------------------------------
+ *
+ * 定数定義
+ *
+ */
+#ifndef SFQ_DEFAULT_QUEUE_DIR
+	#define SFQ_DEFAULT_QUEUE_DIR	"/var/tmp"
+#endif
+
+#ifndef SFQ_DEFAULT_QUEUE_NAME
+	#define SFQ_DEFAULT_QUEUE_NAME	"noname"
+#endif
+
+#define SFQ_MAGICSTR			"sfq"
+
+#define SFQ_QUEUE_FILENAME		"data.sfq"
+#define SFQ_QUEUE_LOGDIRNAME		"logs"
+#define SFQ_QUEUE_PROC_LOGDIRNAME	"proc"
+#define SFQ_QUEUE_EXEC_LOGDIRNAME	"exec"
+
+#define SFQ_ALIGN_MARGIN(e)		(((( (e) / 8 ) + (( (e) % 8) ? 1 : 0)) * 8) - (e) )
+
+#define SFQ_PLUSINTSTR_WIDTH(var)	( ((var) == 0) ? 1 : (((int)log10( (var) )) + 1) )
+
+/* --------------------------------------------------------------
+ *
+ * uid = 0 は root になって uid_t の初期値には使えないから
+ * uid_t, gid_t はマクロを多用する
+ *
+ */
 #define SFQ_IS_ROOTUID(a)	( (a) == 0)
 
 #define SFQ_UNSET_UID(a)	( (a) = (uid_t)-1 )
@@ -53,6 +79,11 @@ uid_t, gid_t はマクロを多用する
 
 #define SFQ_MAX(a, b)		(((a)>(b))?(a):(b))
 
+/* --------------------------------------------------------------
+ *
+ * SFQ_LIB_xxx() マクロ
+ *
+ */
 #define SFQ_LIB_INITIALIZE \
 	int fire_line__  = -1; \
 	int fire_rc__ = SFQ_RC_UNKNOWN; \
@@ -97,9 +128,6 @@ SFQ_FAIL_CATCH_LABEL__:
 	goto SFQ_FAIL_CATCH_LABEL__;
 
 
-#define SFQ_PLUSINTSTR_WIDTH(var)	( ((var) == 0) ? 1 : (((int)log10( (var) )) + 1) )
-
-
 /*
 "fmt, ##__VA_ARGS__" のようにすることで可変長引数部がゼロ個のとき、最後のカンマを除去してくれる
 (GCC独自拡張)
@@ -112,27 +140,24 @@ SFQ_FAIL_CATCH_LABEL__:
 	goto SFQ_FAIL_CATCH_LABEL__;
 
 
-/* */
-#ifndef SFQ_DEFAULT_QUEUE_DIR
-	#define SFQ_DEFAULT_QUEUE_DIR	"/var/tmp"
-#endif
+/* --------------------------------------------------------------
+ *
+ *
+ */
+#define SFQ_ENTP_INITIALIZE \
+\
+SFQ_LIB_INITIALIZE
 
-#ifndef SFQ_DEFAULT_QUEUE_NAME
-	#define SFQ_DEFAULT_QUEUE_NAME	"noname"
-#endif
 
-#define SFQ_MAGICSTR			"sfq"
+#define SFQ_ENTP_FINALIZE \
+\
+SFQ_LIB_FINALIZE
 
-#define SFQ_QUEUE_FILENAME		"data.sfq"
-#define SFQ_QUEUE_LOGDIRNAME		"logs"
-#define SFQ_QUEUE_PROC_LOGDIRNAME	"proc"
-#define SFQ_QUEUE_EXEC_LOGDIRNAME	"exec"
 
-#define SFQ_ALIGN_MARGIN(e)		(((( (e) / 8 ) + (( (e) % 8) ? 1 : 0)) * 8) - (e) )
 
 /* --------------------------------------------------------------
  *
- * 定数定義
+ * enum 定数定義
  *
  */
 
@@ -288,14 +313,15 @@ struct sfq_open_names
 struct sfq_queue_object
 {
 	struct sfq_open_names* om;
-
-	FILE* fp;
 	time_t opentime;
-
 	sfq_uchar queue_openmode;
+	FILE* fp;
 
 	mode_t save_umask;
-	sighandler_t save_sighandler;
+
+	sighandler_t save_handler_SIGINT;
+	sighandler_t save_handler_SIGTERM;
+	sighandler_t save_handler_SIGHUP;
 };
 
 struct sfq_ioelm_buff
@@ -349,6 +375,9 @@ extern void sfq_qh_init_pos(struct sfq_q_header*);
 extern void sfq_free_ioelm_buff(struct sfq_ioelm_buff* ioeb);
 extern void sfq_free_open_names(struct sfq_open_names* om);
 extern void sfq_reopen_4proc(const char* logdir, ushort slotno, questate_t questate, mode_t file_perm);
+
+extern bool sfq_lock_semaphore(const char* semname);
+extern void sfq_unlock_semaphore(const char* semname);
 
 extern struct sfq_queue_object* sfq_create_queue(const struct sfq_queue_create_params* qcp);
 extern struct sfq_queue_object* sfq_open_queue_rw(const char* querootdir, const char* quename);
