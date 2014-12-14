@@ -10,7 +10,7 @@ try
 {
 	$reqv = [
 		'execpath' =>'ls',
-		'execargs' => '-l,/home/NotFound/',
+		'execargs' => implode("\t", ['-l' , '/home/NotFound/']),
 		'soutpath' => '-',
 		'serrpath' => '-',
 	];

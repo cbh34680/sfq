@@ -16,8 +16,9 @@ static size_t atomic_write(int fd, char *buf, int count)
 	return (got < 0 ? got : count - need);
 }
 
-#define READ	(0)
-#define WRITE	(1)
+#define READ			(0)
+#define WRITE			(1)
+#define DELIMITER_CHAR		'\t'
 
 static void execapp(const char* execpath, char* execargs)
 {
@@ -41,7 +42,7 @@ SFQ_LIB_INITIALIZE
 		pos = execargs;
 		while (*pos)
 		{
-			if ((*pos) == ',')
+			if ((*pos) == DELIMITER_CHAR)
 			{
 				valnum++;
 			}
@@ -72,6 +73,8 @@ SFQ_LIB_INITIALIZE
 		}
 		else
 		{
+			char delimiter_str[] = { DELIMITER_CHAR, '\0' };
+
 			char* pos = NULL;
 			char* saveptr = NULL;
 			char* token = NULL;
@@ -79,7 +82,7 @@ SFQ_LIB_INITIALIZE
 
 			for (i=1, pos=execargs; ; i++, pos=NULL)
 			{
-				token = strtok_r(pos, ",", &saveptr);
+				token = strtok_r(pos, delimiter_str, &saveptr);
 				if (token == NULL)
 				{
 					break;

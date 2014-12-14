@@ -394,7 +394,6 @@ extern bool sfq_go_exec(const char* querootdir, const char* quename, ushort slot
 extern bool sfq_copy_ioeb2val(const struct sfq_ioelm_buff* ioeb, struct sfq_value* val);
 extern bool sfq_copy_val2ioeb(const struct sfq_value* val, struct sfq_ioelm_buff* ioeb);
 extern bool sfq_mkdir_p(const char *arg, mode_t mode);
-extern char* sfq_alloc_concat_n(int n, ...);
 
 extern bool sfq_readqfh(struct sfq_queue_object* qo,
 	struct sfq_file_header* qfh, struct sfq_process_info** procs_ptr);

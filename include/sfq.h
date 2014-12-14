@@ -168,6 +168,8 @@ extern int sfq_get_questate(const char* querootdir, const char* quename, questat
 extern int sfq_set_questate(const char* querootdir, const char* quename, questate_t questate);
 extern size_t sfq_payload_len(const struct sfq_value* val);
 
+extern char* sfq_alloc_concat_n(int n, ...);
+
 /* stack allocate and string copy */
 #ifdef __GNUC__
 	#define sfq_stradup(org) \
