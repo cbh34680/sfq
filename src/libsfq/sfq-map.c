@@ -2,7 +2,7 @@
 
 int sfq_map(const char* querootdir, const char* quename, sfq_map_callback callback, void* userdata)
 {
-SFQ_LIB_INITIALIZE
+SFQ_ENTP_INITIALIZE
 
 	struct sfq_queue_object* qo = NULL;
 
@@ -88,7 +88,7 @@ SFQ_LIB_CHECKPOINT
 		sfq_free_ioelm_buff(&ioeb);
 	}
 
-SFQ_LIB_FINALIZE
+SFQ_ENTP_FINALIZE
 
 	sfq_close_queue(qo);
 	qo = NULL;

@@ -1,19 +1,34 @@
 #include "sfq-lib.h"
 
-static struct sfq_queue_object* open_queue_(const char* querootdir, const char* quename, const char* fopen_mode)
+/*
+セマフォのロックを解除するシグナルハンドラ
+*/
+static void unlock_semaphore_sighandler(int signo)
+{
+	signal(signo, SIG_IGN);
+
+	sfq_unlock_semaphore(NULL);
+	raise(signo);
+
+	signal(signo, SIG_DFL);
+}
+
+static struct sfq_queue_object* open_queue_(const char* querootdir, const char* quename,
+	const char* fopen_mode)
 {
 SFQ_LIB_INITIALIZE
 
 	struct sfq_queue_object* qo = NULL;
-
 	struct sfq_open_names* om = NULL;
-	sem_t* semobj = NULL;
 	FILE* fp = NULL;
 
 	mode_t save_umask = (mode_t)-1;
 
-	int irc = 0;
-	bool locked = false;
+	sighandler_t save_handler_SIGINT = NULL;
+	sighandler_t save_handler_SIGTERM = NULL;
+	sighandler_t save_handler_SIGHUP = NULL;
+
+	bool b = false;
 
 /* check argument */
 	if (! fopen_mode)
@@ -30,25 +45,34 @@ SFQ_LIB_INITIALIZE
 
 	save_umask = umask(0);
 
-/* open semaphore */
-/*
-本来は適切なパーミッションとすべきだが、マシンを再起動すると
-セマフォが消えてしまうので 0666 としておく。
-*/
-	semobj = sem_open(om->semname, O_CREAT, 0666, 1);
-	if (semobj == SEM_FAILED)
+/* lock semaphore */
+	b = sfq_lock_semaphore(om->semname);
+	if (! b)
 	{
-		SFQ_FAIL(ES_SEMOPEN, "semaphore open error, check permission (e.g. /dev/shm%s)",
-			om->semname);
+		SFQ_FAIL(EA_LOCKSEMAPHORE, "sfq_lock_semaphore");
 	}
 
-/* lock */
-	irc = sem_wait(semobj);
-	if (irc == -1)
+/* regist signal handlers */
+	/* SIGINT */
+	save_handler_SIGINT = signal(SIGINT, unlock_semaphore_sighandler);
+	if (save_handler_SIGINT == SIG_ERR)
 	{
-		SFQ_FAIL(ES_SEMIO, "sem_wait");
+		SFQ_FAIL(ES_SIGNAL, "change SIGINT handler");
 	}
-	locked = true;
+
+	/* SIGTERM */
+	save_handler_SIGTERM = signal(SIGTERM, unlock_semaphore_sighandler);
+	if (save_handler_SIGTERM == SIG_ERR)
+	{
+		SFQ_FAIL(ES_SIGNAL, "change SIGTERM handler");
+	}
+
+	/* SIGHUP */
+	save_handler_SIGHUP = signal(SIGHUP, unlock_semaphore_sighandler);
+	if (save_handler_SIGHUP == SIG_ERR)
+	{
+		SFQ_FAIL(ES_SIGNAL, "change SIGHUP handler");
+	}
 
 /* open queue-file */
 	fp = fopen(om->quefile, fopen_mode);
@@ -65,11 +89,14 @@ SFQ_LIB_INITIALIZE
 		SFQ_FAIL(ES_MEMALLOC, "malloc(locked_file)");
 	}
 
-	qo->save_umask = save_umask;
 	qo->om = om;
-	qo->semobj = semobj;
 	qo->fp = fp;
 	qo->opentime = time(NULL);
+	qo->save_umask = save_umask;
+
+	qo->save_handler_SIGINT = save_handler_SIGINT;
+	qo->save_handler_SIGTERM = save_handler_SIGTERM;
+	qo->save_handler_SIGHUP = save_handler_SIGHUP;
 
 SFQ_LIB_CHECKPOINT
 
@@ -81,31 +108,118 @@ SFQ_LIB_CHECKPOINT
 			fp = NULL;
 		}
 
-		if (semobj)
+/* un-regist signal handlers */
+		/* SIGINT */
+		if (save_handler_SIGINT)
 		{
-			if (locked)
+			if (save_handler_SIGINT != SIG_ERR)
 			{
-				sem_post(semobj);
+				signal(SIGINT, save_handler_SIGINT);
 			}
-			sem_close(semobj);
-			semobj = NULL;
+			save_handler_SIGINT = NULL;
 		}
 
-		sfq_free_open_names(om);
-		om = NULL;
+		/* SIGTERM */
+		if (save_handler_SIGTERM)
+		{
+			if (save_handler_SIGTERM != SIG_ERR)
+			{
+				signal(SIGTERM, save_handler_SIGTERM);
+			}
+			save_handler_SIGTERM = NULL;
+		}
 
-		free(qo);
-		qo = NULL;
+		/* SIGHUP */
+		if (save_handler_SIGHUP)
+		{
+			if (save_handler_SIGHUP != SIG_ERR)
+			{
+				signal(SIGHUP, save_handler_SIGHUP);
+			}
+			save_handler_SIGHUP = NULL;
+		}
+
+		if (om)
+		{
+/* release semaphore */
+			sfq_unlock_semaphore(om->semname);
+
+			sfq_free_open_names(om);
+			om = NULL;
+		}
 
 		if (save_umask != (mode_t)-1)
 		{
 			umask(save_umask);
 		}
+
+		free(qo);
+		qo = NULL;
 	}
 
 SFQ_LIB_FINALIZE
 
 	return qo;
+}
+
+void sfq_close_queue(struct sfq_queue_object* qo)
+{
+	if (! qo)
+	{
+		return;
+	}
+
+	if (qo->fp)
+	{
+		fclose(qo->fp);
+		qo->fp = NULL;
+	}
+
+/* SIGINT */
+	if (qo->save_handler_SIGINT)
+	{
+		if (qo->save_handler_SIGINT != SIG_ERR)
+		{
+			signal(SIGINT, qo->save_handler_SIGINT);
+		}
+		qo->save_handler_SIGINT = NULL;
+	}
+
+/* SIGTERM */
+	if (qo->save_handler_SIGTERM)
+	{
+		if (qo->save_handler_SIGTERM != SIG_ERR)
+		{
+			signal(SIGTERM, qo->save_handler_SIGTERM);
+		}
+		qo->save_handler_SIGTERM = NULL;
+	}
+
+/* SIGHUP */
+	if (qo->save_handler_SIGHUP)
+	{
+		if (qo->save_handler_SIGHUP != SIG_ERR)
+		{
+			signal(SIGHUP, qo->save_handler_SIGHUP);
+		}
+		qo->save_handler_SIGHUP = NULL;
+	}
+
+	if (qo->om)
+	{
+		sfq_unlock_semaphore(qo->om->semname);
+
+		sfq_free_open_names(qo->om);
+		qo->om = NULL;
+	}
+
+	if (qo->save_umask != (mode_t)-1)
+	{
+		umask(qo->save_umask);
+		qo->save_umask = (mode_t)-1;
+	}
+
+	free(qo);
 }
 
 struct sfq_queue_object* sfq_open_queue_rw(const char* querootdir, const char* quename)
@@ -297,34 +411,6 @@ SFQ_LIB_CHECKPOINT
 SFQ_LIB_FINALIZE
 
 	return qo;
-}
-
-void sfq_close_queue(struct sfq_queue_object* qo)
-{
-	if (! qo)
-	{
-		return;
-	}
-
-	if (qo->fp)
-	{
-		fclose(qo->fp);
-	}
-
-	if (qo->semobj)
-	{
-		sem_post(qo->semobj);
-		sem_close(qo->semobj);
-	}
-
-	sfq_free_open_names(qo->om);
-
-	if (qo->save_umask != (mode_t)-1)
-	{
-		umask(qo->save_umask);
-	}
-
-	free(qo);
 }
 
 bool sfq_writeqfh(struct sfq_queue_object* qo, struct sfq_file_header* qfh,

@@ -11,7 +11,7 @@
 
 int sfq_push(const char* querootdir, const char* quename, struct sfq_value* val)
 {
-SFQ_LIB_INITIALIZE
+SFQ_ENTP_INITIALIZE
 
 	struct sfq_queue_object* qo = NULL;
 	struct sfq_process_info* procs = NULL;
@@ -394,7 +394,7 @@ SFQ_LIB_CHECKPOINT
 	free(procs);
 	procs = NULL;
 
-SFQ_LIB_FINALIZE
+SFQ_ENTP_FINALIZE
 
 	sfq_close_queue(qo);
 	qo = NULL;
