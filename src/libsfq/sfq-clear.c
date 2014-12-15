@@ -2,7 +2,7 @@
 
 int sfq_clear(const char* querootdir, const char* quename)
 {
-SFQ_ENTP_INITIALIZE
+SFQ_ENTP_ENTER
 
 	struct sfq_queue_object* qo = NULL;
 
@@ -43,7 +43,7 @@ SFQ_ENTP_INITIALIZE
 
 SFQ_LIB_CHECKPOINT
 
-SFQ_ENTP_FINALIZE
+SFQ_ENTP_LEAVE
 
 	sfq_close_queue(qo);
 	qo = NULL;

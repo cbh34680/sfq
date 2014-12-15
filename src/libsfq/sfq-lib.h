@@ -2,6 +2,10 @@
 #define SFQ_LIB_H_INCLUDE_ONCE_
 
 /*
+*/
+#define SFQ_SEMUNLOCK_AT_SIGCATCH	(1)
+
+/*
 #pragma GCC diagnostic ignored "-Wunused-label"
 */
 
@@ -16,8 +20,11 @@
 
 #include <errno.h>
 #include <fcntl.h>           /* For O_* constants */
-#include <signal.h>
 #include <math.h>
+
+#ifdef SFQ_SEMUNLOCK_AT_SIGCATCH
+	#include <signal.h>
+#endif
 
 #ifdef WIN32
 	#include "win32-dummy-build.h"
@@ -29,6 +36,7 @@
 	#include <alloca.h>
 
 	#include <semaphore.h>
+	#include <pthread.h>
 	#include <wait.h>
 	#include <libgen.h>
 
@@ -41,7 +49,7 @@
 
 /* --------------------------------------------------------------
  *
- * 定数定義
+ * 定数／マクロ定義
  *
  */
 #ifndef SFQ_DEFAULT_QUEUE_DIR
@@ -84,7 +92,7 @@
  * SFQ_LIB_xxx() マクロ
  *
  */
-#define SFQ_LIB_INITIALIZE \
+#define SFQ_LIB_ENTER \
 	int fire_line__  = -1; \
 	int fire_rc__ = SFQ_RC_UNKNOWN; \
 	int fire_errno__ = 0; \
@@ -102,7 +110,7 @@ SFQ_FAIL_CATCH_LABEL__:
 #define SFQ_LIB_RC()		(fire_rc__)
 
 
-#define SFQ_LIB_FINALIZE \
+#define SFQ_LIB_LEAVE \
 	if (fire_reason__[0]) \
 	{ \
 		struct tm tm_tmp__; \
@@ -145,14 +153,14 @@ SFQ_FAIL_CATCH_LABEL__:
  *
  *
  */
-#define SFQ_ENTP_INITIALIZE \
+#define SFQ_ENTP_ENTER \
 \
-SFQ_LIB_INITIALIZE
+SFQ_LIB_ENTER
 
 
-#define SFQ_ENTP_FINALIZE \
+#define SFQ_ENTP_LEAVE \
 \
-SFQ_LIB_FINALIZE
+SFQ_LIB_LEAVE
 
 
 
@@ -320,9 +328,11 @@ struct sfq_queue_object
 
 	mode_t save_umask;
 
+#ifdef SFQ_SEMUNLOCK_AT_SIGCATCH
 	sighandler_t save_handler_SIGINT;
 	sighandler_t save_handler_SIGTERM;
 	sighandler_t save_handler_SIGHUP;
+#endif
 };
 
 struct sfq_ioelm_buff

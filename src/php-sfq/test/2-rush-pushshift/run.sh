@@ -3,7 +3,9 @@
 unalias -a
 cd $(dirname $(readlink -f "$0"))
 
-for i in {1..5} ;
+sfqc-clear
+
+for i in {1..20} ;
 do
   cat << EOF
 # ------------------------------------------------------------------
@@ -15,7 +17,9 @@ EOF
   php main.php &
   php_pid=$!
 
-  sleepsec=$(( 3 + $i ))
+  #sleepsec=$(( 3 + $i ))
+  sleepsec=5
+
   echo "sleep ${sleepsec} sec"
 
   sleep $sleepsec

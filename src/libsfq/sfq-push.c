@@ -11,7 +11,7 @@
 
 int sfq_push(const char* querootdir, const char* quename, struct sfq_value* val)
 {
-SFQ_ENTP_INITIALIZE
+SFQ_ENTP_ENTER
 
 	struct sfq_queue_object* qo = NULL;
 	struct sfq_process_info* procs = NULL;
@@ -196,9 +196,8 @@ id, pushtime, uuid はここで生成する
 	{
 	/* shift 位置 == push 位置 の場合 ... 全て shift している */
 
-#ifdef SFQ_DEBUG_BUILD
 		assert(qfh.qh.dval.elm_num == 0);
-#endif
+
 		if (qfh.qh.dval.elm_num != 0)
 		{
 			SFQ_FAIL(EA_ASSERT, "qfh.qh.dval.elm_num != 0");
@@ -216,9 +215,8 @@ id, pushtime, uuid はここで生成する
 	{
 	/* push 位置 < shift 位置 の場合 ... 循環済 */
 
-#ifdef SFQ_DEBUG_BUILD
 		assert(qfh.qh.dval.elm_num);
-#endif
+
 		if (qfh.qh.dval.elm_num == 0)
 		{
 			SFQ_FAIL(EA_ASSERT, "qfh.qh.dval.elm_num == 0");
@@ -346,10 +344,44 @@ id, pushtime, uuid はここで生成する
 	{
 		if (procs)
 		{
+			struct stat stbuf;
+			bool try_resreve = false;
+
 /*
-プロセステーブルが存在するので、実行予約を試みる
+プロセステーブルが存在するので、queue ファイルのパーミッションを確認して
+当該プロセスに実行権限があれば実行予約を試みる
 */
-			slotno = sfq_reserve_proc(procs, qfh.qh.sval.procs_num);
+			if (fstat(fileno(qo->fp), &stbuf) != 0)
+			{
+				SFQ_FAIL(ES_FSTAT, "fstat(qo->fp)");
+			}
+
+			if (stbuf.st_mode & S_IXOTH)
+			{
+			/* o+x */
+				try_resreve = true;
+			}
+			else if (stbuf.st_mode & S_IXUSR)
+			{
+			/* u+x */
+				if (stbuf.st_uid == geteuid())
+				{
+					try_resreve = true;
+				}
+			}
+			else if (stbuf.st_mode & S_IXGRP)
+			{
+			/* g+x */
+				if (stbuf.st_gid == getegid())
+				{
+					try_resreve = true;
+				}
+			}
+
+			if (try_resreve)
+			{
+				slotno = sfq_reserve_proc(procs, qfh.qh.sval.procs_num);
+			}
 		}
 	}
 
@@ -393,7 +425,7 @@ SFQ_LIB_CHECKPOINT
 	free(procs);
 	procs = NULL;
 
-SFQ_ENTP_FINALIZE
+SFQ_ENTP_LEAVE
 
 	sfq_close_queue(qo);
 	qo = NULL;

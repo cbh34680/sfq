@@ -525,7 +525,7 @@ int sfqc_takeout(int argc, char** argv, sfq_takeoutfunc_t takeoutfunc)
 	struct sfq_value val;
 	struct sfq_value pval;
 
-SFQC_MAIN_INITIALIZE
+SFQC_MAIN_ENTER
 
 	bzero(&pgargs, sizeof(pgargs));
 	bzero(&val, sizeof(val));
@@ -628,7 +628,7 @@ EXIT_LABEL:
 
 	sfqc_free_program_args(&pgargs);
 
-SFQC_MAIN_FINALIZE
+SFQC_MAIN_LEAVE
 
 	return irc;
 }

@@ -7,7 +7,7 @@ static bool caps_isset(cap_value_t cap);
 
 int sfq_init(const char* querootdir, const char* quename, const struct sfq_queue_init_params* qip)
 {
-SFQ_ENTP_INITIALIZE
+SFQ_ENTP_ENTER
 
 	struct sfq_queue_object* qo = NULL;
 	struct sfq_process_info* procs = NULL;
@@ -230,7 +230,7 @@ root の場合、"-U" か "-G" の指定があるときのみ通過させる
 
 SFQ_LIB_CHECKPOINT
 
-SFQ_ENTP_FINALIZE
+SFQ_ENTP_LEAVE
 
 	sfq_close_queue(qo);
 	qo = NULL;
@@ -245,7 +245,7 @@ static bool pwd_nam2id(const char* queuser, const char* quegroup,
 	char* buf = NULL;
 	size_t bufsize = 0;
 
-SFQ_LIB_INITIALIZE
+SFQ_LIB_ENTER
 
 	sysmax = sysconf(SFQ_MAX(_SC_GETPW_R_SIZE_MAX, _SC_GETGR_R_SIZE_MAX));
 	if (sysmax > 0)
@@ -303,7 +303,7 @@ SFQ_LIB_INITIALIZE
 
 SFQ_LIB_CHECKPOINT
 
-SFQ_LIB_FINALIZE
+SFQ_LIB_LEAVE
 
 	return SFQ_LIB_IS_SUCCESS();
 }
