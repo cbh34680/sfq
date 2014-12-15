@@ -22,6 +22,9 @@ int get_off_on(const char* cms[2], questate_t* bit_ptr)
 		{ "accept",	SFQ_QST_ACCEPT_ON },
 		{ "takeout",	SFQ_QST_TAKEOUT_ON },
 		{ "exec",	SFQ_QST_EXEC_ON },
+
+		{ "semlock",	SFQ_QST_DEV_SEMLOCK_ON },
+		{ "semunlock",	SFQ_QST_DEV_SEMUNLOCK_ON },
 	};
 
 	const char* off_on[] = { "off", "on" };
@@ -85,20 +88,29 @@ SFQC_MAIN_INITIALIZE
 		goto EXIT_LABEL;
 	}
 
-	irc = sfq_get_questate(pgargs.querootdir, pgargs.quename, &questate);
-	if (irc != SFQ_RC_SUCCESS)
-	{
-		message = "sfq_get_questate";
-		jumppos = __LINE__;
-		goto EXIT_LABEL;
-	}
-
 	bit_on = get_off_on(pgargs.commands, &modify_bit);
 	if (bit_on == -1)
 	{
 		message = "unknown command";
 		jumppos = __LINE__;
 		goto EXIT_LABEL;
+	}
+
+	irc = sfq_get_questate(pgargs.querootdir, pgargs.quename, &questate);
+	if (irc != SFQ_RC_SUCCESS)
+	{
+		if ((modify_bit & SFQ_QST_DEV_SEMUNLOCK_ON) && (irc == SFQ_RC_EA_OPENFILE))
+		{
+/*
+セマフォの解除要求時はロックされているときなので、開けなくても OK
+*/
+		}
+		else
+		{
+			message = "sfq_get_questate";
+			jumppos = __LINE__;
+			goto EXIT_LABEL;
+		}
 	}
 
 	if (bit_on)

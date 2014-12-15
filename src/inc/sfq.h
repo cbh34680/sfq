@@ -22,7 +22,7 @@ extern "C" {
 typedef unsigned char sfq_uchar;
 typedef unsigned char sfq_byte;
 
-typedef sfq_uchar questate_t;
+typedef ushort questate_t;
 typedef sfq_uchar payload_type_t;
 
 enum
@@ -35,7 +35,7 @@ enum
 	SFQ_RC_W_TAKEOUT_STOPPED,
 	SFQ_RC_W_NOCHANGE_STATE,
 
-	SFQ_RC_FATAL_MIN		= 31,
+	SFQ_RC_FATAL_MIN		= 21,
 	SFQ_RC_UNKNOWN,
 	SFQ_RC_EA_FSIZESMALL,
 	SFQ_RC_EA_EXISTQUEUE,
@@ -63,7 +63,7 @@ enum
 	SFQ_RC_EA_LOCKSEMAPHORE,
 	SFQ_RC_EA_REGSEMAPHORE,
 
-	SFQ_RC_SYSERR_MIN		= 81,
+	SFQ_RC_SYSERR_MIN		= 71,
 	SFQ_RC_ES_MEMALLOC,
 	SFQ_RC_ES_FILEOPEN,
 	SFQ_RC_ES_FILEIO,
@@ -80,6 +80,10 @@ enum
 	SFQ_RC_ES_CHMOD,
 	SFQ_RC_ES_CHOWN,
 	SFQ_RC_ES_SIGNAL,
+	SFQ_RC_ES_CLOCKGET,
+
+	SFQ_RC_DEV_SEMLOCK,
+	SFQ_RC_DEV_SEMUNLOCK,
 
 	SFQ_RC_EC_EXECFAIL		= 119,
 	SFQ_RC_EC_FILENOTFOUND		= 127,
@@ -93,14 +97,17 @@ enum
 	SFQ_PLT_CHARARRAY	= 4U,
 };
 
-/* Queue Status: uchar */
+/* Queue Status: ushort */
 enum
 {
-	SFQ_QST_STDOUT_ON	= 1U,
-	SFQ_QST_STDERR_ON	= 2U,
-	SFQ_QST_ACCEPT_ON	= 4U,
-	SFQ_QST_TAKEOUT_ON	= 8U,
-	SFQ_QST_EXEC_ON		= 16U,
+	SFQ_QST_STDOUT_ON		= 1U,
+	SFQ_QST_STDERR_ON		= 2U,
+	SFQ_QST_ACCEPT_ON		= 4U,
+	SFQ_QST_TAKEOUT_ON		= 8U,
+	SFQ_QST_EXEC_ON			= 16U,
+
+	SFQ_QST_DEV_SEMLOCK_ON		= 32U,
+	SFQ_QST_DEV_SEMUNLOCK_ON	= 64U,
 };
 
 #define SFQ_QST_DEFAULT		(SFQ_QST_ACCEPT_ON | SFQ_QST_TAKEOUT_ON | SFQ_QST_EXEC_ON)
@@ -162,6 +169,8 @@ extern int sfq_push_binary(const char* querootdir, const char* quename,
 extern int sfq_get_questate(const char* querootdir, const char* quename, questate_t* questate_ptr);
 extern int sfq_set_questate(const char* querootdir, const char* quename, questate_t questate);
 extern size_t sfq_payload_len(const struct sfq_value* val);
+
+extern char* sfq_alloc_concat_n(int n, ...);
 
 /* stack allocate and string copy */
 #ifdef __GNUC__

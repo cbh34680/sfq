@@ -95,7 +95,9 @@ static bool unregister_(const char* semname)
 {
 	bool ret = false;
 	int i = 0;
-	int loop_num = GLOBAL_snos_arr_num;
+	int loop_num = 0;
+
+	loop_num = GLOBAL_snos_arr_num;
 
 //printf("unreg %s (loop=%d)\n", semname, loop_num);
 
@@ -176,6 +178,7 @@ bool sfq_lock_semaphore(const char* semname)
 	bool locked = false;
 	bool registered = false;
 
+	struct timespec tspec;
 	sem_t* semobj = NULL;
 
 SFQ_LIB_INITIALIZE
@@ -187,6 +190,13 @@ SFQ_LIB_INITIALIZE
 		SFQ_FAIL(EA_SEMEXISTS, "semaphore(name=%s) is already registered", semname);
 	}
 
+	irc = clock_gettime(CLOCK_REALTIME, &tspec);
+	if (irc == -1)
+	{
+		SFQ_FAIL(ES_CLOCKGET, "clock_gettime");
+	}
+	tspec.tv_sec += 2;
+
 /* open semaphore */
 /*
 本来は適切なパーミッションとすべきだが、マシンを再起動すると
@@ -195,15 +205,17 @@ SFQ_LIB_INITIALIZE
 	semobj = sem_open(semname, O_CREAT, 0666, 1);
 	if (semobj == SEM_FAILED /* =0 */)
 	{
-		SFQ_FAIL(ES_SEMOPEN, "semaphore open error, check permission (e.g. /dev/shm%s)",
+		SFQ_FAIL(ES_SEMOPEN, "semaphore open error, check permission file=[/dev/shm%s]",
 			semname);
 	}
 
 //printf("lock attempt to get\n");
-	irc = sem_wait(semobj);
+	//irc = sem_wait(semobj);
+
+	irc = sem_timedwait(semobj, &tspec);
 	if (irc == -1)
 	{
-		SFQ_FAIL(ES_SEMIO, "sem_wait");
+		SFQ_FAIL(ES_SEMIO, "semaphore lock wait timeout, unlock command=[sfqc-sets semunlock on]");
 	}
 	locked = true;
 

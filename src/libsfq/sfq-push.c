@@ -140,6 +140,13 @@ push 可能条件の判定
 		SFQ_FAIL(EA_FUNCARG, "no input data");
 	}
 
+/* copy arguments to write-buffer */
+	b = sfq_copy_val2ioeb(val, &ioeb);
+	if (! b)
+	{
+		SFQ_FAIL(EA_COPYVALUE, "sfq_copy_val2ioeb");
+	}
+
 /* open queue-file */
 	qo = sfq_open_queue_rw(querootdir, quename);
 	if (! qo)
@@ -164,13 +171,6 @@ push 可能条件の判定
 questate は go_exec() に渡すので、ここで保存しておく
 */
 	questate = qfh.qh.dval.questate;
-
-/* copy arguments to write-buffer */
-	b = sfq_copy_val2ioeb(val, &ioeb);
-	if (! b)
-	{
-		SFQ_FAIL(EA_COPYVALUE, "sfq_copy_val2ioeb");
-	}
 
 /* check payload-size limit */
 	if (qfh.qh.sval.payloadsize_limit)
@@ -340,7 +340,6 @@ id, pushtime, uuid はここで生成する
 			SFQ_FAIL(EA_SEEKSETIO, "sfq_seek_set_and_write(prev_eh)");
 		}
 	}
-
 
 /* update procs */
 	if (questate & SFQ_QST_EXEC_ON)

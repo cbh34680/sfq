@@ -353,11 +353,39 @@ int sfqc_parse_program_args(int argc, char** argv, const char* optstring,
 			case 'U': { RESET_STR(optarg, queuser);		break; } // QUEUE ユーザ
 			case 'G': { RESET_STR(optarg, quegroup);	break; } // QUEUE グループ
 			case 'x': { RESET_STR(optarg, execpath);	break; } // exec() パス
-			case 'a': { RESET_STR(optarg, execargs);	break; } // exec() 引数 (カンマ区切り)
 			case 'v': { RESET_STR(optarg, textdata);	break; } // データ# テキスト
 			case 'f': { RESET_STR(optarg, inputfile);	break; } // データ# ファイル名
 			case 'm': { RESET_STR(optarg, metatext);	break; } // メタ情報
 			case 'p': { RESET_STR(optarg, printmethod);	break; } // pop, shift の出力方法
+
+			// exec() 引数
+			case 'a':
+			{
+				char* c = NULL;
+
+				if (pgargs->execargs)
+				{
+					c = sfq_alloc_concat_n(3, pgargs->execargs, "\t", optarg);
+				}
+				else
+				{
+					c = strdup(optarg);
+				}
+
+				if (! c)
+				{
+					snprintf(message, sizeof(message), "'%c': mem alloc", opt);
+
+					jumppos = __LINE__;
+					goto EXIT_LABEL;
+				}
+
+
+				free((char*)pgargs->execargs);
+				pgargs->execargs = c;
+
+				break;
+			}
 
 			// 標準出力のリダイレクト先
 			case 'o': { RESET_STR(optarg ? optarg : "-", soutpath); break; }

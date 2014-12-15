@@ -98,22 +98,68 @@ int sfq_set_questate(const char* querootdir, const char* quename, questate_t que
 {
 SFQ_LIB_INITIALIZE
 
+	struct sfq_open_names* om = NULL;
 	struct sfq_queue_object* qo = NULL;
 	struct sfq_process_info* procs = NULL;
 
+	int irc = -1;
 	int slotno = -1;
 	bool b = false;
+
+	bool forceLeakQueue = false;
 
 	struct sfq_file_header qfh;
 
 /* initialize */
 	bzero(&qfh, sizeof(qfh));
 
+/* create names */
+	if (questate & SFQ_QST_DEV_SEMUNLOCK_ON)
+	{
+/*
+!! デバッグ用 !!
+
+強制的にセマフォのロックを解除する
+*/
+		om = sfq_alloc_open_names(querootdir, quename);
+		if (! om)
+		{
+			SFQ_FAIL(EA_CREATENAMES, "sfq_alloc_open_names");
+		}
+
+		irc = sem_unlink(om->semname);
+		if (irc == -1)
+		{
+			if (errno != ENOENT)
+			{
+				SFQ_FAIL(ES_UNLINK,
+					"delete semaphore fault, check permission (e.g. /dev/shm%s)",
+					om->semname);
+			}
+		}
+
+		SFQ_FAIL(DEV_SEMUNLOCK, "success unlock semaphore [%s] (for develop)\n", om->semname);
+	}
+
 /* open queue */
 	qo = sfq_open_queue_rw(querootdir, quename);
 	if (! qo)
 	{
 		SFQ_FAIL(EA_OPENFILE, "sfq_open_queue");
+	}
+
+/* */
+	if (questate & SFQ_QST_DEV_SEMLOCK_ON)
+	{
+/*
+!! デバッグ用 !!
+
+セマフォをロッセしたままにする
+--> メモリリークは発生する
+*/
+		forceLeakQueue = true;
+
+		SFQ_FAIL(DEV_SEMLOCK, "success lock semaphore [%s] (for develop)\n", qo->om->semname);
 	}
 
 /* read queue header */
@@ -173,11 +219,21 @@ SFQ_LIB_CHECKPOINT
 
 SFQ_LIB_FINALIZE
 
+	sfq_free_open_names(om);
+	om = NULL;
+
 	free(procs);
 	procs = NULL;
 
-	sfq_close_queue(qo);
-	qo = NULL;
+	if (forceLeakQueue)
+	{
+		/* for Debug */
+	}
+	else
+	{
+		sfq_close_queue(qo);
+		qo = NULL;
+	}
 
 	if (slotno != -1)
 	{

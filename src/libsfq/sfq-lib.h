@@ -96,6 +96,7 @@
 SFQ_FAIL_CATCH_LABEL__:
 
 
+
 #define SFQ_LIB_IS_FAIL()	(fire_rc__ != SFQ_RC_SUCCESS)
 #define SFQ_LIB_IS_SUCCESS()	(fire_rc__ == SFQ_RC_SUCCESS)
 #define SFQ_LIB_RC()		(fire_rc__)
@@ -240,8 +241,8 @@ struct sfq_qh_dval
 	ulong update_cnt;		/* 8 */
 
 	char lastoper[4];		/* 4 */
-	questate_t questate;		/* 1 */
-	sfq_byte filler[3];		/* 3 */
+	questate_t questate;		/* 2 */
+	sfq_byte filler[2];		/* 2 */
 };
 
 struct sfq_q_header
@@ -394,7 +395,6 @@ extern bool sfq_go_exec(const char* querootdir, const char* quename, ushort slot
 extern bool sfq_copy_ioeb2val(const struct sfq_ioelm_buff* ioeb, struct sfq_value* val);
 extern bool sfq_copy_val2ioeb(const struct sfq_value* val, struct sfq_ioelm_buff* ioeb);
 extern bool sfq_mkdir_p(const char *arg, mode_t mode);
-extern char* sfq_alloc_concat_n(int n, ...);
 
 extern bool sfq_readqfh(struct sfq_queue_object* qo,
 	struct sfq_file_header* qfh, struct sfq_process_info** procs_ptr);
