@@ -22,7 +22,7 @@ extern "C" {
 typedef unsigned char sfq_uchar;
 typedef unsigned char sfq_byte;
 
-typedef sfq_uchar questate_t;
+typedef ushort questate_t;
 typedef sfq_uchar payload_type_t;
 
 enum
@@ -83,6 +83,7 @@ enum
 	SFQ_RC_ES_CLOCKGET,
 
 	SFQ_RC_DEV_SEMLOCK,
+	SFQ_RC_DEV_SEMUNLOCK,
 
 	SFQ_RC_EC_EXECFAIL		= 119,
 	SFQ_RC_EC_FILENOTFOUND		= 127,
@@ -96,7 +97,7 @@ enum
 	SFQ_PLT_CHARARRAY	= 4U,
 };
 
-/* Queue Status: uchar */
+/* Queue Status: ushort */
 enum
 {
 	SFQ_QST_STDOUT_ON		= 1U,
@@ -106,6 +107,7 @@ enum
 	SFQ_QST_EXEC_ON			= 16U,
 
 	SFQ_QST_DEV_SEMLOCK_ON		= 32U,
+	SFQ_QST_DEV_SEMUNLOCK_ON	= 64U,
 };
 
 #define SFQ_QST_DEFAULT		(SFQ_QST_ACCEPT_ON | SFQ_QST_TAKEOUT_ON | SFQ_QST_EXEC_ON)

@@ -96,6 +96,7 @@
 SFQ_FAIL_CATCH_LABEL__:
 
 
+
 #define SFQ_LIB_IS_FAIL()	(fire_rc__ != SFQ_RC_SUCCESS)
 #define SFQ_LIB_IS_SUCCESS()	(fire_rc__ == SFQ_RC_SUCCESS)
 #define SFQ_LIB_RC()		(fire_rc__)
@@ -240,8 +241,8 @@ struct sfq_qh_dval
 	ulong update_cnt;		/* 8 */
 
 	char lastoper[4];		/* 4 */
-	questate_t questate;		/* 1 */
-	sfq_byte filler[3];		/* 3 */
+	questate_t questate;		/* 2 */
+	sfq_byte filler[2];		/* 2 */
 };
 
 struct sfq_q_header

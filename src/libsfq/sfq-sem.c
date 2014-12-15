@@ -95,7 +95,9 @@ static bool unregister_(const char* semname)
 {
 	bool ret = false;
 	int i = 0;
-	int loop_num = GLOBAL_snos_arr_num;
+	int loop_num = 0;
+
+	loop_num = GLOBAL_snos_arr_num;
 
 //printf("unreg %s (loop=%d)\n", semname, loop_num);
 
@@ -213,8 +215,7 @@ SFQ_LIB_INITIALIZE
 	irc = sem_timedwait(semobj, &tspec);
 	if (irc == -1)
 	{
-		SFQ_FAIL(ES_SEMIO, "semaphore lock wait timeout, delete first file=[/dev/shm%s]",
-			semname);
+		SFQ_FAIL(ES_SEMIO, "semaphore lock wait timeout, unlock command=[sfqc-sets semunlock on]");
 	}
 	locked = true;
 
