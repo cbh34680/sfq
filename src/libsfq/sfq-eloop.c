@@ -3,7 +3,7 @@
 static bool update_procstate(const struct sfq_eloop_params* elop,
 	sfq_uchar procstate, int TO_state, questate_t* questate_ptr)
 {
-SFQ_LIB_INITIALIZE
+SFQ_LIB_ENTER
 
 	struct sfq_queue_object* qo = NULL;
 	struct sfq_process_info* procs = NULL;
@@ -98,7 +98,7 @@ SFQ_LIB_CHECKPOINT
 	free(procs);
 	procs = NULL;
 
-SFQ_LIB_FINALIZE
+SFQ_LIB_LEAVE
 
 	sfq_close_queue(qo);
 	qo = NULL;
@@ -108,7 +108,7 @@ SFQ_LIB_FINALIZE
 
 static void foreach_element(const struct sfq_eloop_params* elop)
 {
-SFQ_LIB_INITIALIZE
+SFQ_LIB_ENTER
 
 	bool b = false;
 	int shift_rc = SFQ_RC_SUCCESS;
@@ -265,7 +265,7 @@ SFQ_LIB_CHECKPOINT
 fprintf(stderr, "after loop [loop times=%zu]\n", loop);
 fprintf(stderr, "\n");
 
-SFQ_LIB_FINALIZE
+SFQ_LIB_LEAVE
 }
 
 bool sfq_go_exec(const char* querootdir, const char* quename, ushort slotno, questate_t questate)

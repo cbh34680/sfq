@@ -1,5 +1,6 @@
 #include "sfq-lib.h"
 
+#ifdef SFQ_SEMUNLOCK_AT_SIGCATCH
 /*
 セマフォのロックを解除するシグナルハンドラ
 */
@@ -12,11 +13,12 @@ static void unlock_semaphore_sighandler(int signo)
 
 	signal(signo, SIG_DFL);
 }
+#endif
 
 static struct sfq_queue_object* open_queue_(const char* querootdir, const char* quename,
 	const char* fopen_mode)
 {
-SFQ_LIB_INITIALIZE
+SFQ_LIB_ENTER
 
 	struct sfq_queue_object* qo = NULL;
 	struct sfq_open_names* om = NULL;
@@ -24,9 +26,11 @@ SFQ_LIB_INITIALIZE
 
 	mode_t save_umask = (mode_t)-1;
 
+#ifdef SFQ_SEMUNLOCK_AT_SIGCATCH
 	sighandler_t save_handler_SIGINT = NULL;
 	sighandler_t save_handler_SIGTERM = NULL;
 	sighandler_t save_handler_SIGHUP = NULL;
+#endif
 
 	bool b = false;
 
@@ -52,6 +56,7 @@ SFQ_LIB_INITIALIZE
 		SFQ_FAIL(EA_LOCKSEMAPHORE, "sfq_lock_semaphore");
 	}
 
+#ifdef SFQ_SEMUNLOCK_AT_SIGCATCH
 /* regist signal handlers */
 	/* SIGINT */
 	save_handler_SIGINT = signal(SIGINT, unlock_semaphore_sighandler);
@@ -73,6 +78,7 @@ SFQ_LIB_INITIALIZE
 	{
 		SFQ_FAIL(ES_SIGNAL, "change SIGHUP handler");
 	}
+#endif
 
 /* open queue-file */
 	fp = fopen(om->quefile, fopen_mode);
@@ -94,9 +100,11 @@ SFQ_LIB_INITIALIZE
 	qo->opentime = time(NULL);
 	qo->save_umask = save_umask;
 
+#ifdef SFQ_SEMUNLOCK_AT_SIGCATCH
 	qo->save_handler_SIGINT = save_handler_SIGINT;
 	qo->save_handler_SIGTERM = save_handler_SIGTERM;
 	qo->save_handler_SIGHUP = save_handler_SIGHUP;
+#endif
 
 SFQ_LIB_CHECKPOINT
 
@@ -108,6 +116,7 @@ SFQ_LIB_CHECKPOINT
 			fp = NULL;
 		}
 
+#ifdef SFQ_SEMUNLOCK_AT_SIGCATCH
 /* un-regist signal handlers */
 		/* SIGINT */
 		if (save_handler_SIGINT)
@@ -138,6 +147,7 @@ SFQ_LIB_CHECKPOINT
 			}
 			save_handler_SIGHUP = NULL;
 		}
+#endif
 
 		if (om)
 		{
@@ -157,7 +167,7 @@ SFQ_LIB_CHECKPOINT
 		qo = NULL;
 	}
 
-SFQ_LIB_FINALIZE
+SFQ_LIB_LEAVE
 
 	return qo;
 }
@@ -175,6 +185,7 @@ void sfq_close_queue(struct sfq_queue_object* qo)
 		qo->fp = NULL;
 	}
 
+#ifdef SFQ_SEMUNLOCK_AT_SIGCATCH
 /* SIGINT */
 	if (qo->save_handler_SIGINT)
 	{
@@ -204,6 +215,7 @@ void sfq_close_queue(struct sfq_queue_object* qo)
 		}
 		qo->save_handler_SIGHUP = NULL;
 	}
+#endif
 
 	if (qo->om)
 	{
@@ -252,7 +264,7 @@ static bool mkdir_withUGW(const char* dir, const struct sfq_queue_create_params*
 
 	mode_t dir_perm = (mode_t)-1;
 
-SFQ_LIB_INITIALIZE
+SFQ_LIB_ENTER
 
 	dir_perm = (S_IRUSR | S_IWUSR | S_IXUSR);
 	if (qcp->chmod_GaW)
@@ -286,14 +298,14 @@ chown() を実行すると sticky-bit が外れるので
 
 SFQ_LIB_CHECKPOINT
 
-SFQ_LIB_FINALIZE
+SFQ_LIB_LEAVE
 
 	return SFQ_LIB_IS_SUCCESS();
 }
 
 struct sfq_queue_object* sfq_create_queue(const struct sfq_queue_create_params* qcp)
 {
-SFQ_LIB_INITIALIZE
+SFQ_LIB_ENTER
 
 	struct sfq_queue_object* qo = NULL;
 	struct sfq_open_names* om = NULL;
@@ -408,7 +420,7 @@ SFQ_LIB_CHECKPOINT
 		qo = NULL;
 	}
 
-SFQ_LIB_FINALIZE
+SFQ_LIB_LEAVE
 
 	return qo;
 }
@@ -416,7 +428,7 @@ SFQ_LIB_FINALIZE
 bool sfq_writeqfh(struct sfq_queue_object* qo, struct sfq_file_header* qfh,
 	const struct sfq_process_info* procs, const char* lastoper)
 {
-SFQ_LIB_INITIALIZE
+SFQ_LIB_ENTER
 
 	bool b = false;
 
@@ -459,7 +471,7 @@ SFQ_LIB_INITIALIZE
 
 SFQ_LIB_CHECKPOINT
 
-SFQ_LIB_FINALIZE
+SFQ_LIB_LEAVE
 
 	return SFQ_LIB_IS_SUCCESS();
 }
@@ -467,7 +479,7 @@ SFQ_LIB_FINALIZE
 bool sfq_readqfh(struct sfq_queue_object* qo, struct sfq_file_header* qfh,
 	struct sfq_process_info** procs_ptr)
 {
-SFQ_LIB_INITIALIZE
+SFQ_LIB_ENTER
 
 	struct sfq_process_info* procs = NULL;
 	bool b = false;
@@ -547,7 +559,7 @@ SFQ_LIB_CHECKPOINT
 		bzero(qfh, sizeof(*qfh));
 	}
 
-SFQ_LIB_FINALIZE
+SFQ_LIB_LEAVE
 
 	return SFQ_LIB_IS_SUCCESS();
 }
@@ -565,7 +577,7 @@ SFQ_LIB_FINALIZE
  */
 bool sfq_writeelm(struct sfq_queue_object* qo, off_t seek_pos, const struct sfq_ioelm_buff* ioeb)
 {
-SFQ_LIB_INITIALIZE
+SFQ_LIB_ENTER
 
 	bool b = false;
 	size_t iosize = 0;
@@ -655,14 +667,14 @@ SFQ_LIB_INITIALIZE
 
 SFQ_LIB_CHECKPOINT
 
-SFQ_LIB_FINALIZE
+SFQ_LIB_LEAVE
 
 	return SFQ_LIB_IS_SUCCESS();
 }
 
 bool sfq_readelm(struct sfq_queue_object* qo, off_t seek_pos, struct sfq_ioelm_buff* ioeb)
 {
-SFQ_LIB_INITIALIZE
+SFQ_LIB_ENTER
 
 	bool b = false;
 	size_t iosize = 0;
@@ -814,7 +826,7 @@ SFQ_LIB_CHECKPOINT
 		free(serrpath);
 	}
 
-SFQ_LIB_FINALIZE
+SFQ_LIB_LEAVE
 
 	return SFQ_LIB_IS_SUCCESS();
 }

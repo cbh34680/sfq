@@ -176,7 +176,7 @@ class SFQueueClientLocal extends SFQueueClient
 		{
 			if (! isset($params['payload_type']))
 			{
-				$params['payload_type'] = (SFQ_PLT_CHARARRAY | SFQ_PLT_NULLTERM);
+				$params['payload_type'] = (SFQ_PLT_CHARARRAY);
 			}
 		}
 

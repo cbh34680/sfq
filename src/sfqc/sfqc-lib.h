@@ -28,19 +28,19 @@
 
 #define DEBUG_PRINT_BAR		"========================="
 
-	#define SFQC_MAIN_INITIALIZE \
+	#define SFQC_MAIN_ENTER \
 		{ \
 			fprintf(stderr, DEBUG_PRINT_BAR " DEBUG BUILD (%s) " DEBUG_PRINT_BAR "\n\n", argv[0]); \
 			setvbuf(stdout, NULL, _IONBF, 0); \
 		}
 
-	#define SFQC_MAIN_FINALIZE \
+	#define SFQC_MAIN_LEAVE \
 		{ \
 		}
 
 #else
-	#define SFQC_MAIN_INITIALIZE
-	#define SFQC_MAIN_FINALIZE
+	#define SFQC_MAIN_ENTER
+	#define SFQC_MAIN_LEAVE
 #endif
 
 #define SFQC_RESERVE_SLOT_MIN		(4)

@@ -40,11 +40,11 @@ for ($i=0; $i<5; $i++)
 			echo "c-{$i}) while start" . PHP_EOL;
 			while ($cont)
 			{
-#echo "PSH({$i}) ";
-				$sfqc->push_binary(['payload'=>"{$i}"]);
+#echo "PSH1({$i}) ";
+				$sfqc->push_text(['payload'=>"a{$i}", 'metatext'=>"PSH1({$i})"]);
 
-#echo "PSH({$i}) ";
-				$sfqc->push_binary(['payload'=>"{$i}"]);
+#echo "PSH2({$i}) ";
+				$sfqc->push_text(['payload'=>"b{$i}", 'metatext'=>"PSH2({$i})"]);
 
 				$v = $sfqc->shift();
 				if ($v)

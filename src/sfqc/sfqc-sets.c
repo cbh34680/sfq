@@ -66,7 +66,7 @@ int main(int argc, char** argv)
 /* */
 	struct sfqc_program_args pgargs;
 
-SFQC_MAIN_INITIALIZE
+SFQC_MAIN_ENTER
 
 	bzero(&pgargs, sizeof(pgargs));
 
@@ -163,7 +163,7 @@ EXIT_LABEL:
 		fprintf(stderr, "%s(%d): %s\n", __FILE__, jumppos, message);
 	}
 
-SFQC_MAIN_FINALIZE
+SFQC_MAIN_LEAVE
 
 	return irc;
 }

@@ -14,7 +14,7 @@ int main(int argc, char** argv)
 	struct sfqc_program_args pgargs;
 	struct sfq_queue_init_params qip;
 
-SFQC_MAIN_INITIALIZE
+SFQC_MAIN_ENTER
 
 	bzero(&pgargs, sizeof(pgargs));
 	bzero(&qip, sizeof(qip));
@@ -89,7 +89,7 @@ EXIT_LABEL:
 
 	sfqc_free_program_args(&pgargs);
 
-SFQC_MAIN_FINALIZE
+SFQC_MAIN_LEAVE
 
 	return irc;
 }

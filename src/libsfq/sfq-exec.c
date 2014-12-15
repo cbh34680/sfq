@@ -22,7 +22,7 @@ static size_t atomic_write(int fd, char *buf, int count)
 
 static void execapp(const char* execpath, char* execargs)
 {
-SFQ_LIB_INITIALIZE
+SFQ_LIB_ENTER
 
 	int argc = 0;
 	char** argv = NULL;
@@ -113,7 +113,7 @@ execvp() が成功すれば処理は戻らない
 
 SFQ_LIB_CHECKPOINT
 
-SFQ_LIB_FINALIZE
+SFQ_LIB_LEAVE
 }
 
 static void output_reopen_4exec(const char* logdir, const struct sfq_value* val, mode_t dir_perm, mode_t file_perm)
@@ -150,7 +150,7 @@ fprintf(stderr, "\tsoutpath == serrpath [%s], redirect stderr to /dev/null\n", s
 
 static int child_write_dup_exec_exit(const struct sfq_eloop_params* elop, struct sfq_value* val)
 {
-SFQ_LIB_INITIALIZE
+SFQ_LIB_ENTER
 
 	char* execpath = "/bin/sh";
 	char* execargs = NULL;
@@ -275,7 +275,7 @@ SFQ_LIB_CHECKPOINT
 		close(pipefd[WRITE]);
 	}
 
-SFQ_LIB_FINALIZE
+SFQ_LIB_LEAVE
 
 	return SFQ_LIB_RC();
 }

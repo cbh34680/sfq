@@ -2,7 +2,7 @@
 
 int sfq_pop(const char* querootdir, const char* quename, struct sfq_value* val)
 {
-SFQ_ENTP_INITIALIZE
+SFQ_ENTP_ENTER
 
 	struct sfq_queue_object* qo = NULL;
 
@@ -129,7 +129,7 @@ SFQ_LIB_CHECKPOINT
 		sfq_free_ioelm_buff(&ioeb);
 	}
 
-SFQ_ENTP_FINALIZE
+SFQ_ENTP_LEAVE
 
 	sfq_close_queue(qo);
 	qo = NULL;

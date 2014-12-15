@@ -55,7 +55,7 @@ int sfq_reserve_proc(struct sfq_process_info* procs, ushort procs_num)
 
 int sfq_get_questate(const char* querootdir, const char* quename, questate_t* questate_ptr)
 {
-SFQ_LIB_INITIALIZE
+SFQ_LIB_ENTER
 
 	struct sfq_queue_object* qo = NULL;
 
@@ -86,7 +86,7 @@ SFQ_LIB_INITIALIZE
 
 SFQ_LIB_CHECKPOINT
 
-SFQ_LIB_FINALIZE
+SFQ_LIB_LEAVE
 
 	sfq_close_queue(qo);
 	qo = NULL;
@@ -96,7 +96,7 @@ SFQ_LIB_FINALIZE
 
 int sfq_set_questate(const char* querootdir, const char* quename, questate_t questate)
 {
-SFQ_LIB_INITIALIZE
+SFQ_LIB_ENTER
 
 	struct sfq_open_names* om = NULL;
 	struct sfq_queue_object* qo = NULL;
@@ -217,7 +217,7 @@ exec が OFF から ON に変わった
 
 SFQ_LIB_CHECKPOINT
 
-SFQ_LIB_FINALIZE
+SFQ_LIB_LEAVE
 
 	sfq_free_open_names(om);
 	om = NULL;
@@ -245,7 +245,7 @@ SFQ_LIB_FINALIZE
 
 bool sfq_copy_val2ioeb(const struct sfq_value* val, struct sfq_ioelm_buff* ioeb)
 {
-SFQ_LIB_INITIALIZE
+SFQ_LIB_ENTER
 
 	size_t eh_size = 0;
 	size_t add_all = 0;
@@ -408,7 +408,7 @@ SFQ_LIB_INITIALIZE
 
 SFQ_LIB_CHECKPOINT
 
-SFQ_LIB_FINALIZE
+SFQ_LIB_LEAVE
 
 	return SFQ_LIB_IS_SUCCESS();
 }
@@ -494,7 +494,7 @@ void sfq_free_value(struct sfq_value* val)
 
 int sfq_alloc_print_value(const struct sfq_value* val, struct sfq_value* dst)
 {
-SFQ_LIB_INITIALIZE
+SFQ_LIB_ENTER
 
 	const char* NA = "N/A";
 
@@ -607,14 +607,14 @@ SFQ_LIB_CHECKPOINT
 		free(serrpath);
 	}
 
-SFQ_LIB_FINALIZE
+SFQ_LIB_LEAVE
 
 	return SFQ_LIB_RC();
 }
 
 struct sfq_open_names* sfq_alloc_open_names(const char* querootdir, const char* quename)
 {
-SFQ_LIB_INITIALIZE
+SFQ_LIB_ENTER
 
 	struct sfq_open_names* om = NULL;
 
@@ -864,7 +864,7 @@ SFQ_LIB_CHECKPOINT
 		om = NULL;
 	}
 
-SFQ_LIB_FINALIZE
+SFQ_LIB_LEAVE
 
 	return om;
 }

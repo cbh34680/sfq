@@ -38,7 +38,7 @@ MESG: <?= $ex->getMessage() ?><br />
 <hr />
 <pre>
 <? if (isset($reqv)) { var_dump($reqv); } ?>
-<?= var_dump(@$resp) ?>
+<?= var_dump(@$uuid) ?>
 </pre>
 <? if (isset($dir)) : ?>
 <hr />

@@ -12,6 +12,11 @@
 			if (preg_match_all('/../', implode(explode('-', $uuid)), $matches))
 			{
 				$path = '/var/tmp/webque-1/logs/exec/' . implode('/', $matches[0]) . '/' . $file;
+
+				if (! file_exists($path))
+				{
+					unset($path);
+				}
 			}
 		}
 	}

@@ -20,7 +20,7 @@ int main(int argc, char** argv)
 
 /* */
 
-SFQC_MAIN_INITIALIZE
+SFQC_MAIN_ENTER
 
 	atexit(release_heap);
 
@@ -108,7 +108,7 @@ EXIT_LABEL:
 
 	sfqc_free_program_args(&pgargs);
 
-SFQC_MAIN_FINALIZE
+SFQC_MAIN_LEAVE
 
 	return irc;
 }
