@@ -78,6 +78,16 @@
 					}
 					val.payload = (sfq_byte*)str_val;
 				}
+				else if (strcasecmp("payload_size", str_key) == 0)
+				{
+					char* e = NULL;
+					val.payload_size = (size_t)strtoul(str_val, &e, 0);
+				}
+				else if (strcasecmp("payload_type", str_key) == 0)
+				{
+					char* e = NULL;
+					val.payload_type = (size_t)strtoul(str_val, &e, 0);
+				}
 
 				break;
 			}

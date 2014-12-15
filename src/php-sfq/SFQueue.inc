@@ -60,8 +60,8 @@ abstract class SFQueueClient implements SFQueueClientInterface
 	protected $quename_;
 	protected $throwException_;
 
-	protected $lastError_ = 0;
-	protected $lastMessage_ = '';
+	private $lastError_ = 0;
+	private $lastMessage_ = '';
 
 	protected function throwException($code, $mesg=null)
 	{
@@ -83,6 +83,12 @@ abstract class SFQueueClient implements SFQueueClientInterface
 	public function lastMessage()
 	{
 		return $this->lastMessage_;
+	}
+
+	public function clearLastError()
+	{
+		$this->lastError_ = 0;
+		$this->lastMessage_ = '';
 	}
 }
 
@@ -138,6 +144,8 @@ class SFQueueClientLocal extends SFQueueClient
 
 	private function native_push_($params)
 	{
+		$this->clearLastError();
+
 		if (is_array($params))
 		{
 			$rc = wrap_sfq_push($this->querootdir_, $this->quename_, $params);
@@ -157,8 +165,9 @@ class SFQueueClientLocal extends SFQueueClient
 
 	private function native_takeout_($funcname)
 	{
-		$param = [];
+		$this->clearLastError();
 
+		$param = [];
 		$rc = wrap_sfq_takeout($this->querootdir_, $this->quename_, $param, $funcname);
 
 		if ($this->isNativeSuccess_($rc))
@@ -318,6 +327,12 @@ EOS;
 			$sres();
 
 			var_dump($sfqc->push_text(1));
+			$sres();
+
+			var_dump($sfqc->push_text(['payload'=>'1234567890', 'payload_size'=>'5']));
+			$sres();
+
+			var_dump($sfqc->pop());
 			$sres();
 
 			echo "! ALL DONE." . PHP_EOL;
