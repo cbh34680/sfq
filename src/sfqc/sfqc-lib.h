@@ -89,16 +89,16 @@ enum
 /* プロトタイプ定義 */
 typedef int (*sfq_takeoutfunc_t)(const char* querootdir, const char* quename, struct sfq_value* val);
 
-extern int sfqc_takeout(int argc, char** argv, sfq_takeoutfunc_t takeoutfunc);
+int sfqc_takeout(int argc, char** argv, sfq_takeoutfunc_t takeoutfunc);
 
-extern int sfqc_parse_program_args(int argc, char** argv, const char* optstring,
+int sfqc_parse_program_args(int argc, char** argv, const char* optstring,
 	sfq_bool use_rest, struct sfqc_program_args* pgargs);
 
-extern void sfqc_free_program_args(struct sfqc_program_args* pgargs);
+void sfqc_free_program_args(struct sfqc_program_args* pgargs);
 
-extern char** sfqc_split(char* params_str, char c_delim);
-extern int sfqc_readstdin(sfq_byte** mem_ptr, size_t* memsize_ptr);
-extern int sfqc_readfile(const char* path, sfq_byte** mem_ptr, size_t* memsize_ptr);
+char** sfqc_split(char* params_str, char c_delim);
+int sfqc_readstdin(sfq_byte** mem_ptr, size_t* memsize_ptr);
+int sfqc_readfile(const char* path, sfq_byte** mem_ptr, size_t* memsize_ptr);
 
 #endif
 

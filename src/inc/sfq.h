@@ -148,37 +148,37 @@ struct sfq_value
 
 typedef void (*sfq_map_callback)(ulong order, off_t elm_pos, const struct sfq_value* val, void* userdata);
 
-extern int sfq_init(const char* querootdir, const char* quename,
+int sfq_init(const char* querootdir, const char* quename,
 	const struct sfq_queue_init_params* qip);
 
-extern int sfq_map(const char* querootdir, const char* quename,
+int sfq_map(const char* querootdir, const char* quename,
 	sfq_map_callback callback, void* userdata,
 	sfq_bool reverse, ulong loop_limit);
 
-extern int sfq_push(const char* querootdir, const char* quename, struct sfq_value* val);
-extern int sfq_pop(const char* querootdir, const char* quename, struct sfq_value* val);
-extern int sfq_shift(const char* querootdir, const char* quename, struct sfq_value* val);
-extern int sfq_info(const char* querootdir, const char* quename);
-extern int sfq_clear(const char* querootdir, const char* quename);
-extern int sfq_alloc_print_value(const struct sfq_value* bin, struct sfq_value* str);
-extern void sfq_free_value(struct sfq_value* p);
+int sfq_push(const char* querootdir, const char* quename, struct sfq_value* val);
+int sfq_pop(const char* querootdir, const char* quename, struct sfq_value* val);
+int sfq_shift(const char* querootdir, const char* quename, struct sfq_value* val);
+int sfq_info(const char* querootdir, const char* quename);
+int sfq_clear(const char* querootdir, const char* quename);
+int sfq_alloc_print_value(const struct sfq_value* bin, struct sfq_value* str);
+void sfq_free_value(struct sfq_value* p);
 
 /* short-cut */
-extern int sfq_push_text(const char* querootdir, const char* quename,
+int sfq_push_text(const char* querootdir, const char* quename,
 	const char* execpath, const char* execargs, const char* metatext,
 	const char* soutpath, const char* serrpath, uuid_t uuid,
 	const char* textdata);
 
-extern int sfq_push_binary(const char* querootdir, const char* quename,
+int sfq_push_binary(const char* querootdir, const char* quename,
 	const char* execpath, const char* execargs, const char* metatext,
 	const char* soutpath, const char* serrpath, uuid_t uuid,
 	const sfq_byte* payload, size_t payload_size);
 
-extern int sfq_get_questate(const char* querootdir, const char* quename, questate_t* questate_ptr);
-extern int sfq_set_questate(const char* querootdir, const char* quename, questate_t questate);
-extern size_t sfq_payload_len(const struct sfq_value* val);
+int sfq_get_questate(const char* querootdir, const char* quename, questate_t* questate_ptr);
+int sfq_set_questate(const char* querootdir, const char* quename, questate_t questate);
+size_t sfq_payload_len(const struct sfq_value* val);
 
-extern char* sfq_alloc_concat_n(int n, ...);
+char* sfq_alloc_concat_n(int n, ...);
 
 /* stack allocate and string copy */
 #ifdef __GNUC__

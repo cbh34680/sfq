@@ -100,17 +100,12 @@ class SFQueueClientLocal extends SFQueueClient
 	{
 		if (extension_loaded('wrap_libsfq'))
 		{
+			parent::__construct($quename, $throwException);
+
 			if (isset($params['querootdir']))
 			{
 				$querootdir_ = $params['querootdir'];
 			}
-
-			if (isset($quename))
-			{
-				$quename_ = $quename;
-			}
-
-			parent::__construct($quename, $throwException);
 		}
 		else
 		{
