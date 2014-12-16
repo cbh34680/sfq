@@ -953,7 +953,7 @@ void sfq_qh_init_pos(struct sfq_q_header* p)
 		return;
 	}
 
-	p->dval.elm_last_push_pos = p->dval.elm_next_shift_pos = p->dval.elm_num = 0;
-	p->dval.elm_new_push_pos = p->sval.elmseg_start_pos;
+	p->dval.elm_next_pop_pos = p->dval.elm_next_shift_pos = p->dval.elm_num = 0;
+	p->dval.elm_next_push_pos = p->sval.elmseg_start_pos;
 }
 

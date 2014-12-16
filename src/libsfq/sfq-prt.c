@@ -109,8 +109,8 @@ void sfq_print_sizes(void)
 static void sfq_print_qh_dval_(const struct sfq_qh_dval* p, char c)
 {
 	fprintf(stderr, "%c [print_q_header:dynv]\n", c);
-	fprintf(stderr, "%c q_header.elm_last_push_pos  = %zu\n", c, p->elm_last_push_pos);
-	fprintf(stderr, "%c q_header.elm_new_push_pos   = %zu\n", c, p->elm_new_push_pos);
+	fprintf(stderr, "%c q_header.elm_next_pop_pos   = %zu\n", c, p->elm_next_pop_pos);
+	fprintf(stderr, "%c q_header.elm_next_push_pos  = %zu\n", c, p->elm_next_push_pos);
 	fprintf(stderr, "%c q_header.elm_next_shift_pos = %zu\n", c, p->elm_next_shift_pos);
 	fprintf(stderr, "%c q_header.elm_num            = %zu\n", c, p->elm_num);
 	fprintf(stderr, "%c q_header.elm_lastid         = %zu\n", c, p->elm_lastid);

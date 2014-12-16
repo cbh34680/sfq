@@ -4,14 +4,26 @@ import java.util.HashMap;
 
 public class SFQueue
 {
-	static SFQueueClientInterface newClient(HashMap<String, Object> params)
+	static SFQueueClientInterface newClient()
+	{
+		return new newClient(new HashMap<String, Object>(), null);
+	}
+
+	static SFQueueClientInterface newClient(Map<String, Object> params)
 	{
 		return new newClient(params, null);
 	}
 
-	static SFQueueClientInterface newClient(HashMap<String, Object> params, String quename)
+	static SFQueueClientInterface newClient(Map<String, Object> params, String quename)
 	{
-		return null;
+		if (params.containsKey("host"))
+		{
+			return null;
+		}
+		else
+		{
+			return new SFQueueClientLocal(quename, params
+		}
 	}
 
 	public static void main(String[] args)

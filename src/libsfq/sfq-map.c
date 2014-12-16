@@ -48,7 +48,7 @@ SFQ_ENTP_ENTER
 
 /* loop elements */
 	elm_pos = reverse
-		? qfh.qh.dval.elm_last_push_pos
+		? qfh.qh.dval.elm_next_pop_pos
 		: qfh.qh.dval.elm_next_shift_pos;
 
 	//for (num=0, elm_pos=qfh.qh.dval.elm_next_shift_pos; elm_pos; num++)

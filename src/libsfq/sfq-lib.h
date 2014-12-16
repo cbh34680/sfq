@@ -239,8 +239,8 @@ struct sfq_qh_sval
 
 struct sfq_qh_dval
 {
-	off_t elm_last_push_pos;	/* 8 */
-	off_t elm_new_push_pos;		/* 8 */
+	off_t elm_next_pop_pos;		/* 8 */
+	off_t elm_next_push_pos;	/* 8 */
 	off_t elm_next_shift_pos;	/* 8 */
 
 	ulong elm_num;			/* 8 */

@@ -54,12 +54,12 @@ SFQ_ENTP_ENTER
 #ifdef SFQ_DEBUG_BUILD
 	assert(qfh.qh.dval.elm_next_shift_pos);
 #endif
-	if (qfh.qh.dval.elm_last_push_pos == 0)
+	if (qfh.qh.dval.elm_next_pop_pos == 0)
 	{
-		SFQ_FAIL(EA_ASSERT, "qfh.qh.dval.elm_last_push_pos == 0");
+		SFQ_FAIL(EA_ASSERT, "qfh.qh.dval.elm_next_pop_pos == 0");
 	}
 
-	elm_pos = qfh.qh.dval.elm_last_push_pos;
+	elm_pos = qfh.qh.dval.elm_next_pop_pos;
 
 /* read element */
 	b = sfq_readelm(qo, elm_pos, &ioeb);
@@ -102,8 +102,8 @@ SFQ_ENTP_ENTER
 		}
 
 /* update next shift pos */
-		qfh.qh.dval.elm_last_push_pos = ioeb.eh.prev_elmpos;
-		qfh.qh.dval.elm_new_push_pos = elm_pos;
+		qfh.qh.dval.elm_next_pop_pos = ioeb.eh.prev_elmpos;
+		qfh.qh.dval.elm_next_push_pos = elm_pos;
 	}
 
 /* set val */

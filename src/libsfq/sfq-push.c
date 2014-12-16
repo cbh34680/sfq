@@ -190,7 +190,7 @@ id, pushtime, uuid はここで生成する
 	uuid_generate_random(ioeb.eh.uuid);
 
 /* set cursor to pushable-pos */
-	if (qfh.qh.dval.elm_next_shift_pos == qfh.qh.dval.elm_new_push_pos)
+	if (qfh.qh.dval.elm_next_shift_pos == qfh.qh.dval.elm_next_push_pos)
 	{
 	/* shift 位置 == push 位置 の場合 ... 全て shift している */
 
@@ -203,7 +203,7 @@ id, pushtime, uuid はここで生成する
 
 		// GO NEXT
 	}
-	else if (qfh.qh.dval.elm_next_shift_pos < qfh.qh.dval.elm_new_push_pos)
+	else if (qfh.qh.dval.elm_next_shift_pos < qfh.qh.dval.elm_next_push_pos)
 	{
 	/* shift 位置 < push 位置 の場合 ... 通常 */
 
@@ -220,7 +220,7 @@ id, pushtime, uuid はここで生成する
 			SFQ_FAIL(EA_ASSERT, "qfh.qh.dval.elm_num == 0");
 		}
 
-		IfPush_next_elmpos = qfh.qh.dval.elm_new_push_pos + ioeb.eh.elmsize_;
+		IfPush_next_elmpos = qfh.qh.dval.elm_next_push_pos + ioeb.eh.elmsize_;
 		IfPush_elm_end_pos = IfPush_next_elmpos - 1;
 
 		if (IfPush_elm_end_pos < (qfh.qh.dval.elm_next_shift_pos - 1))
@@ -241,7 +241,7 @@ id, pushtime, uuid はここで生成する
 		}
 	}
 
-	IfPush_next_elmpos = qfh.qh.dval.elm_new_push_pos + ioeb.eh.elmsize_;
+	IfPush_next_elmpos = qfh.qh.dval.elm_next_push_pos + ioeb.eh.elmsize_;
 	IfPush_elm_end_pos = IfPush_next_elmpos - 1;
 
 	if (IfPush_elm_end_pos <= qfh.qh.sval.elmseg_end_pos)
@@ -249,14 +249,14 @@ id, pushtime, uuid はここで生成する
 	/* 領域限界を超えない ... 通常 */
 
 		/* push 位置へ移動 */
-		elm_pos = qfh.qh.dval.elm_new_push_pos;
+		elm_pos = qfh.qh.dval.elm_next_push_pos;
 
 		/* 要素ヘッダを書き換え */
-		ioeb.eh.prev_elmpos = qfh.qh.dval.elm_last_push_pos;
+		ioeb.eh.prev_elmpos = qfh.qh.dval.elm_next_pop_pos;
 
 		/* 属性ヘッダを書き換え */
-		qfh.qh.dval.elm_last_push_pos = qfh.qh.dval.elm_new_push_pos;
-		qfh.qh.dval.elm_new_push_pos = IfPush_next_elmpos;
+		qfh.qh.dval.elm_next_pop_pos = qfh.qh.dval.elm_next_push_pos;
+		qfh.qh.dval.elm_next_push_pos = IfPush_next_elmpos;
 	}
 	else
 	{
@@ -279,11 +279,11 @@ id, pushtime, uuid はここで生成する
 			elm_pos = qfh.qh.sval.elmseg_start_pos;
 
 			/* 要素ヘッダを書き換え */
-			ioeb.eh.prev_elmpos = qfh.qh.dval.elm_last_push_pos;
+			ioeb.eh.prev_elmpos = qfh.qh.dval.elm_next_pop_pos;
 
 			/* 属性ヘッダを書き換え */
-			qfh.qh.dval.elm_last_push_pos = qfh.qh.sval.elmseg_start_pos;
-			qfh.qh.dval.elm_new_push_pos = IfPush_next_elmpos;
+			qfh.qh.dval.elm_next_pop_pos = qfh.qh.sval.elmseg_start_pos;
+			qfh.qh.dval.elm_next_push_pos = IfPush_next_elmpos;
 
 			if (qfh.qh.dval.elm_num == 0)
 			{
