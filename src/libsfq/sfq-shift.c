@@ -6,7 +6,7 @@ SFQ_ENTP_ENTER
 
 	struct sfq_queue_object* qo = NULL;
 
-	bool b = false;
+	sfq_bool b = SFQ_false;
 	size_t eh_size = 0;
 	off_t elm_pos = 0;
 
@@ -14,8 +14,6 @@ SFQ_ENTP_ENTER
 	struct sfq_file_header qfh;
 
 /* initialize */
-	errno = 0;
-
 	eh_size = sizeof(struct sfq_e_header);
 
 	bzero(&qfh, sizeof(qfh));
@@ -31,7 +29,7 @@ SFQ_ENTP_ENTER
 	qo = sfq_open_queue_rw(querootdir, quename);
 	if (! qo)
 	{
-		SFQ_FAIL(EA_OPENFILE, "sfq_open_queue");
+		SFQ_FAIL(EA_OPENQUEUE, "sfq_open_queue_rw");
 	}
 
 
@@ -108,18 +106,18 @@ SFQ_ENTP_ENTER
 		qfh.qh.dval.elm_next_shift_pos = ioeb.eh.next_elmpos;
 	}
 
-/* overwrite header */
-	b = sfq_writeqfh(qo, &qfh, NULL, "SHF");
-	if (! b)
-	{
-		SFQ_FAIL(EA_WRITEQFH, "sfq_writeqfh");
-	}
-
 /* set val */
 	b = sfq_copy_ioeb2val(&ioeb, val);
 	if (! b)
 	{
 		SFQ_FAIL(EA_COPYVALUE, "sfq_copy_ioeb2val");
+	}
+
+/* update header */
+	b = sfq_writeqfh(qo, &qfh, NULL, "SHF");
+	if (! b)
+	{
+		SFQ_FAIL(EA_WRITEQFH, "sfq_writeqfh");
 	}
 
 SFQ_LIB_CHECKPOINT

@@ -19,8 +19,12 @@
 extern "C" {
 #endif
 
+#define SFQ_true			(1)
+#define SFQ_false			(0)
+
 typedef unsigned char sfq_uchar;
 typedef unsigned char sfq_byte;
+typedef unsigned char sfq_bool;
 
 typedef ushort questate_t;
 typedef sfq_uchar payload_type_t;
@@ -37,9 +41,9 @@ enum
 
 	SFQ_RC_FATAL_MIN		= 21,
 	SFQ_RC_UNKNOWN,
+	SFQ_RC_EA_OPENQUEUE,
 	SFQ_RC_EA_FSIZESMALL,
 	SFQ_RC_EA_EXISTQUEUE,
-	SFQ_RC_EA_OPENFILE,
 	SFQ_RC_EA_FUNCARG,
 	SFQ_RC_EA_ILLEGALVER,
 	SFQ_RC_EA_ASSERT,
@@ -62,6 +66,8 @@ enum
 	SFQ_RC_EA_SEMEXISTS,
 	SFQ_RC_EA_LOCKSEMAPHORE,
 	SFQ_RC_EA_REGSEMAPHORE,
+	SFQ_RC_EA_DIRTYQUEFILE,
+	SFQ_RC_EA_UPDQFSDIRTY,
 
 	SFQ_RC_SYSERR_MIN		= 71,
 	SFQ_RC_ES_MEMALLOC,
@@ -140,13 +146,14 @@ struct sfq_value
 	const sfq_byte* payload;		/* 8 */
 };
 
-typedef void (*sfq_map_callback)(ulong order, const struct sfq_value* val, void* userdata);
+typedef void (*sfq_map_callback)(ulong order, off_t elm_pos, const struct sfq_value* val, void* userdata);
 
 extern int sfq_init(const char* querootdir, const char* quename,
 	const struct sfq_queue_init_params* qip);
 
 extern int sfq_map(const char* querootdir, const char* quename,
-	sfq_map_callback callback, void* userdata);
+	sfq_map_callback callback, void* userdata,
+	sfq_bool reverse, ulong loop_limit);
 
 extern int sfq_push(const char* querootdir, const char* quename, struct sfq_value* val);
 extern int sfq_pop(const char* querootdir, const char* quename, struct sfq_value* val);

@@ -20,7 +20,7 @@ SFQ_ENTP_ENTER
 	char* full_soutpath = NULL;
 	char* full_serrpath = NULL;
 
-	bool b = false;
+	sfq_bool b = SFQ_false;
 
 	int slotno = -1;
 	size_t eh_size = 0;
@@ -35,8 +35,6 @@ SFQ_ENTP_ENTER
 	struct sfq_ioelm_buff ioeb;
 
 /* initialize */
-	errno = 0;
-
 	eh_size = sizeof(struct sfq_e_header);
 
 	bzero(&qfh, sizeof(qfh));
@@ -140,7 +138,7 @@ push 可能条件の判定
 		SFQ_FAIL(EA_FUNCARG, "no input data");
 	}
 
-/* copy arguments to write-buffer */
+/* copy arguments to buffer */
 	b = sfq_copy_val2ioeb(val, &ioeb);
 	if (! b)
 	{
@@ -151,7 +149,7 @@ push 可能条件の判定
 	qo = sfq_open_queue_rw(querootdir, quename);
 	if (! qo)
 	{
-		SFQ_FAIL(EA_OPENFILE, "open_locked_file");
+		SFQ_FAIL(EA_OPENQUEUE, "sfq_open_queue_rw");
 	}
 
 /* read file-header */
@@ -304,7 +302,7 @@ id, pushtime, uuid はここで生成する
 	sfq_print_e_header(&ioeb.eh);
 #endif
 
-/* write element */
+/* add element */
 	b = sfq_writeelm(qo, elm_pos, &ioeb);
 	if (! b)
 	{
@@ -345,7 +343,7 @@ id, pushtime, uuid はここで生成する
 		if (procs)
 		{
 			struct stat stbuf;
-			bool try_resreve = false;
+			sfq_bool try_resreve = SFQ_false;
 
 /*
 プロセステーブルが存在するので、queue ファイルのパーミッションを確認して
@@ -359,14 +357,14 @@ id, pushtime, uuid はここで生成する
 			if (stbuf.st_mode & S_IXOTH)
 			{
 			/* o+x */
-				try_resreve = true;
+				try_resreve = SFQ_true;
 			}
 			else if (stbuf.st_mode & S_IXUSR)
 			{
 			/* u+x */
 				if (stbuf.st_uid == geteuid())
 				{
-					try_resreve = true;
+					try_resreve = SFQ_true;
 				}
 			}
 			else if (stbuf.st_mode & S_IXGRP)
@@ -374,7 +372,7 @@ id, pushtime, uuid はここで生成する
 			/* g+x */
 				if (stbuf.st_gid == getegid())
 				{
-					try_resreve = true;
+					try_resreve = SFQ_true;
 				}
 			}
 
@@ -394,22 +392,22 @@ id, pushtime, uuid はここで生成する
 		procs = NULL;
 	}
 
+/*
+正常時には呼び出し元に uuid を返却する
+*/
+	uuid_copy(val->uuid, ioeb.eh.uuid);
+
 /* update queue file header */
 
 	/* 要素数を加算 */
 	qfh.qh.dval.elm_num++;
 
-/* overwrite header */
+/* update header */
 	b = sfq_writeqfh(qo, &qfh, procs, "PSH");
 	if (! b)
 	{
 		SFQ_FAIL(EA_WRITEQFH, "sfq_writeqfh");
 	}
-
-/*
-正常時には呼び出し元に uuid を返却する
-*/
-	uuid_copy(val->uuid, ioeb.eh.uuid);
 
 SFQ_LIB_CHECKPOINT
 

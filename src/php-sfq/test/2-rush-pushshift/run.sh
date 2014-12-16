@@ -5,7 +5,7 @@ cd $(dirname $(readlink -f "$0"))
 
 sfqc-clear
 
-for i in {1..20} ;
+for i in {1..200000} ;
 do
   cat << EOF
 # ------------------------------------------------------------------
@@ -14,7 +14,7 @@ do
 #
 EOF
 
-  php main.php &
+  php main.php nowait &
   php_pid=$!
 
   #sleepsec=$(( 3 + $i ))

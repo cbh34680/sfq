@@ -27,13 +27,13 @@ void localvars_destroy_(void)
 /* */
 struct sem_name_obj_set
 {
-	bool enable;
+	sfq_bool enable;
 
 	const char* semname;
 	sem_t* semobj;
 };
 
-static bool register_(const char* semname, sem_t* semobj)
+static sfq_bool register_(const char* semname, sem_t* semobj)
 {
 	size_t realloc_size = 0;
 	size_t snos_size = 0;
@@ -70,7 +70,7 @@ SFQ_LIB_ENTER
 
 	bzero(snos, snos_size);
 
-	snos->enable = true;
+	snos->enable = SFQ_true;
 	snos->semname= semname_dup;
 	snos->semobj = semobj;
 
@@ -89,9 +89,9 @@ SFQ_LIB_LEAVE
 	return SFQ_LIB_IS_SUCCESS();
 }
 
-static bool is_registered_(const char* semname)
+static sfq_bool is_registered_(const char* semname)
 {
-	bool ret = false;
+	sfq_bool ret = SFQ_false;
 	int i = 0;
 
 	assert(semname);
@@ -107,7 +107,7 @@ static bool is_registered_(const char* semname)
 		{
 			if (strcmp(semname, snos->semname) == 0)
 			{
-				ret = true;
+				ret = SFQ_true;
 				break;
 			}
 		}
@@ -118,9 +118,9 @@ static bool is_registered_(const char* semname)
 	return ret;
 }
 
-static bool unregister_(const char* semname)
+static sfq_bool unregister_(const char* semname)
 {
-	bool ret = false;
+	sfq_bool ret = SFQ_false;
 	int i = 0;
 	int loop_num = 0;
 
@@ -130,7 +130,7 @@ static bool unregister_(const char* semname)
 
 	for (i=0; i<loop_num; i++)
 	{
-		bool do_free = false;
+		sfq_bool do_free = SFQ_false;
 
 		struct sem_name_obj_set* snos = &GLOBAL_snos_arr[i];
 
@@ -140,12 +140,12 @@ static bool unregister_(const char* semname)
 			{
 				if (strcmp(semname, snos->semname) == 0)
 				{
-					do_free = true;
+					do_free = SFQ_true;
 				}
 			}
 			else
 			{
-				do_free = true;
+				do_free = SFQ_true;
 			}
 		}
 
@@ -162,11 +162,11 @@ static bool unregister_(const char* semname)
 			sem_close(snos->semobj);
 			snos->semobj = NULL;
 
-			snos->enable = false;
+			snos->enable = SFQ_false;
 
 			GLOBAL_snos_arr_num--;
 
-			ret = true;
+			ret = SFQ_true;
 
 			if (semname)
 			{
@@ -199,11 +199,11 @@ void sfq_unlock_semaphore(const char* semname)
 
 --> ロックが獲得できたときのみ global に保存する
 */
-bool sfq_lock_semaphore(const char* semname)
+sfq_bool sfq_lock_semaphore(const char* semname)
 {
 	int irc = -1;
-	bool locked = false;
-	bool registered = false;
+	sfq_bool locked = SFQ_false;
+	sfq_bool registered = SFQ_false;
 
 	struct timespec tspec;
 	sem_t* semobj = NULL;
@@ -244,7 +244,7 @@ SFQ_LIB_ENTER
 	{
 		SFQ_FAIL(ES_SEMIO, "semaphore lock wait timeout, unlock command=[sfqc-sets semunlock on]");
 	}
-	locked = true;
+	locked = SFQ_true;
 
 //printf("lock get\n");
 	registered = register_(semname, semobj);

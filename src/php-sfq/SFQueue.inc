@@ -246,7 +246,7 @@ class SFQueueClientRemote extends SFQueueClient
 
 class SFQueue
 {
-	static function newClient($quename=null, $params=[])
+	static function newClient($params=[], $quename=null)
 	{
 		if (isset($params['host']))
 		{
@@ -262,7 +262,7 @@ class SFQueue
 		}
 	}
 
-	static function newClientNotThrow($quename=null, $params=[])
+	static function newClientNotThrow($params=[], $quename=null)
 	{
 		if (isset($params['host']))
 		{
@@ -380,12 +380,12 @@ EOS;
 			],
 		];
 
-		$etest(SFQueue::newClient(null, $copt));
+		$etest(SFQueue::newClient($copt));
 		echo PHP_EOL;
 
 	// remote (not throw exception)
 
-		$test(SFQueue::newClientNotThrow(null, $copt));
+		$test(SFQueue::newClientNotThrow($copt));
 		echo PHP_EOL;
 	}
 }

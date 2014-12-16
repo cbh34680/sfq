@@ -7,19 +7,18 @@ SFQ_ENTP_ENTER
 	struct sfq_queue_object* qo = NULL;
 	struct sfq_process_info* procs = NULL;
 
-	bool b = false;
+	sfq_bool b = SFQ_false;
 
 	struct sfq_file_header qfh;
 
 /* initialize */
-	errno = 0;
 	bzero(&qfh, sizeof(qfh));
 
 /* open queue-file */
 	qo = sfq_open_queue_ro(querootdir, quename);
 	if (! qo)
 	{
-		SFQ_FAIL(EA_OPENFILE, "sfq_open_queue");
+		SFQ_FAIL(EA_OPENQUEUE, "sfq_open_queue_ro");
 	}
 
 #ifdef SFQ_DEBUG_BUILD

@@ -60,7 +60,7 @@ SFQ_LIB_ENTER
 	struct sfq_queue_object* qo = NULL;
 
 	struct sfq_file_header qfh;
-	bool b = false;
+	sfq_bool b = SFQ_false;
 
 /* initialize */
 	bzero(&qfh, sizeof(qfh));
@@ -73,7 +73,7 @@ SFQ_LIB_ENTER
 	qo = sfq_open_queue_ro(querootdir, quename);
 	if (! qo)
 	{
-		SFQ_FAIL(EA_OPENFILE, "sfq_open_queue");
+		SFQ_FAIL(EA_OPENQUEUE, "sfq_open_queue_ro");
 	}
 
 	b = sfq_readqfh(qo, &qfh, NULL);
@@ -104,9 +104,9 @@ SFQ_LIB_ENTER
 
 	int irc = -1;
 	int slotno = -1;
-	bool b = false;
+	sfq_bool b = SFQ_false;
 
-	bool forceLeakQueue = false;
+	sfq_bool forceLeakQueue = SFQ_false;
 
 	struct sfq_file_header qfh;
 
@@ -145,7 +145,7 @@ SFQ_LIB_ENTER
 	qo = sfq_open_queue_rw(querootdir, quename);
 	if (! qo)
 	{
-		SFQ_FAIL(EA_OPENFILE, "sfq_open_queue");
+		SFQ_FAIL(EA_OPENQUEUE, "sfq_open_queue_rw");
 	}
 
 /* */
@@ -157,7 +157,7 @@ SFQ_LIB_ENTER
 セマフォをロッセしたままにする
 --> メモリリークは発生する
 */
-		forceLeakQueue = true;
+		forceLeakQueue = SFQ_true;
 
 		SFQ_FAIL(DEV_SEMLOCK, "success lock semaphore [%s] (for develop)\n", qo->om->semname);
 	}
@@ -243,7 +243,7 @@ SFQ_LIB_LEAVE
 	return SFQ_LIB_RC();
 }
 
-bool sfq_copy_val2ioeb(const struct sfq_value* val, struct sfq_ioelm_buff* ioeb)
+sfq_bool sfq_copy_val2ioeb(const struct sfq_value* val, struct sfq_ioelm_buff* ioeb)
 {
 SFQ_LIB_ENTER
 
@@ -413,16 +413,16 @@ SFQ_LIB_LEAVE
 	return SFQ_LIB_IS_SUCCESS();
 }
 
-bool sfq_copy_ioeb2val(const struct sfq_ioelm_buff* ioeb, struct sfq_value* val)
+sfq_bool sfq_copy_ioeb2val(const struct sfq_ioelm_buff* ioeb, struct sfq_value* val)
 {
 	if (! ioeb)
 	{
-		return false;
+		return SFQ_false;
 	}
 
 	if (! val)
 	{
-		return false;
+		return SFQ_false;
 	}
 
 	bzero(val, sizeof(*val));
@@ -472,7 +472,7 @@ bool sfq_copy_ioeb2val(const struct sfq_ioelm_buff* ioeb, struct sfq_value* val)
 		val->payload = ioeb->payload;
 	}
 
-	return true;
+	return SFQ_true;
 }
 
 void sfq_free_value(struct sfq_value* val)
@@ -890,7 +890,7 @@ void sfq_free_open_names(struct sfq_open_names* om)
 /*
 http://nion.modprobe.de/blog/archives/357-Recursive-directory-creation.html
 */
-bool sfq_mkdir_p(const char *arg, mode_t perm)
+sfq_bool sfq_mkdir_p(const char *arg, mode_t perm)
 {
 	char* dir = NULL;
 	char *p = NULL;
@@ -900,7 +900,7 @@ bool sfq_mkdir_p(const char *arg, mode_t perm)
 	dir = sfq_stradup(arg);
 	if (! dir)
 	{
-		return false;
+		return SFQ_false;
 	}
 
 	len = strlen(dir);
@@ -918,7 +918,7 @@ bool sfq_mkdir_p(const char *arg, mode_t perm)
 			{
 				if (errno != EEXIST)
 				{
-					return false;
+					return SFQ_false;
 				}
 			}
 			*p = '/';
@@ -929,11 +929,11 @@ bool sfq_mkdir_p(const char *arg, mode_t perm)
 	{
 		if (errno != EEXIST)
 		{
-			return false;
+			return SFQ_false;
 		}
 	}
 
-	return true;
+	return SFQ_true;
 }
 
 char* sfq_alloc_concat_n(int n, ...)

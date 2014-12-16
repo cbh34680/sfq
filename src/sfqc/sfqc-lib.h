@@ -15,7 +15,6 @@
 #ifdef WIN32
 	#include "win32-dummy-build.h"
 #else
-	#include <stdbool.h>
 	#include <inttypes.h>
 	#include <dirent.h>
 	#include <unistd.h>
@@ -64,7 +63,10 @@ struct sfqc_program_args
 	const char* soutpath;		/* o */
 	const char* serrpath;		/* e */
 	const char* printmethod;	/* p */
-	bool quiet;			/* q */
+
+	sfq_bool quiet;			/* q */
+	sfq_bool reverse;		/* r */
+	ulong loop_limit;		/* -1 */
 
 	const char** commands;
 	int command_num;
@@ -90,7 +92,7 @@ typedef int (*sfq_takeoutfunc_t)(const char* querootdir, const char* quename, st
 extern int sfqc_takeout(int argc, char** argv, sfq_takeoutfunc_t takeoutfunc);
 
 extern int sfqc_parse_program_args(int argc, char** argv, const char* optstring,
-	bool use_rest, struct sfqc_program_args* pgargs);
+	sfq_bool use_rest, struct sfqc_program_args* pgargs);
 
 extern void sfqc_free_program_args(struct sfqc_program_args* pgargs);
 

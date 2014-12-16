@@ -8,7 +8,7 @@
 static void to_camelcase(char* p)
 {
 	char* pos = p;
-	bool next_upper = true;
+	sfq_bool next_upper = SFQ_true;
 
 	if (! p)
 	{
@@ -24,14 +24,14 @@ static void to_camelcase(char* p)
 
 		if ((*pos) == '-')
 		{
-			next_upper = true;
+			next_upper = SFQ_true;
 		}
 		else
 		{
 			if (next_upper)
 			{
 				(*pos) = toupper(*pos);
-				next_upper = false;
+				next_upper = SFQ_false;
 			}
 		}
 
@@ -76,7 +76,7 @@ static void print_date(const char* key, time_t t)
 	printf("%s: %s" CRLF, key, dt);
 }
 
-static void print_http_headers(bool exist, const char* content_type, size_t content_length)
+static void print_http_headers(sfq_bool exist, const char* content_type, size_t content_length)
 {
 	time_t now = time(NULL);
 
@@ -107,7 +107,7 @@ static void print_http_headers(bool exist, const char* content_type, size_t cont
 /* ------------------------------------------------------------------------------- */
 // outputtype=plain/text
 
-static void h_printf(bool http, const char* org_format, ...)
+static void h_printf(sfq_bool http, const char* org_format, ...)
 {
 	va_list arg;
 	char* format = NULL;
@@ -128,8 +128,8 @@ static void h_printf(bool http, const char* org_format, ...)
 	va_end(arg);
 }
 
-static void print_custom_headers(bool http, const struct sfq_value* val,
-	size_t data_len, bool pbin, size_t pb64text_len)
+static void print_custom_headers(sfq_bool http, const struct sfq_value* val,
+	size_t data_len, sfq_bool pbin, size_t pb64text_len)
 {
 	char uuid_s[36 + 1] = "";
 
@@ -194,12 +194,12 @@ static void print_raw(uint printmethod, const struct sfq_value* val)
 
 	size_t iosize = 0;
 
-	bool pbin = (val->payload_type & SFQ_PLT_BINARY);
-	bool pb64 = (printmethod & SFQC_PRM_PAYLOAD_BASE64);
-	bool adda = (printmethod & SFQC_PRM_ADD_ATTRIBUTE);
-	bool http = (printmethod & SFQC_PRM_HTTP_HEADER);
+	sfq_bool pbin = (val->payload_type & SFQ_PLT_BINARY);
+	sfq_bool pb64 = (printmethod & SFQC_PRM_PAYLOAD_BASE64);
+	sfq_bool adda = (printmethod & SFQC_PRM_ADD_ATTRIBUTE);
+	sfq_bool http = (printmethod & SFQC_PRM_HTTP_HEADER);
 
-	bool text_output = pb64 ? true : (val->payload_type & SFQ_PLT_CHARARRAY);
+	sfq_bool text_output = pb64 ? SFQ_true : (val->payload_type & SFQ_PLT_CHARARRAY);
 
 /* */
 	char uuid_s[36 + 1] = "";
@@ -231,7 +231,7 @@ static void print_raw(uint printmethod, const struct sfq_value* val)
 		const char* content_type = text_output
 			? "text/plain; charset=UTF-8" : "application/octed-stream";
 
-		print_http_headers(true, content_type, data_len);
+		print_http_headers(SFQ_true, content_type, data_len);
 
 		if (! text_output)
 		{
@@ -274,8 +274,8 @@ EXIT_LABEL:
 /* ------------------------------------------------------------------------------- */
 // outputtype=json
 
-static char* create_json_string(const struct sfq_value* val, bool pbin, bool pb64, size_t pb64text_len,
-	bool adda, const sfq_byte* data, size_t data_len)
+static char* create_json_string(const struct sfq_value* val, sfq_bool pbin, sfq_bool pb64, size_t pb64text_len,
+	sfq_bool adda, const sfq_byte* data, size_t data_len)
 {
 	int irc = 1;
 
@@ -389,10 +389,10 @@ static void print_by_json(uint printmethod, const struct sfq_value* val)
 
 	char* jsontext = NULL;
 
-	bool pbin = (val->payload_type & SFQ_PLT_BINARY);
-	bool pb64 = (printmethod & SFQC_PRM_PAYLOAD_BASE64);
-	bool adda = (printmethod & SFQC_PRM_ADD_ATTRIBUTE);
-	bool http = (printmethod & SFQC_PRM_HTTP_HEADER);
+	sfq_bool pbin = (val->payload_type & SFQ_PLT_BINARY);
+	sfq_bool pb64 = (printmethod & SFQC_PRM_PAYLOAD_BASE64);
+	sfq_bool adda = (printmethod & SFQC_PRM_ADD_ATTRIBUTE);
+	sfq_bool http = (printmethod & SFQC_PRM_HTTP_HEADER);
 
 /* */
 	data = val->payload;
@@ -424,7 +424,7 @@ static void print_by_json(uint printmethod, const struct sfq_value* val)
 
 	if (http)
 	{
-		print_http_headers(true, "application/json", strlen(jsontext));
+		print_http_headers(SFQ_true, "application/json", strlen(jsontext));
 	}
 
 	if (adda)
@@ -532,7 +532,7 @@ SFQC_MAIN_ENTER
 	bzero(&pval, sizeof(pval));
 
 /* */
-	irc = sfqc_parse_program_args(argc, argv, "D:N:p:q", false, &pgargs);
+	irc = sfqc_parse_program_args(argc, argv, "D:N:p:q", SFQ_false, &pgargs);
 	if (irc != 0)
 	{
 		message = "parse_program_args: parse error";
@@ -610,7 +610,7 @@ EXIT_LABEL:
 
 	if (printmethod & SFQC_PRM_HTTP_HEADER)
 	{
-		print_http_headers(false, "text/plain; charset=UTF-8", strlen(message));
+		print_http_headers(SFQ_false, "text/plain; charset=UTF-8", strlen(message));
 
 		printf(CRLF);
 		printf("%s" CRLF, message);

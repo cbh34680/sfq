@@ -8,6 +8,7 @@ rm -rf wrap_libsfq/*
 
 pcp=$(readlink -f ../../lib/pkgconfig)
 export PKG_CONFIG_PATH="$pcp"
+echo "PKG_CONFIG_PATH=[$PKG_CONFIG_PATH]"
 
 which pecl-gen 2> /dev/null
 if [ $? != 0 ] ;

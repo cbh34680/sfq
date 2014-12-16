@@ -32,6 +32,7 @@ for ($i=0; $i<5; $i++)
 		pcntl_signal(SIGHUP, $hndl);
 		pcntl_signal(SIGINT, $hndl);
 		pcntl_signal(SIGTERM, $hndl);
+		pcntl_signal(SIGUSR1, $hndl);
 
 		try
 		{
@@ -70,33 +71,36 @@ for ($i=0; $i<5; $i++)
 	}
 }
 
-/*
-echo "*" . PHP_EOL;
-echo "* stop when you press the [Enter]." . PHP_EOL;
-echo "*" . PHP_EOL;
-echo PHP_EOL;
+$argv1 = @$argv[1];
 
-try
+if ($argv1 != 'nowait')
 {
-	readline("");
-}
-catch (Exception $ex)
-{
-}
+	echo "*" . PHP_EOL;
+	echo "* stop when you press the [Enter]." . PHP_EOL;
+	echo "*" . PHP_EOL;
+	echo PHP_EOL;
 
-#
-echo PHP_EOL;
-echo "! send stop signal to child process" . PHP_EOL;
+	try
+	{
+		readline("");
+	}
+	catch (Exception $ex)
+	{
+	}
 
-foreach ($childs as $key=>$pid)
-{
-	$sendsig = SIGINT;
+	#
+	echo PHP_EOL;
+	echo "! send stop signal to child process" . PHP_EOL;
 
-	echo "\tsend kill to pid={$pid} send={$sendsig}" . PHP_EOL;
-	posix_kill($pid, $sendsig);
+	foreach ($childs as $key=>$pid)
+	{
+		$sendsig = SIGUSR1;
+
+		echo "\tsend kill to pid={$pid} send={$sendsig}" . PHP_EOL;
+		posix_kill($pid, $sendsig);
+	}
+	echo PHP_EOL;
 }
-echo PHP_EOL;
-*/
 
 #
 echo "! wait for exit of child processs" . PHP_EOL;
