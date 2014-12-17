@@ -13,7 +13,7 @@ public class SFQueueClientException extends Exception
 		{
 			{
 				put(0,		"it has not yet been set");
-				put(1010,	"extension(wrap_libsfq) is not loaded");
+				put(1010,	"extension(libsfqc-jni.so) is not loaded");
 				put(1020,	"it has not yet been initialized");
 				put(1030,	"it does not yet implemented");
 				put(1040,	"illegal argument type exception");

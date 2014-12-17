@@ -3,7 +3,7 @@ BASEI = include/sfq.h
 BASEL = lib/libsfq.so lib/libsfqc.so
 BASEX = bin/sfqc-init bin/sfqc-info bin/sfqc-list bin/sfqc-pusht bin/sfqc-pushb bin/sfqc-pop bin/sfqc-shift bin/sfqc-clear bin/sfqc-sets
 
-EXTNL = lib/sfqc_php.so lib/libsfqc-jni.so
+EXTNL = lib/sfqc_php.so lib/sfqc-jni.jar
 
 TARGET_BASE = $(BASEI) $(BASEL) $(BASEX)
 TARGET_EXTN = $(EXTNL)
@@ -27,7 +27,7 @@ lib/libsfqc.so: src/sfqc/libsfqc.so
 lib/sfqc_php.so: src/sfqc-php/sfqc_php/modules/sfqc_php.so
 	cp -p $^ $@
 
-lib/libsfqc-jni.so: src/sfqc-jni/src/libsfqc-jni.so
+lib/sfqc-jni.jar: src/sfqc-jni/sfqc-jni.jar
 	cp -p $^ $@
 
 src/libsfq/libsfq.so:
