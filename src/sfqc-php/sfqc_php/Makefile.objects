@@ -1,8 +1,0 @@
-sfqc_php.lo: /data/project/sfq/src/sfqc-php/sfqc_php/sfqc_php.c
-	$(LIBTOOL) --mode=compile $(CC)  -I. -I/data/project/sfq/src/sfqc-php/sfqc_php $(COMMON_FLAGS) $(CFLAGS_CLEAN) $(EXTRA_CFLAGS)  -c /data/project/sfq/src/sfqc-php/sfqc_php/sfqc_php.c -o sfqc_php.lo 
-$(phplibdir)/sfqc_php.la: ./sfqc_php.la
-	$(LIBTOOL) --mode=install cp ./sfqc_php.la $(phplibdir)
-
-./sfqc_php.la: $(shared_objects_sfqc_php) $(SFQC_PHP_SHARED_DEPENDENCIES)
-	$(LIBTOOL) --mode=link $(CC) $(COMMON_FLAGS) $(CFLAGS_CLEAN) $(EXTRA_CFLAGS) $(LDFLAGS) -o $@ -export-dynamic -avoid-version -prefer-pic -module -rpath $(phplibdir) $(EXTRA_LDFLAGS) $(shared_objects_sfqc_php) $(SFQC_PHP_SHARED_LIBADD)
-
