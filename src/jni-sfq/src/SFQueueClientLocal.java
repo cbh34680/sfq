@@ -5,8 +5,11 @@ import java.util.Map;
 
 public class SFQueueClientLocal extends SFQueueClient
 {
-	private native String wrap_sfq_push(Map<String, Object> params);
-	private native Map<String, Object> warp_sfq_takeout(String funcname);
+	private native int wrap_sfq_push(String querootdir, String quename,
+		HashMap<String, Object> hashmap);
+
+	private native int warp_sfq_takeout(String querootdir, String quename,
+		HashMap<String, Object> hashmap, String takeoutfunc);
 
 	static
 	{
@@ -34,10 +37,7 @@ public class SFQueueClientLocal extends SFQueueClient
 
 		if (dll_loaded)
 		{
-			if (params.containsKey("querootdir"))
-			{
-				querootdir_ = (String)params.get("querootdir");
-			}
+			querootdir_ = (String)params.get("querootdir");
 		}
 		else
 		{
@@ -45,24 +45,74 @@ public class SFQueueClientLocal extends SFQueueClient
 		}
 	}
 
-	public String push_text(Map<String, Object> params)
+	public String push(Map<String, Object> arg) throws SFQueueClientException
 	{
+		clearLastError();
+
+		if (notInitialized_)
+		{
+			throwException(1020);
+		}
+		else
+		{
+			HashMap<String, Object> params = new HashMap<>(arg);
+
+			int rc = wrap_sfq_push(querootdir_, quename_, params);
+
+			if (rc == SFQ_RC_SUCCESS)
+			{
+				Object uuid = params.get("uuid");
+				if (uuid instanceof String)
+				{
+					return (String)uuid;
+				}
+
+				throwException(3010);
+			}
+			else if (rc > SFQ_RC_FATAL_MIN)
+			{
+				throwException(2000 + rc, "native error rc={" + rc + "}");
+			}
+		}
+
 		return null;
 	}
 
-	public String push_binary(Map<String, Object> params)
+	private Map<String, Object> native_takeout_(String funcname) throws SFQueueClientException
 	{
+		clearLastError();
+
+		if (notInitialized_)
+		{
+			throwException(1020);
+		}
+		else
+		{
+			HashMap<String, Object> params = new HashMap<>();
+
+			int rc = warp_sfq_takeout(querootdir_, quename_, params, funcname);
+
+			if (rc == SFQ_RC_SUCCESS)
+			{
+				return params;
+			}
+			else if (rc > SFQ_RC_FATAL_MIN)
+			{
+				throwException(2000 + rc, "native error rc={" + rc + "}");
+			}
+		}
+
 		return null;
 	}
 
-	public Map<String, Object> pop()
+	public Map<String, Object> pop() throws SFQueueClientException
 	{
-		return new HashMap<String, Object>();
+		return native_takeout_("sfq_pop");
 	}
 
-	public Map<String, Object> shift()
+	public Map<String, Object> shift() throws SFQueueClientException
 	{
-		return new HashMap<String, Object>();
+		return native_takeout_("sfq_shift");
 	}
 
 }

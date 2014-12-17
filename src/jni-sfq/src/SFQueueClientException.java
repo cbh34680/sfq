@@ -17,6 +17,8 @@ public class SFQueueClientException extends Exception
 				put(1020,	"it has not yet been initialized");
 				put(1030,	"it does not yet implemented");
 				put(1040,	"illegal argument type exception");
+
+				put(3010,	"illegal type response exception");
 			}
 		};
 	}

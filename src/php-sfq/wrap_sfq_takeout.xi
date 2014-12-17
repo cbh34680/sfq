@@ -11,13 +11,13 @@
 /* init */
 	bzero(&val, sizeof(val));
 
-	if (strcmp(takeoutfunc, "sfq_pop") == 0)
-	{
-		takeout_rc = sfq_pop(querootdir, quename, &val);
-	}
 	if (strcmp(takeoutfunc, "sfq_shift") == 0)
 	{
 		takeout_rc = sfq_shift(querootdir, quename, &val);
+	}
+	else if (strcmp(takeoutfunc, "sfq_pop") == 0)
+	{
+		takeout_rc = sfq_pop(querootdir, quename, &val);
 	}
 
 	if (takeout_rc == SFQ_RC_SUCCESS)

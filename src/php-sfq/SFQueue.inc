@@ -162,12 +162,12 @@ class SFQueueClientLocal extends SFQueueClient
 	{
 		$this->clearLastError();
 
-		$param = [];
-		$rc = wrap_sfq_takeout($this->querootdir_, $this->quename_, $param, $funcname);
+		$params = [];
+		$rc = wrap_sfq_takeout($this->querootdir_, $this->quename_, $params, $funcname);
 
 		if ($this->isNativeSuccess_($rc))
 		{
-			return $param;
+			return $params;
 		}
 
 		return false;

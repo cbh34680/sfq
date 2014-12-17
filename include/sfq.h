@@ -193,11 +193,27 @@ char* sfq_alloc_concat_n(int n, ...);
 			} \
 			dst; \
 		})
+
+
+	#define sfq_strandup(org, copylen) \
+		({ \
+			char* dst = NULL; \
+			if ( (org) && (copylen) ) { \
+				dst = alloca( (copylen) + 1); \
+				if (dst) { \
+					strncpy(dst, (org), (copylen)); \
+					dst[ (copylen) ] = '\0'; \
+				} \
+			} \
+			dst; \
+		})
+
 #else
 	#define sfq_stradup(org) \
 		sfq_safe_strcpy( alloca( strlen( (org) ) + 1 ), (org) )
 
 	extern char* sfq_safe_strcpy(char* dst, const char* org);
+
 #endif
 
 #ifdef __cplusplus

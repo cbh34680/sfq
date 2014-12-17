@@ -3,4 +3,5 @@
 *.bin
 *.dat
 .*.swp
+*.log
 noname

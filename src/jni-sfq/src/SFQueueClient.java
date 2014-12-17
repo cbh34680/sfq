@@ -2,6 +2,9 @@ package jp.co.iret.sfq;
 
 public abstract class SFQueueClient implements SFQueueClientInterface
 {
+	static final int SFQ_RC_SUCCESS		= 0;
+	static final int SFQ_RC_FATAL_MIN	= 21;
+
 	SFQueueClient(String quename, boolean throwException)
 	{
 		quename_ = quename;
