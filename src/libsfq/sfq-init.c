@@ -1,9 +1,9 @@
 #include "sfq-lib.h"
 
-static bool pwd_nam2id(const char* queuser, const char* quegroup,
+static sfq_bool pwd_nam2id(const char* queuser, const char* quegroup,
 	uid_t* queuserid_ptr, gid_t* quegroupid_ptr);
 
-static bool caps_isset(cap_value_t cap);
+static sfq_bool caps_isset(cap_value_t cap);
 
 int sfq_init(const char* querootdir, const char* quename, const struct sfq_queue_init_params* qip)
 {
@@ -17,20 +17,18 @@ SFQ_ENTP_ENTER
 	size_t pi_size = 0;
 	size_t procs_size = 0;
 	size_t elmseg_start_pos = 0;
-	bool b = false;
+	sfq_bool b = SFQ_false;
 
 	uid_t euid = (uid_t)-1;
 	gid_t egid = (uid_t)-1;
 	uid_t queuserid = (uid_t)-1;
 	gid_t quegroupid = (uid_t)-1;
-	bool chmod_GaW = false;
+	sfq_bool chmod_GaW = SFQ_false;
 
 	struct sfq_queue_create_params qcp;
 	struct sfq_file_header qfh;
 
 /* initialize */
-	errno = 0;
-
 	qfh_size = sizeof(qfh);
 	eh_size = sizeof(struct sfq_e_header);
 	pi_size = sizeof(struct sfq_process_info);
@@ -45,8 +43,9 @@ SFQ_ENTP_ENTER
 queue header の初期値を設定
 */
 
-	strcpy(qfh.magicstr, SFQ_MAGICSTR);
-	qfh.qfh_size = qfh_size;
+	strcpy(qfh.qfs.magicstr, SFQ_MAGICSTR);
+	qfh.qfs.qfh_size = qfh_size;
+
 	qfh.qh.dval.questate = qip->questate;
 	strcpy(qfh.last_qhd1.lastoper, "---");
 	strcpy(qfh.last_qhd2.lastoper, "---");
@@ -72,7 +71,7 @@ queue header の初期値を設定
 				/* chown queuserid.quegroupid */
 				/* chmod g+w */
 
-				chmod_GaW= true;
+				chmod_GaW= SFQ_true;
 			}
 			else
 			{
@@ -84,7 +83,7 @@ queue header の初期値を設定
 			/* chown root.quegroupid */
 			/* chmod g+w */
 
-			chmod_GaW= true;
+			chmod_GaW= SFQ_true;
 		}
 		else
 		{
@@ -118,7 +117,7 @@ root の場合、"-U" か "-G" の指定があるときのみ通過させる
 
 			/* chmod g+w */
 
-			chmod_GaW = true;
+			chmod_GaW = SFQ_true;
 		}
 
 		SFQ_UNSET_UID(queuserid);
@@ -174,10 +173,10 @@ root の場合、"-U" か "-G" の指定があるときのみ通過させる
 	qcp.quegroupid = quegroupid;
 	qcp.chmod_GaW = chmod_GaW;
 
-	qo = sfq_create_queue(&qcp);
+	qo = sfq_open_queue_wo(&qcp);
 	if (! qo)
 	{
-		SFQ_FAIL(EA_OPENFILE, "sfq_create_queue");
+		SFQ_FAIL(EA_OPENQUEUE, "sfq_create_queue");
 	}
 
 	if (procs)
@@ -238,7 +237,7 @@ SFQ_ENTP_LEAVE
 	return SFQ_LIB_RC();
 }
 
-static bool pwd_nam2id(const char* queuser, const char* quegroup,
+static sfq_bool pwd_nam2id(const char* queuser, const char* quegroup,
 	uid_t* queuserid_ptr, gid_t* quegroupid_ptr)
 {
 	long sysmax = 0;
@@ -311,9 +310,9 @@ SFQ_LIB_LEAVE
 /*
 https://github.com/dotcloud/lxc/blob/master/src/lxc/caps.c
 */
-static bool caps_isset(cap_value_t cap)
+static sfq_bool caps_isset(cap_value_t cap)
 {
-	bool ret = false;
+	sfq_bool ret = SFQ_false;
 
 #ifdef __GNUC__
 	cap_t cap_p = NULL;

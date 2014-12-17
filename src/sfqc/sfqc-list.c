@@ -3,7 +3,7 @@
 #define _T_	"\t"
 #define LF	"\n"
 
-void print_element(ulong order, const struct sfq_value* val, void* userdata)
+void print_element(ulong order, off_t elm_pos, const struct sfq_value* val, void* userdata)
 {
 	int irc = 0;
 	struct tm tmp;
@@ -23,8 +23,8 @@ void print_element(ulong order, const struct sfq_value* val, void* userdata)
 	irc = sfq_alloc_print_value(val, &pval);
 	if (irc == SFQ_RC_SUCCESS)
 	{
-		printf("%lu" _T_ "%zu" _T_ "%s" _T_ "%s" _T_ "%s" _T_       "%s" _T_       "%s" _T_       "%s" _T_       "%s" _T_       "%u" _T_           "%zu" _T_          "%s"                LF,
-		       order,    pval.id,  dt,      uuid_s,  pval.execpath, pval.execargs, pval.metatext, pval.soutpath, pval.serrpath, val->payload_type, val->payload_size, (char*)pval.payload);
+		printf("%lu" _T_ "%zu" _T_ "%zu" _T_ "%s" _T_ "%s" _T_ "%s" _T_       "%s" _T_       "%s" _T_       "%s" _T_       "%s" _T_       "%u" _T_           "%zu" _T_          "%s"                LF,
+		       order,    elm_pos,  pval.id,  dt,      uuid_s,  pval.execpath, pval.execargs, pval.metatext, pval.soutpath, pval.serrpath, val->payload_type, val->payload_size, (char*)pval.payload);
 
 		sfq_free_value(&pval);
 	}
@@ -48,7 +48,7 @@ SFQC_MAIN_ENTER
 	bzero(&pgargs, sizeof(pgargs));
 
 /* */
-	irc = sfqc_parse_program_args(argc, argv, "D:N:", false, &pgargs);
+	irc = sfqc_parse_program_args(argc, argv, "D:N:r123456789", SFQ_false, &pgargs);
 	if (irc != 0)
 	{
 		message = "parse_program_args: parse error";
@@ -56,7 +56,9 @@ SFQC_MAIN_ENTER
 		goto EXIT_LABEL;
 	}
 
-	irc = sfq_map(pgargs.querootdir, pgargs.quename, print_element, &cnt);
+	irc = sfq_map(pgargs.querootdir, pgargs.quename, print_element, &cnt,
+		pgargs.reverse, pgargs.loop_limit);
+
 	if (irc != SFQ_RC_SUCCESS)
 	{
 		if (irc != SFQ_RC_W_NOELEMENT)
@@ -67,17 +69,24 @@ SFQC_MAIN_ENTER
 		}
 	}
 
-	if (cnt == 0)
+	if (pgargs.loop_limit)
 	{
-		fprintf(stderr, "element does not exist in the queue\n");
-	}
-	else if (cnt == 1)
-	{
-		fprintf(stderr, "\nthere is one element in the queue\n");
+		puts("");
 	}
 	else
 	{
-		fprintf(stderr, "\nthere are %zu elements in the queue\n", cnt);
+		if (cnt == 0)
+		{
+			printf("element does not exist in the queue\n");
+		}
+		else if (cnt == 1)
+		{
+			printf("\nthere is one element in the queue\n");
+		}
+		else
+		{
+			printf("\nthere are %zu elements in the queue\n", cnt);
+		}
 	}
 
 EXIT_LABEL:

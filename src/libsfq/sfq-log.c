@@ -306,10 +306,10 @@ fprintf(stderr, "\tsfq_mkdir_p(%s) dir [cwd=%s path=%s perm=%x]\n", ext, cwd, di
 
 						if (sfq_mkdir_p(dir, dir_perm))
 						{
-							bool firstOpen = false;
+							sfq_bool firstOpen = SFQ_false;
 							struct stat stbuf;
 
-							firstOpen = (stat(freopen_path, &stbuf) == 0) ? false : true;
+							firstOpen = (stat(freopen_path, &stbuf) == 0) ? SFQ_false : SFQ_true;
 
 fprintf(stderr, "\tfreopen(%s) file [cwd=%s path=%s mode=%s first=%d]\n", ext, cwd, freopen_path, freopen_mode, firstOpen);
 
@@ -375,7 +375,7 @@ fprintf(stderr, "\tre-open(%s) [mode=wb path=/dev/null]\n", ext);
 	}
 }
 
-static bool output_reopen_4proc(FILE* fp, const char* logdir, ushort slotno, const char* ext, mode_t file_perm)
+static sfq_bool output_reopen_4proc(FILE* fp, const char* logdir, ushort slotno, const char* ext, mode_t file_perm)
 {
 	char* wpath = NULL;
 	size_t wpath_size = 0;
@@ -395,11 +395,11 @@ static bool output_reopen_4proc(FILE* fp, const char* logdir, ushort slotno, con
 	wpath = alloca(wpath_size);
 	if (wpath)
 	{
-		bool firstOpen = false;
+		sfq_bool firstOpen = SFQ_false;
 
 		snprintf(wpath, wpath_size, "%s/%u.%s", logdir, slotno, ext);
 
-		firstOpen = (stat(wpath, &stbuf) == 0) ? false : true;
+		firstOpen = (stat(wpath, &stbuf) == 0) ? SFQ_false : SFQ_true;
 
 		if (freopen(wpath, "at", fp))
 		{
@@ -417,17 +417,17 @@ static bool output_reopen_4proc(FILE* fp, const char* logdir, ushort slotno, con
 				}
 			}
 
-			return true;
+			return SFQ_true;
 		}
 	}
 
-	return false;
+	return SFQ_false;
 }
 
 void sfq_reopen_4proc(const char* logdir, ushort slotno, questate_t questate, mode_t file_perm)
 {
-	bool sout_ok = false;
-	bool serr_ok = false;
+	sfq_bool sout_ok = SFQ_false;
+	sfq_bool serr_ok = SFQ_false;
 
 	/* stdio */
 	freopen("/dev/null", "rb", stdin);
@@ -439,7 +439,7 @@ void sfq_reopen_4proc(const char* logdir, ushort slotno, questate_t questate, mo
 		{
 			if (output_reopen_4proc(stdout, logdir, slotno, "out", file_perm))
 			{
-				sout_ok = true;
+				sout_ok = SFQ_true;
 			}
 		}
 
@@ -448,7 +448,7 @@ void sfq_reopen_4proc(const char* logdir, ushort slotno, questate_t questate, mo
 		{
 			if (output_reopen_4proc(stderr, logdir, slotno, "err", file_perm))
 			{
-				serr_ok = true;
+				serr_ok = SFQ_true;
 			}
 		}
 	}

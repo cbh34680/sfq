@@ -20,7 +20,7 @@ SFQC_MAIN_ENTER
 	bzero(&qip, sizeof(qip));
 
 /* */
-	irc = sfqc_parse_program_args(argc, argv, "D:N:S:L:B:U:G:oe", false, &pgargs);
+	irc = sfqc_parse_program_args(argc, argv, "D:N:S:L:B:U:G:oe", SFQ_false, &pgargs);
 	if (irc != 0)
 	{
 		message = "parse_program_args: parse error";

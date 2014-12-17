@@ -274,7 +274,7 @@ int get_ul_bytesize(const char* str, unsigned long* ul_ptr, char** e_ptr)
 	pgargs->MEMBER_ = c;
 
 int sfqc_parse_program_args(int argc, char** argv, const char* optstring,
-	bool use_rest, struct sfqc_program_args* pgargs)
+	sfq_bool use_rest, struct sfqc_program_args* pgargs)
 {
 	int irc = 1;
 	int opt = 0;
@@ -395,7 +395,27 @@ int sfqc_parse_program_args(int argc, char** argv, const char* optstring,
 
 			case 'q':
 			{
-				pgargs->quiet = true;
+				pgargs->quiet = SFQ_true;
+				break;
+			}
+
+			case 'r':
+			{
+				pgargs->reverse = SFQ_true;
+				break;
+			}
+
+			case '1':
+			case '2':
+			case '3':
+			case '4':
+			case '5':
+			case '6':
+			case '7':
+			case '8':
+			case '9':
+			{
+				pgargs->loop_limit = (opt - '0');
 				break;
 			}
 

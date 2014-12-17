@@ -4,7 +4,7 @@
 	#define PRINT_OPERATE_HIST1	(1)
 	#define PRINT_OPERATE_HIST2	(1)
 #else
-	#define PRINT_OPERATE_HIST1	(0)
+	#define PRINT_OPERATE_HIST1	(1)
 	#define PRINT_OPERATE_HIST2	(0)
 #endif
 
@@ -76,7 +76,7 @@ void sfq_print_sizes(void)
 	long sc_arg_max = sysconf(_SC_ARG_MAX);
 
 	fprintf(stderr, "! [print_sizes]\n");
-	fprintf(stderr, "! sizeof(bool)                = %zu\n", sizeof(bool));
+	fprintf(stderr, "! sizeof(sfq_bool)                = %zu\n", sizeof(sfq_bool));
 	fprintf(stderr, "! sizeof(int)                 = %zu\n", sizeof(int));
 	fprintf(stderr, "! sizeof(long)                = %zu\n", sizeof(long));
 	fprintf(stderr, "! sizeof(void*)               = %zu\n", sizeof(void*));
@@ -109,8 +109,8 @@ void sfq_print_sizes(void)
 static void sfq_print_qh_dval_(const struct sfq_qh_dval* p, char c)
 {
 	fprintf(stderr, "%c [print_q_header:dynv]\n", c);
-	fprintf(stderr, "%c q_header.elm_last_push_pos  = %zu\n", c, p->elm_last_push_pos);
-	fprintf(stderr, "%c q_header.elm_new_push_pos   = %zu\n", c, p->elm_new_push_pos);
+	fprintf(stderr, "%c q_header.elm_next_pop_pos   = %zu\n", c, p->elm_next_pop_pos);
+	fprintf(stderr, "%c q_header.elm_next_push_pos  = %zu\n", c, p->elm_next_push_pos);
 	fprintf(stderr, "%c q_header.elm_next_shift_pos = %zu\n", c, p->elm_next_shift_pos);
 	fprintf(stderr, "%c q_header.elm_num            = %zu\n", c, p->elm_num);
 	fprintf(stderr, "%c q_header.elm_lastid         = %zu\n", c, p->elm_lastid);
@@ -124,8 +124,8 @@ static void sfq_print_qh_dval_(const struct sfq_qh_dval* p, char c)
 void sfq_print_qf_header(const struct sfq_file_header* p)
 {
 	fprintf(stderr, "# [print_qf_header:conf]\n");
-	fprintf(stderr, "# qf_header.magicstr          = %s\n", p->magicstr);
-	fprintf(stderr, "# qf_header.qfh_size          = %u\n", p->qfh_size);
+	fprintf(stderr, "# qf_header.qfs.magicstr      = %s\n", p->qfs.magicstr);
+	fprintf(stderr, "# qf_header.qfs.qfh_size      = %u\n", p->qfs.qfh_size);
 	fprintf(stderr, "#\n");
 	sfq_print_q_header(&p->qh);
 
@@ -173,7 +173,6 @@ void sfq_print_e_header(const struct sfq_e_header* p)
 	fprintf(stderr, "# element.pushtime            = %zu\n", p->pushtime);
 	fprintf(stderr, "# element.uuid                = %s\n",  uuid_s);
 	fprintf(stderr, "# element.payload_type        = %u\n",  p->payload_type);
-	fprintf(stderr, "#\n");
 	fprintf(stderr, "# element.execpath_size       = %u\n",  p->execpath_size);
 	fprintf(stderr, "# element.execargs_size       = %u\n",  p->execargs_size);
 	fprintf(stderr, "# element.metatext_size       = %u\n",  p->metatext_size);

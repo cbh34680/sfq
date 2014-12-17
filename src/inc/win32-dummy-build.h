@@ -17,7 +17,6 @@ typedef int			sem_t;
 typedef int			pid_t;
 typedef unsigned short		ushort;
 typedef unsigned int		uint;
-typedef unsigned char		bool;
 typedef long			ssize_t;
 typedef int			mode_t;
 typedef int			uid_t;

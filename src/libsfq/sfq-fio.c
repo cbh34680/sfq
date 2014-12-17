@@ -1,5 +1,51 @@
 #include "sfq-lib.h"
 
+static sfq_bool mkdir_withUGW(const char* dir, const struct sfq_queue_create_params* qcp)
+{
+	int irc = -1;
+
+	mode_t dir_perm = (mode_t)-1;
+
+SFQ_LIB_ENTER
+
+	dir_perm = (S_IRUSR | S_IWUSR | S_IXUSR);
+	if (qcp->chmod_GaW)
+	{
+		dir_perm |= (S_ISGID | S_IRGRP | S_IWGRP | S_IXGRP);
+	}
+
+	irc = mkdir(dir, dir_perm);
+	if (irc != 0)
+	{
+		SFQ_FAIL(ES_MKDIR, "%s: make directory failed, check permission", dir);
+	}
+
+	if (SFQ_ISSET_UID(qcp->queuserid) || SFQ_ISSET_GID(qcp->quegroupid))
+	{
+		irc = chown(dir, qcp->queuserid, qcp->quegroupid);
+		if (irc != 0)
+		{
+			SFQ_FAIL(ES_CHOWN, "chown");
+		}
+	}
+
+/*
+chown() を実行すると sticky-bit が外れるので
+改めて chmod を実行する。
+
+--> オプショナルな感があるので、失敗しても無視
+*/
+
+	chmod(dir, dir_perm);
+
+SFQ_LIB_CHECKPOINT
+
+SFQ_LIB_LEAVE
+
+	return SFQ_LIB_IS_SUCCESS();
+}
+
+
 #ifdef SFQ_SEMUNLOCK_AT_SIGCATCH
 /*
 セマフォのロックを解除するシグナルハンドラ
@@ -16,7 +62,7 @@ static void unlock_semaphore_sighandler(int signo)
 #endif
 
 static struct sfq_queue_object* open_queue_(const char* querootdir, const char* quename,
-	const char* fopen_mode)
+	sfq_uchar queue_openmode)
 {
 SFQ_LIB_ENTER
 
@@ -25,6 +71,8 @@ SFQ_LIB_ENTER
 	FILE* fp = NULL;
 
 	mode_t save_umask = (mode_t)-1;
+	sfq_bool b = SFQ_false;
+	const char* fopen_mode = NULL;
 
 #ifdef SFQ_SEMUNLOCK_AT_SIGCATCH
 	sighandler_t save_handler_SIGINT = NULL;
@@ -32,13 +80,7 @@ SFQ_LIB_ENTER
 	sighandler_t save_handler_SIGHUP = NULL;
 #endif
 
-	bool b = false;
-
-/* check argument */
-	if (! fopen_mode)
-	{
-		SFQ_FAIL(EA_FUNCARG, "arg(fopen_mode) is null");
-	}
+	assert(queue_openmode);
 
 /* create names */
 	om = sfq_alloc_open_names(querootdir, quename);
@@ -81,11 +123,69 @@ SFQ_LIB_ENTER
 #endif
 
 /* open queue-file */
+	switch (queue_openmode)
+	{
+		case (SFQ_FOM_READ | SFQ_FOM_WRITE):
+		{
+			fopen_mode = "rb+";
+			break;
+		}
+		case SFQ_FOM_READ:
+		{
+			fopen_mode = "rb";
+			break;
+		}
+		case SFQ_FOM_WRITE:
+		{
+			fopen_mode = "wb";
+			break;
+		}
+	}
+
+	assert(fopen_mode);
+
 	fp = fopen(om->quefile, fopen_mode);
 	if (! fp)
 	{
 		SFQ_FAIL(ES_FILEOPEN, "file open error '%s' (systemd[PrivateTmp=true] enable?)",
 			om->quefile);
+	}
+
+/* */
+	if (queue_openmode & SFQ_FOM_READ)
+	{
+		size_t iosize = 0; 
+		off_t orc = 0;
+		struct sfq_file_stamp qfs;
+
+		bzero(&qfs, sizeof(qfs));
+
+		iosize = fread(&qfs, sizeof(qfs), 1, fp);
+		if (iosize != 1)
+		{
+			SFQ_FAIL(ES_FILEIO, "FILE-READ(qfs)");
+		}
+
+/* check magic string */
+		if (strncmp(qfs.magicstr, SFQ_MAGICSTR, strlen(SFQ_MAGICSTR)) != 0)
+		{
+			SFQ_FAIL(EA_ILLEGALVER, "magicstr");
+		}
+
+/* check data version */
+		if (qfs.qfh_size != sizeof(struct sfq_file_header))
+		{
+			SFQ_FAIL(EA_ILLEGALVER, "sfq_file_header size not match");
+		}
+
+/*
+qfs を読んだので先頭に戻す
+*/
+		orc = fseeko(fp, 0, SEEK_SET);
+		if (orc == (off_t)-1)
+		{
+			SFQ_FAIL(ES_FILEIO, "fseeko");
+		}
 	}
 
 /* create response */
@@ -99,6 +199,7 @@ SFQ_LIB_ENTER
 	qo->fp = fp;
 	qo->opentime = time(NULL);
 	qo->save_umask = save_umask;
+	qo->queue_openmode = queue_openmode;
 
 #ifdef SFQ_SEMUNLOCK_AT_SIGCATCH
 	qo->save_handler_SIGINT = save_handler_SIGINT;
@@ -236,74 +337,15 @@ void sfq_close_queue(struct sfq_queue_object* qo)
 
 struct sfq_queue_object* sfq_open_queue_rw(const char* querootdir, const char* quename)
 {
-	struct sfq_queue_object* qo = open_queue_(querootdir, quename, "rb+");
-
-	if (qo)
-	{
-		qo->queue_openmode = (SFQ_FOM_READ | SFQ_FOM_WRITE);
-	}
-
-	return qo;
+	return open_queue_(querootdir, quename, (SFQ_FOM_READ | SFQ_FOM_WRITE));
 }
 
 struct sfq_queue_object* sfq_open_queue_ro(const char* querootdir, const char* quename)
 {
-	struct sfq_queue_object* qo = open_queue_(querootdir, quename, "rb");
-
-	if (qo)
-	{
-		qo->queue_openmode = (SFQ_FOM_READ);
-	}
-
-	return qo;
+	return open_queue_(querootdir, quename, SFQ_FOM_READ);
 }
 
-static bool mkdir_withUGW(const char* dir, const struct sfq_queue_create_params* qcp)
-{
-	int irc = -1;
-
-	mode_t dir_perm = (mode_t)-1;
-
-SFQ_LIB_ENTER
-
-	dir_perm = (S_IRUSR | S_IWUSR | S_IXUSR);
-	if (qcp->chmod_GaW)
-	{
-		dir_perm |= (S_ISGID | S_IRGRP | S_IWGRP | S_IXGRP);
-	}
-
-	irc = mkdir(dir, dir_perm);
-	if (irc != 0)
-	{
-		SFQ_FAIL(ES_MKDIR, "mkdir");
-	}
-
-	if (SFQ_ISSET_UID(qcp->queuserid) || SFQ_ISSET_GID(qcp->quegroupid))
-	{
-		irc = chown(dir, qcp->queuserid, qcp->quegroupid);
-		if (irc != 0)
-		{
-			SFQ_FAIL(ES_CHOWN, "chown");
-		}
-	}
-
-/*
-chown() を実行すると sticky-bit が外れるので
-改めて chmod を実行する。
-
---> オプショナルな感があるので、失敗しても無視
-*/
-
-	chmod(dir, dir_perm);
-
-SFQ_LIB_CHECKPOINT
-
-SFQ_LIB_LEAVE
-
-	return SFQ_LIB_IS_SUCCESS();
-}
-
-struct sfq_queue_object* sfq_create_queue(const struct sfq_queue_create_params* qcp)
+struct sfq_queue_object* sfq_open_queue_wo(const struct sfq_queue_create_params* qcp)
 {
 SFQ_LIB_ENTER
 
@@ -311,7 +353,7 @@ SFQ_LIB_ENTER
 	struct sfq_open_names* om = NULL;
 
 	mode_t file_perm = 0;
-	bool b = false;
+	sfq_bool b = SFQ_false;
 
 	int irc = -1;
 	struct stat stbuf;
@@ -323,7 +365,7 @@ SFQ_LIB_ENTER
 		SFQ_FAIL(EA_CREATENAMES, "sfq_alloc_open_names");
 	}
 
-/* queue-dir not exists */
+/* queue-rootdir not exists */
 	irc = stat(om->querootdir, &stbuf);
 	if (irc != 0)
 	{
@@ -331,7 +373,7 @@ SFQ_LIB_ENTER
 		SFQ_FAIL(EA_PATHNOTEXIST, "dir not exist '%s'", om->querootdir);
 	}
 
-/* queue file, already exists */
+/* queue-dir already exists */
 	irc = stat(om->quedir, &stbuf);
 	if (irc == 0)
 	{
@@ -339,7 +381,7 @@ SFQ_LIB_ENTER
 		SFQ_FAIL(EA_EXISTQUEUE, "dir already exist '%s'", om->quedir);
 	}
 
-/* delete old lock */
+/* force delete old lock */
 	irc = sem_unlink(om->semname);
 	if (irc == -1)
 	{
@@ -351,7 +393,7 @@ SFQ_LIB_ENTER
 		}
 	}
 
-/* make directories */
+/* make directory tree */
 	b = mkdir_withUGW(om->quedir, qcp);
 	if (! b)
 	{
@@ -377,10 +419,11 @@ SFQ_LIB_ENTER
 	}
 
 /* open queue (w) */
-	qo = open_queue_(om->querootdir, om->quename, "wb");
+	qo = open_queue_(om->querootdir, om->quename, SFQ_FOM_WRITE);
 	if (! qo)
 	{
-		SFQ_FAIL(EA_OPENFILE, "open_queue_");
+		SFQ_FAIL(EA_OPENQUEUE, "queue open error name=[%s] file=[%s/%s]",
+			om->quename, om->quedir, om->quefile);
 	}
 
 /* change owner/group and permission */
@@ -406,9 +449,6 @@ SFQ_LIB_ENTER
 		}
 	}
 
-/* */
-	qo->queue_openmode = (SFQ_FOM_WRITE);
-
 SFQ_LIB_CHECKPOINT
 
 	sfq_free_open_names(om);
@@ -425,12 +465,12 @@ SFQ_LIB_LEAVE
 	return qo;
 }
 
-bool sfq_writeqfh(struct sfq_queue_object* qo, struct sfq_file_header* qfh,
+sfq_bool sfq_writeqfh(struct sfq_queue_object* qo, struct sfq_file_header* qfh,
 	const struct sfq_process_info* procs, const char* lastoper)
 {
 SFQ_LIB_ENTER
 
-	bool b = false;
+	sfq_bool b = SFQ_false;
 
 	if (! qo)
 	{
@@ -476,13 +516,13 @@ SFQ_LIB_LEAVE
 	return SFQ_LIB_IS_SUCCESS();
 }
 
-bool sfq_readqfh(struct sfq_queue_object* qo, struct sfq_file_header* qfh,
+sfq_bool sfq_readqfh(struct sfq_queue_object* qo, struct sfq_file_header* qfh,
 	struct sfq_process_info** procs_ptr)
 {
 SFQ_LIB_ENTER
 
 	struct sfq_process_info* procs = NULL;
-	bool b = false;
+	sfq_bool b = SFQ_false;
 
 /* */
 	if (! qo)
@@ -497,18 +537,6 @@ SFQ_LIB_ENTER
 	if (! b)
 	{
 		SFQ_FAIL(EA_SEEKSETIO, "sfq_seek_set_and_read(qfh)");
-	}
-
-/* check magic string */
-	if (strncmp(qfh->magicstr, SFQ_MAGICSTR, strlen(SFQ_MAGICSTR)) != 0)
-	{
-		SFQ_FAIL(EA_ILLEGALVER, "magicstr");
-	}
-
-/* check data version */
-	if (qfh->qfh_size != sizeof(*qfh))
-	{
-		SFQ_FAIL(EA_ILLEGALVER, "qfh_size not match");
 	}
 
 /* read process-table */
@@ -575,11 +603,11 @@ SFQ_LIB_LEAVE
  *    - serrpath (eh.serrpath_size >= 0) ... nullterm string
  *
  */
-bool sfq_writeelm(struct sfq_queue_object* qo, off_t seek_pos, const struct sfq_ioelm_buff* ioeb)
+sfq_bool sfq_writeelm(struct sfq_queue_object* qo, off_t seek_pos, const struct sfq_ioelm_buff* ioeb)
 {
 SFQ_LIB_ENTER
 
-	bool b = false;
+	sfq_bool b = SFQ_false;
 	size_t iosize = 0;
 
 	if (! qo)
@@ -672,11 +700,11 @@ SFQ_LIB_LEAVE
 	return SFQ_LIB_IS_SUCCESS();
 }
 
-bool sfq_readelm(struct sfq_queue_object* qo, off_t seek_pos, struct sfq_ioelm_buff* ioeb)
+sfq_bool sfq_readelm(struct sfq_queue_object* qo, off_t seek_pos, struct sfq_ioelm_buff* ioeb)
 {
 SFQ_LIB_ENTER
 
-	bool b = false;
+	sfq_bool b = SFQ_false;
 	size_t iosize = 0;
 	size_t eh_size = 0;
 
@@ -848,74 +876,74 @@ void sfq_free_ioelm_buff(struct sfq_ioelm_buff* ioeb)
 	bzero(ioeb, sizeof(*ioeb));
 }
 
-bool sfq_seek_set_and_read(FILE* fp, off_t set_pos, void* mem, size_t mem_size)
+sfq_bool sfq_seek_set_and_read(FILE* fp, off_t set_pos, void* mem, size_t mem_size)
 {
 	off_t orc = 0;
 	size_t iosize = 0;
 
 	if (! fp)
 	{
-		return false;
+		return SFQ_false;
 	}
 
 	if (! mem)
 	{
-		return false;
+		return SFQ_false;
 	}
 
 	if (mem_size == 0)
 	{
-		return false;
+		return SFQ_false;
 	}
 
 	orc = fseeko(fp, set_pos, SEEK_SET);
 	if (orc == (off_t)-1)
 	{
-		return false;
+		return SFQ_false;
 	}
 
 	iosize = fread(mem, mem_size, 1, fp);
 	if (iosize != 1)
 	{
-		return false;
+		return SFQ_false;
 	}
 
-	return true;
+	return SFQ_true;
 }
 
-bool sfq_seek_set_and_write(FILE* fp, off_t set_pos, const void* mem, size_t mem_size)
+sfq_bool sfq_seek_set_and_write(FILE* fp, off_t set_pos, const void* mem, size_t mem_size)
 {
 	off_t orc = 0;
 	size_t iosize = 0;
 
 	if (! fp)
 	{
-		return false;
+		return SFQ_false;
 	}
 
 	if (! mem)
 	{
-		return false;
+		return SFQ_false;
 	}
 
 	if (mem_size == 0)
 	{
-		return false;
+		return SFQ_false;
 	}
 
 	orc = fseeko(fp, set_pos, SEEK_SET);
 	if (orc == (off_t)-1)
 	{
-		return false;
+		return SFQ_false;
 	}
 
 	iosize = fwrite(mem, mem_size, 1, fp);
 	if (iosize != 1)
 	{
-		return false;
+		return SFQ_false;
 	}
 
-	return true;
+	return SFQ_true;
 }
 
 void sfq_qh_init_pos(struct sfq_q_header* p)
@@ -925,7 +953,7 @@ void sfq_qh_init_pos(struct sfq_q_header* p)
 		return;
 	}
 
-	p->dval.elm_last_push_pos = p->dval.elm_next_shift_pos = p->dval.elm_num = 0;
-	p->dval.elm_new_push_pos = p->sval.elmseg_start_pos;
+	p->dval.elm_next_pop_pos = p->dval.elm_next_shift_pos = p->dval.elm_num = 0;
+	p->dval.elm_next_push_pos = p->sval.elmseg_start_pos;
 }
 

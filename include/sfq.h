@@ -19,8 +19,12 @@
 extern "C" {
 #endif
 
+#define SFQ_true			(1)
+#define SFQ_false			(0)
+
 typedef unsigned char sfq_uchar;
 typedef unsigned char sfq_byte;
+typedef unsigned char sfq_bool;
 
 typedef ushort questate_t;
 typedef sfq_uchar payload_type_t;
@@ -37,9 +41,9 @@ enum
 
 	SFQ_RC_FATAL_MIN		= 21,
 	SFQ_RC_UNKNOWN,
+	SFQ_RC_EA_OPENQUEUE,
 	SFQ_RC_EA_FSIZESMALL,
 	SFQ_RC_EA_EXISTQUEUE,
-	SFQ_RC_EA_OPENFILE,
 	SFQ_RC_EA_FUNCARG,
 	SFQ_RC_EA_ILLEGALVER,
 	SFQ_RC_EA_ASSERT,
@@ -62,6 +66,8 @@ enum
 	SFQ_RC_EA_SEMEXISTS,
 	SFQ_RC_EA_LOCKSEMAPHORE,
 	SFQ_RC_EA_REGSEMAPHORE,
+	SFQ_RC_EA_DIRTYQUEFILE,
+	SFQ_RC_EA_UPDQFSDIRTY,
 
 	SFQ_RC_SYSERR_MIN		= 71,
 	SFQ_RC_ES_MEMALLOC,
@@ -140,38 +146,39 @@ struct sfq_value
 	const sfq_byte* payload;		/* 8 */
 };
 
-typedef void (*sfq_map_callback)(ulong order, const struct sfq_value* val, void* userdata);
+typedef void (*sfq_map_callback)(ulong order, off_t elm_pos, const struct sfq_value* val, void* userdata);
 
-extern int sfq_init(const char* querootdir, const char* quename,
+int sfq_init(const char* querootdir, const char* quename,
 	const struct sfq_queue_init_params* qip);
 
-extern int sfq_map(const char* querootdir, const char* quename,
-	sfq_map_callback callback, void* userdata);
+int sfq_map(const char* querootdir, const char* quename,
+	sfq_map_callback callback, void* userdata,
+	sfq_bool reverse, ulong loop_limit);
 
-extern int sfq_push(const char* querootdir, const char* quename, struct sfq_value* val);
-extern int sfq_pop(const char* querootdir, const char* quename, struct sfq_value* val);
-extern int sfq_shift(const char* querootdir, const char* quename, struct sfq_value* val);
-extern int sfq_info(const char* querootdir, const char* quename);
-extern int sfq_clear(const char* querootdir, const char* quename);
-extern int sfq_alloc_print_value(const struct sfq_value* bin, struct sfq_value* str);
-extern void sfq_free_value(struct sfq_value* p);
+int sfq_push(const char* querootdir, const char* quename, struct sfq_value* val);
+int sfq_pop(const char* querootdir, const char* quename, struct sfq_value* val);
+int sfq_shift(const char* querootdir, const char* quename, struct sfq_value* val);
+int sfq_info(const char* querootdir, const char* quename);
+int sfq_clear(const char* querootdir, const char* quename);
+int sfq_alloc_print_value(const struct sfq_value* bin, struct sfq_value* str);
+void sfq_free_value(struct sfq_value* p);
 
 /* short-cut */
-extern int sfq_push_text(const char* querootdir, const char* quename,
+int sfq_push_text(const char* querootdir, const char* quename,
 	const char* execpath, const char* execargs, const char* metatext,
 	const char* soutpath, const char* serrpath, uuid_t uuid,
 	const char* textdata);
 
-extern int sfq_push_binary(const char* querootdir, const char* quename,
+int sfq_push_binary(const char* querootdir, const char* quename,
 	const char* execpath, const char* execargs, const char* metatext,
 	const char* soutpath, const char* serrpath, uuid_t uuid,
 	const sfq_byte* payload, size_t payload_size);
 
-extern int sfq_get_questate(const char* querootdir, const char* quename, questate_t* questate_ptr);
-extern int sfq_set_questate(const char* querootdir, const char* quename, questate_t questate);
-extern size_t sfq_payload_len(const struct sfq_value* val);
+int sfq_get_questate(const char* querootdir, const char* quename, questate_t* questate_ptr);
+int sfq_set_questate(const char* querootdir, const char* quename, questate_t questate);
+size_t sfq_payload_len(const struct sfq_value* val);
 
-extern char* sfq_alloc_concat_n(int n, ...);
+char* sfq_alloc_concat_n(int n, ...);
 
 /* stack allocate and string copy */
 #ifdef __GNUC__
@@ -186,11 +193,27 @@ extern char* sfq_alloc_concat_n(int n, ...);
 			} \
 			dst; \
 		})
+
+
+	#define sfq_strandup(org, copylen) \
+		({ \
+			char* dst = NULL; \
+			if ( (org) && (copylen) ) { \
+				dst = alloca( (copylen) + 1); \
+				if (dst) { \
+					strncpy(dst, (org), (copylen)); \
+					dst[ (copylen) ] = '\0'; \
+				} \
+			} \
+			dst; \
+		})
+
 #else
 	#define sfq_stradup(org) \
 		sfq_safe_strcpy( alloca( strlen( (org) ) + 1 ), (org) )
 
 	extern char* sfq_safe_strcpy(char* dst, const char* org);
+
 #endif
 
 #ifdef __cplusplus

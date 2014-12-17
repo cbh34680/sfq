@@ -73,7 +73,7 @@ SFQC_MAIN_ENTER
 	atexit(release_heap);
 
 /* */
-	irc = sfqc_parse_program_args(argc, argv, "D:N:", true, &pgargs);
+	irc = sfqc_parse_program_args(argc, argv, "D:N:", SFQ_true, &pgargs);
 	if (irc != 0)
 	{
 		message = "parse_program_args: parse error";
@@ -99,7 +99,7 @@ SFQC_MAIN_ENTER
 	irc = sfq_get_questate(pgargs.querootdir, pgargs.quename, &questate);
 	if (irc != SFQ_RC_SUCCESS)
 	{
-		if ((modify_bit & SFQ_QST_DEV_SEMUNLOCK_ON) && (irc == SFQ_RC_EA_OPENFILE))
+		if ((modify_bit & SFQ_QST_DEV_SEMUNLOCK_ON) && (irc == SFQ_RC_EA_OPENQUEUE))
 		{
 /*
 セマフォの解除要求時はロックされているときなので、開けなくても OK

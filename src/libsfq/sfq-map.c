@@ -1,21 +1,20 @@
 #include "sfq-lib.h"
 
-int sfq_map(const char* querootdir, const char* quename, sfq_map_callback callback, void* userdata)
+int sfq_map(const char* querootdir, const char* quename, sfq_map_callback callback, void* userdata,
+	sfq_bool reverse, ulong loop_limit)
 {
 SFQ_ENTP_ENTER
 
 	struct sfq_queue_object* qo = NULL;
 
 	ulong num = 0;
-	bool b = false;
+	sfq_bool b = SFQ_false;
 	off_t elm_pos = 0;
 
 	struct sfq_file_header qfh;
 	struct sfq_ioelm_buff ioeb;
 
 /* initialize */
-	errno = 0;
-
 	bzero(&qfh, sizeof(qfh));
 	bzero(&ioeb, sizeof(ioeb));
 
@@ -23,7 +22,7 @@ SFQ_ENTP_ENTER
 	qo = sfq_open_queue_ro(querootdir, quename);
 	if (! qo)
 	{
-		SFQ_FAIL(EA_OPENFILE, "open_locked_file");
+		SFQ_FAIL(EA_OPENQUEUE, "sfq_open_queue_ro");
 	}
 
 /* read file-header */
@@ -48,9 +47,22 @@ SFQ_ENTP_ENTER
 	}
 
 /* loop elements */
-	for (num=0, elm_pos=qfh.qh.dval.elm_next_shift_pos; elm_pos; num++)
+	elm_pos = reverse
+		? qfh.qh.dval.elm_next_pop_pos
+		: qfh.qh.dval.elm_next_shift_pos;
+
+	//for (num=0, elm_pos=qfh.qh.dval.elm_next_shift_pos; elm_pos; num++)
+	for (num=0; elm_pos; num++)
 	{
 		struct sfq_value val;
+
+		if (loop_limit)
+		{
+			if (num >= loop_limit)
+			{
+				break;
+			}
+		}
 
 		bzero(&val, sizeof(val));
 
@@ -62,12 +74,12 @@ SFQ_ENTP_ENTER
 
 #ifdef SFQ_DEBUG_BUILD
 		sfq_print_e_header(&ioeb.eh);
-
-		fprintf(stderr, "* [seek-pos=%zu]\n", elm_pos);
+#else
+		if (loop_limit)
+		{
+			sfq_print_e_header(&ioeb.eh);
+		}
 #endif
-
-/* copy next element-offset to pos */
-		elm_pos = ioeb.eh.next_elmpos;
 
 /* set val */
 		b = sfq_copy_ioeb2val(&ioeb, &val);
@@ -76,7 +88,13 @@ SFQ_ENTP_ENTER
 			SFQ_FAIL(EA_COPYVALUE, "sfq_copy_ioeb2val");
 		}
 
-		callback(num, &val, userdata);
+		callback(num, elm_pos, &val, userdata);
+
+/* copy next element-offset to pos */
+		//elm_pos = ioeb.eh.next_elmpos;
+		elm_pos = reverse
+			? ioeb.eh.prev_elmpos
+			: ioeb.eh.next_elmpos;
 
 		sfq_free_ioelm_buff(&ioeb);
 	}

@@ -100,17 +100,12 @@ class SFQueueClientLocal extends SFQueueClient
 	{
 		if (extension_loaded('wrap_libsfq'))
 		{
+			parent::__construct($quename, $throwException);
+
 			if (isset($params['querootdir']))
 			{
 				$querootdir_ = $params['querootdir'];
 			}
-
-			if (isset($quename))
-			{
-				$quename_ = $quename;
-			}
-
-			parent::__construct($quename, $throwException);
 		}
 		else
 		{
@@ -167,12 +162,12 @@ class SFQueueClientLocal extends SFQueueClient
 	{
 		$this->clearLastError();
 
-		$param = [];
-		$rc = wrap_sfq_takeout($this->querootdir_, $this->quename_, $param, $funcname);
+		$params = [];
+		$rc = wrap_sfq_takeout($this->querootdir_, $this->quename_, $params, $funcname);
 
 		if ($this->isNativeSuccess_($rc))
 		{
-			return $param;
+			return $params;
 		}
 
 		return false;
@@ -246,7 +241,7 @@ class SFQueueClientRemote extends SFQueueClient
 
 class SFQueue
 {
-	static function newClient($quename=null, $params=[])
+	static function newClient($params=[], $quename=null)
 	{
 		if (isset($params['host']))
 		{
@@ -262,7 +257,7 @@ class SFQueue
 		}
 	}
 
-	static function newClientNotThrow($quename=null, $params=[])
+	static function newClientNotThrow($params=[], $quename=null)
 	{
 		if (isset($params['host']))
 		{
@@ -380,12 +375,12 @@ EOS;
 			],
 		];
 
-		$etest(SFQueue::newClient(null, $copt));
+		$etest(SFQueue::newClient($copt));
 		echo PHP_EOL;
 
 	// remote (not throw exception)
 
-		$test(SFQueue::newClientNotThrow(null, $copt));
+		$test(SFQueue::newClientNotThrow($copt));
 		echo PHP_EOL;
 	}
 }

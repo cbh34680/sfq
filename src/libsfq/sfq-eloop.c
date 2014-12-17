@@ -1,6 +1,6 @@
 #include "sfq-lib.h"
 
-static bool update_procstate(const struct sfq_eloop_params* elop,
+static sfq_bool update_procstate(const struct sfq_eloop_params* elop,
 	sfq_uchar procstate, int TO_state, questate_t* questate_ptr)
 {
 SFQ_LIB_ENTER
@@ -8,22 +8,17 @@ SFQ_LIB_ENTER
 	struct sfq_queue_object* qo = NULL;
 	struct sfq_process_info* procs = NULL;
 	struct sfq_process_info* proc = NULL;
-
-	bool b = false;
-	size_t procs_size = 0;
-	size_t pi_size = 0;
-
+	sfq_bool b = SFQ_false;
 	struct sfq_file_header qfh;
 
 /* initialize */
-	errno = 0;
 	bzero(&qfh, sizeof(qfh));
 
 /* open queue-file */
 	qo = sfq_open_queue_rw(elop->om_querootdir, elop->om_quename);
 	if (! qo)
 	{
-		SFQ_FAIL(EA_OPENFILE, "sfq_open_queue");
+		SFQ_FAIL(EA_OPENQUEUE, "sfq_open_queue_rw");
 	}
 
 /* read file-header */
@@ -77,14 +72,12 @@ SFQ_LIB_ENTER
 	}
 
 /* */
-	pi_size = sizeof(struct sfq_process_info);
-	procs_size = pi_size * qfh.qh.sval.procs_num;
 
 /* write process table */
-	b = sfq_seek_set_and_write(qo->fp, qfh.qh.sval.procseg_start_pos, procs, procs_size);
+	b = sfq_writeqfh(qo, &qfh, procs, "UPS");
 	if (! b)
 	{
-		SFQ_FAIL(EA_SEEKSETIO, "sfq_seek_set_and_write");
+		SFQ_FAIL(EA_WRITEQFH, "sfq_writeqfh");
 	}
 
 /* */
@@ -110,7 +103,7 @@ static void foreach_element(const struct sfq_eloop_params* elop)
 {
 SFQ_LIB_ENTER
 
-	bool b = false;
+	sfq_bool b = SFQ_false;
 	int shift_rc = SFQ_RC_SUCCESS;
 	ulong loop = 0;
 
@@ -128,9 +121,10 @@ fprintf(stderr, "# queue   = %s\n", elop->om_quename);
 fprintf(stderr, "# execlog = %s\n", elop->om_queexeclogdir);
 fprintf(stderr, "#\n");
 
+fprintf(stderr, "before update_procstate\n");
+
 	/* 状態を LOOPSTART に変更 */
 	b = update_procstate(elop, SFQ_PIS_LOOPSTART, 0, &questate);
-
 	if (! b)
 	{
 		SFQ_FAIL(EA_UPDSTATUS, "loop start");
@@ -256,19 +250,21 @@ fprintf(stderr, "loop(%zu) block-bottom [questate=%u]\n", loop, questate);
 
 SFQ_LIB_CHECKPOINT
 
+fprintf(stderr, "after loop [loop times=%zu]\n", loop);
+
 /*
 ここでの update_procstate() の失敗は無視するしかないが
 スロットが埋まったままになってしまうので、解除手段の検討が必要かも
 */
 	update_procstate(elop, SFQ_PIS_DONE, 0, NULL);
 
-fprintf(stderr, "after loop [loop times=%zu]\n", loop);
+fprintf(stderr, "after update_procstate\n");
 fprintf(stderr, "\n");
 
 SFQ_LIB_LEAVE
 }
 
-bool sfq_go_exec(const char* querootdir, const char* quename, ushort slotno, questate_t questate)
+sfq_bool sfq_go_exec(const char* querootdir, const char* quename, ushort slotno, questate_t questate)
 {
 	pid_t pid = (pid_t)-1;
 
@@ -349,6 +345,6 @@ bool sfq_go_exec(const char* querootdir, const char* quename, ushort slotno, que
 		exit (EXIT_SUCCESS);
 	}
 
-	return (pid > 0) ? true : false;
+	return (pid > 0) ? SFQ_true : SFQ_false;
 }
 
