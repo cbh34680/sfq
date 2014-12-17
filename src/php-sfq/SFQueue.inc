@@ -46,11 +46,19 @@ abstract class SFQueueClient implements SFQueueClientInterface
 {
 	function __construct($quename, $throwException)
 	{
-		$this->quename_ = $quename;
 		$this->throwException_ = $throwException;
 
-		$this->initialized_ = true;
-		$this->notInitialized_ = false;
+		if (is_null($quename) || is_string($quename))
+		{
+			$this->quename_ = $quename;
+
+			$this->initialized_ = true;
+			$this->notInitialized_ = false;
+		}
+		else
+		{
+			$this->throwException(1040);
+		}
 	}
 
 // protected:
@@ -241,7 +249,7 @@ class SFQueueClientRemote extends SFQueueClient
 
 class SFQueue
 {
-	static function newClient($params=[], $quename=null)
+	static function newClient($quename=null, $params=[])
 	{
 		if (isset($params['host']))
 		{
@@ -257,7 +265,7 @@ class SFQueue
 		}
 	}
 
-	static function newClientNotThrow($params=[], $quename=null)
+	static function newClientNotThrow($quename=null, $params=[])
 	{
 		if (isset($params['host']))
 		{
@@ -375,12 +383,12 @@ EOS;
 			],
 		];
 
-		$etest(SFQueue::newClient($copt));
+		$etest(SFQueue::newClient(null, $copt));
 		echo PHP_EOL;
 
 	// remote (not throw exception)
 
-		$test(SFQueue::newClientNotThrow($copt));
+		$test(SFQueue::newClientNotThrow(null, $copt));
 		echo PHP_EOL;
 	}
 }

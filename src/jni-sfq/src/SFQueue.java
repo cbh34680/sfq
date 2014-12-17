@@ -8,16 +8,22 @@ public class SFQueue
 	static SFQueueClientInterface newClient()
 		throws SFQueueClientException
 	{
-		return newClient(new HashMap<String, Object>(), null);
+		return newClient(null, new HashMap<String, Object>());
 	}
 
 	static SFQueueClientInterface newClient(Map<String, Object> params)
 		throws SFQueueClientException
 	{
-		return newClient(params, null);
+		return newClient(null, params);
 	}
 
-	static SFQueueClientInterface newClient(Map<String, Object> params, String quename)
+	static SFQueueClientInterface newClient(String quename)
+		throws SFQueueClientException
+	{
+		return newClient(quename, null);
+	}
+
+	static SFQueueClientInterface newClient(String quename, Map<String, Object> params)
 		throws SFQueueClientException
 	{
 		if (params.containsKey("host"))
