@@ -1,7 +1,7 @@
 /*.c
 /*.pc
 /?.php
-/wrap_libsfq
+/sfqc_php
 /php_smart_str.h
 /zend_API.h
 /zend_hash.h
