@@ -1,0 +1,7 @@
+<!ENTITY reference.sfqc-php.reference SYSTEM './sfqc-php/reference.xml'>
+<!ENTITY reference.sfqc-php.constants SYSTEM './sfqc-php/constants.xml'>
+<!ENTITY reference.sfqc-php.ini SYSTEM './sfqc-php/ini.xml'>
+<!ENTITY reference.sfqc-php.configure SYSTEM './sfqc-php/configure.xml'>
+<!ENTITY reference.sfqc-php.functions.wrap-sfq-push SYSTEM './sfqc-php/functions/wrap-sfq-push.xml'>
+<!ENTITY reference.sfqc-php.functions.wrap-sfq-takeout SYSTEM './sfqc-php/functions/wrap-sfq-takeout.xml'>
+<!ENTITY reference.sfqc-php.functions SYSTEM './functions.xml'>

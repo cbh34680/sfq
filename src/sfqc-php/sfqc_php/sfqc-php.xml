@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension name="sfqc_php" version="0.11.0" xmlns:xi="http://www.w3.org/2001/XInclude">
+  <summary>libsfq wrapper extension</summary>
+  <description><?data
+This is wrap_libsfq PHP extension module.
+  ?></description>
+
+  <maintainers>
+    <maintainer>
+      <user>cbh34680</user>
+      <name>cbh34680</name>
+      <email>cbh34680@iret.co.jp</email>
+      <role>lead</role>
+    </maintainer>
+  </maintainers>
+
+  <license>PHP</license>
+  <channel>__uri</channel>
+
+  <release>
+    <version>0.11.0</version>
+    <date>2014-12-08</date>
+    <state>stable</state>
+    <notes><?data
+- Initial release.
+    ?></notes>
+  </release>
+
+  <deps language="C" platform="unix">
+    <with name="libsfq" mode="pkg-config">
+      <header name="sfq.h" />
+    </with>
+  </deps>
+
+  <constants>
+    <constant type="int" name="SFQ_RC_SUCCESS"			value="SFQ_RC_SUCCESS" />
+    <constant type="int" name="SFQ_RC_W_NOELEMENT"		value="SFQ_RC_W_NOELEMENT" />
+    <constant type="int" name="SFQ_RC_W_NOSPACE"		value="SFQ_RC_W_NOSPACE" />
+    <constant type="int" name="SFQ_RC_W_ACCEPT_STOPPED"		value="SFQ_RC_W_ACCEPT_STOPPED" />
+    <constant type="int" name="SFQ_RC_W_TAKEOUT_STOPPED"	value="SFQ_RC_W_TAKEOUT_STOPPED" />
+    <constant type="int" name="SFQ_RC_FATAL_MIN"		value="SFQ_RC_FATAL_MIN" />
+
+    <constant type="int" name="SFQ_PLT_NULLTERM"		value="SFQ_PLT_NULLTERM" />
+    <constant type="int" name="SFQ_PLT_BINARY"			value="SFQ_PLT_BINARY" />
+    <constant type="int" name="SFQ_PLT_CHARARRAY"		value="SFQ_PLT_CHARARRAY" />
+  </constants>
+
+  <code position="top"><?data
+#include <ext/standard/php_smart_str.h>
+#include "../sfqc-php.h"
+  ?></code>
+
+  <xi:include href="sfqc-php_push.xi"    parse="xml" />
+  <xi:include href="sfqc-php_takeout.xi" parse="xml" />
+
+</extension>
