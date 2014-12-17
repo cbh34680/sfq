@@ -1,11 +1,19 @@
 
-TARGETI = include/sfq.h
-TARGETL = lib/libsfq.so lib/libsfqc.so
-TARGETE = bin/sfqc-init bin/sfqc-info bin/sfqc-list bin/sfqc-pusht bin/sfqc-pushb bin/sfqc-pop bin/sfqc-shift bin/sfqc-clear bin/sfqc-sets
+BASEI = include/sfq.h
+BASEL = lib/libsfq.so lib/libsfqc.so
+BASEX = bin/sfqc-init bin/sfqc-info bin/sfqc-list bin/sfqc-pusht bin/sfqc-pushb bin/sfqc-pop bin/sfqc-shift bin/sfqc-clear bin/sfqc-sets
 
-TARGET  = $(TARGETI) $(TARGETL) $(TARGETE)
+EXTNL = lib/sfqc_php.so lib/libsfqc-jni.so
 
-all: $(TARGET)
+TARGET_BASE = $(BASEI) $(BASEL) $(BASEX)
+TARGET_EXTN = $(EXTNL)
+
+
+all: $(TARGET_BASE)
+
+
+ext: $(TARGET_EXTN)
+
 
 include/sfq.h: src/inc/sfq.h
 	cp -p $^ include
@@ -14,6 +22,12 @@ lib/libsfq.so: src/libsfq/libsfq.so
 	cp -p $^ $@
 
 lib/libsfqc.so: src/sfqc/libsfqc.so
+	cp -p $^ $@
+
+lib/sfqc_php.so: src/sfqc-php/sfqc_php/modules/sfqc_php.so
+	cp -p $^ $@
+
+lib/libsfqc-jni.so: src/sfqc-jni/src/libsfqc-jni.so
 	cp -p $^ $@
 
 src/libsfq/libsfq.so:
@@ -54,7 +68,7 @@ debug:
 	make "MAKEOPT=debug"
 
 clean:
-	rm -f $(TARGET)
+	rm -f $(TARGET_BASE) $(TARGET_EXTN)
 	cd src/sfqc/; make clean
 	cd src/libsfq/; make clean
 

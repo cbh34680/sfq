@@ -1,0 +1,11 @@
+= 2014-12-17 20:20:07 =
+	sfq-fio.c(151)# open_queue_
+	reason=73 [file open error '/var/tmp/noname/data.sfq' (systemd[PrivateTmp=true] enable?)]
+	errno=2 [-----]
+
+= 2014-12-17 20:20:07 =
+	sfq-pop.c(32)# sfq_pop
+	reason=23 [sfq_open_queue_rw]
+	errno=2 [-----]
+
+23
