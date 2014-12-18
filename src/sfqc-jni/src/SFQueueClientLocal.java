@@ -21,12 +21,16 @@ public class SFQueueClientLocal extends SFQueueClient
 		}
 		catch (Throwable ta)
 		{
+String javaLibPath = System.getProperty("java.library.path");
+System.out.println(javaLibPath);
+			ta_ = ta;
 			dll_loaded = false;
 		}
 
 	};
 
 	static boolean dll_loaded;
+	static Throwable ta_;
 
 	String querootdir_;
 
@@ -41,7 +45,7 @@ public class SFQueueClientLocal extends SFQueueClient
 		}
 		else
 		{
-			throwException(1010);
+			throwException(1010, ta_.getMessage());
 		}
 	}
 

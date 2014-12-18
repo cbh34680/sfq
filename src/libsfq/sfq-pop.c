@@ -7,14 +7,18 @@ SFQ_ENTP_ENTER
 	struct sfq_queue_object* qo = NULL;
 
 	sfq_bool b = SFQ_false;
+#if 0
 	size_t eh_size = 0;
+#endif
 	off_t elm_pos = 0;
 
 	struct sfq_ioelm_buff ioeb;
 	struct sfq_file_header qfh;
 
 /* initialize */
+#if 0
 	eh_size = sizeof(struct sfq_e_header);
+#endif
 
 	bzero(&qfh, sizeof(qfh));
 	bzero(&ioeb, sizeof(ioeb));
@@ -84,6 +88,7 @@ SFQ_ENTP_ENTER
 	else
 	{
 /* update next-element-prev_elmpos */
+#if 0
 		struct sfq_e_header prev_eh;
 
 		b = sfq_seek_set_and_read(qo->fp, ioeb.eh.prev_elmpos, &prev_eh, eh_size);
@@ -100,6 +105,13 @@ SFQ_ENTP_ENTER
 		{
 			SFQ_FAIL(EA_SEEKSETIO, "sfq_seek_set_and_write(prev_eh)");
 		}
+#else
+		b = sfq_unlink_nextelm(qo, ioeb.eh.prev_elmpos);
+		if (! b)
+		{
+			SFQ_FAIL(EA_UNLINKELM, "sfq_unlink_nextelm");
+		}
+#endif
 
 /* update next shift pos */
 		qfh.qh.dval.elm_next_pop_pos = ioeb.eh.prev_elmpos;

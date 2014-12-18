@@ -14,7 +14,7 @@ pcp=$(readlink -f ../../lib/pkgconfig)
 
 copt="$(pkg-config $pcp/libsfq.pc --cflags --libs) -I/usr/java/default/include/ -I/usr/java/default/include/linux/"
 
-gcc -Wall -O2 -fPIC --shared -o bin/libsfqc-jni.so src/SFQueueClientLocal.c $copt
+gcc -Wall -O2 -fPIC --shared -o libsfqc-jni.so src/SFQueueClientLocal.c $copt
 
 jar cvfm sfqc-jni.jar manifest.cf -C bin/ .
 

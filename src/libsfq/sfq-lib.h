@@ -417,6 +417,9 @@ sfq_bool sfq_readqfh(struct sfq_queue_object* qo,
 sfq_bool sfq_writeqfh(struct sfq_queue_object* qo, struct sfq_file_header* qfh,
 	const struct sfq_process_info* procs, const char* lastoper);
 
+sfq_bool sfq_unlink_prevelm(struct sfq_queue_object* qo, off_t elmpos);
+sfq_bool sfq_unlink_nextelm(struct sfq_queue_object* qo, off_t elmpos);
+
 void sfq_output_reopen_4exec(FILE* fp, const time_t* now, const char* arg_wpath,
 	const char* logdir, const uuid_t uuid, ulong id, const char* ext, const char* env_key,
 	mode_t dir_perm, mode_t file_perm);
