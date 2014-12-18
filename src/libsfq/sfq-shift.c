@@ -7,19 +7,12 @@ SFQ_ENTP_ENTER
 	struct sfq_queue_object* qo = NULL;
 
 	sfq_bool b = SFQ_false;
-#if 0
-	size_t eh_size = 0;
-#endif
 	off_t elm_pos = 0;
 
 	struct sfq_ioelm_buff ioeb;
 	struct sfq_file_header qfh;
 
 /* initialize */
-#if 0
-	eh_size = sizeof(struct sfq_e_header);
-#endif
-
 	bzero(&qfh, sizeof(qfh));
 	bzero(&ioeb, sizeof(ioeb));
 
@@ -89,30 +82,11 @@ SFQ_ENTP_ENTER
 	else
 	{
 /* update next-element-prev_elmpos */
-#if 0
-		struct sfq_e_header next_eh;
-
-		b = sfq_seek_set_and_read(qo->fp, ioeb.eh.next_elmpos, &next_eh, eh_size);
-		if (! b)
-		{
-			SFQ_FAIL(EA_SEEKSETIO, "sfq_seek_set_and_read(next_eh)");
-		}
-
-		/* 次の要素の prev_elmpos に 0 を設定し、リンクを切る */
-		next_eh.prev_elmpos = 0;
-
-		b = sfq_seek_set_and_write(qo->fp, ioeb.eh.next_elmpos, &next_eh, eh_size);
-		if (! b)
-		{
-			SFQ_FAIL(EA_SEEKSETIO, "sfq_seek_set_and_write(next_eh)");
-		}
-#else
 		b = sfq_unlink_prevelm(qo, ioeb.eh.next_elmpos);
 		if (! b)
 		{
 			SFQ_FAIL(EA_UNLINKELM, "sfq_unlink_prevelm");
 		}
-#endif
 
 /* update next shift pos */
 		qfh.qh.dval.elm_next_shift_pos = ioeb.eh.next_elmpos;
