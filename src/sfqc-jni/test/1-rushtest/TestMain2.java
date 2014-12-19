@@ -55,16 +55,20 @@ o.println(name + "(" + type + "): stop");
 	static void doTest() throws Exception
 	{
 		Thread t1 = startThread(1);
+/*
 		Thread t2 = startThread(1);
 		Thread t3 = startThread(1);
 		Thread t4 = startThread(2);
 		Thread t5 = startThread(3);
+*/
 
 		t1.join();
+/*
 		t2.join();
 		t3.join();
 		t4.join();
 		t5.join();
+*/
 	}
 
 	public static void main(String[] args)
