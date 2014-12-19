@@ -1,7 +1,7 @@
 #include "sfq-lib.h"
 
 int sfq_map(const char* querootdir, const char* quename, sfq_map_callback callback, void* userdata,
-	sfq_bool reverse, ulong loop_limit)
+	sfq_bool reserve, ulong loop_limit)
 {
 SFQ_ENTP_ENTER
 
@@ -9,7 +9,10 @@ SFQ_ENTP_ENTER
 
 	ulong num = 0;
 	sfq_bool b = SFQ_false;
-	off_t elm_pos = 0;
+
+	off_t endpos = 0;
+	off_t currpos = 0;
+	off_t savepos = 0;
 
 	struct sfq_file_header qfh;
 	struct sfq_ioelm_buff ioeb;
@@ -38,23 +41,30 @@ SFQ_ENTP_ENTER
 		SFQ_FAIL_SILENT(W_NOELEMENT);
 	}
 
-#ifdef SFQ_DEBUG_BUILD
 	assert(qfh.qh.dval.elm_next_shift_pos);
-#endif
-	if (qfh.qh.dval.elm_next_shift_pos == 0)
-	{
-		SFQ_FAIL(EA_ASSERT, "qfh.qh.dval.elm_next_shift_pos == 0");
-	}
 
 /* loop elements */
-	elm_pos = reverse
+	currpos = reserve
 		? qfh.qh.dval.elm_next_pop_pos
 		: qfh.qh.dval.elm_next_shift_pos;
 
-	//for (num=0, elm_pos=qfh.qh.dval.elm_next_shift_pos; elm_pos; num++)
-	for (num=0; elm_pos; num++)
+	endpos = reserve
+		? qfh.qh.dval.elm_next_shift_pos
+		: qfh.qh.dval.elm_next_pop_pos;
+
+/*
+念のため currpos と savepos の両方を脱出条件としておく
+
+--> currpos はシグナルでの強制終了時に不正な値となることが考えられるのであてにしないこと
+--> currpos を条件から外した
+*/
+	for (num=0; /*currpos && */(savepos != endpos); num++)
 	{
 		struct sfq_value val;
+
+/* */
+		savepos = currpos;
+		bzero(&val, sizeof(val));
 
 		if (loop_limit)
 		{
@@ -64,9 +74,7 @@ SFQ_ENTP_ENTER
 			}
 		}
 
-		bzero(&val, sizeof(val));
-
-		b = sfq_readelm(qo, elm_pos, &ioeb);
+		b = sfq_readelm(qo, currpos, &ioeb);
 		if (! b)
 		{
 			SFQ_FAIL(EA_RWELEMENT, "sfq_readelm");
@@ -88,11 +96,10 @@ SFQ_ENTP_ENTER
 			SFQ_FAIL(EA_COPYVALUE, "sfq_copy_ioeb2val");
 		}
 
-		callback(num, elm_pos, &val, userdata);
+		callback(num, currpos, &val, userdata);
 
 /* copy next element-offset to pos */
-		//elm_pos = ioeb.eh.next_elmpos;
-		elm_pos = reverse
+		currpos = reserve
 			? ioeb.eh.prev_elmpos
 			: ioeb.eh.next_elmpos;
 
