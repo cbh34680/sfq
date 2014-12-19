@@ -42,10 +42,10 @@ SFQ_LIB_CHECKPOINT
 	free(procs);
 	procs = NULL;
 
-SFQ_ENTP_LEAVE
-
 	sfq_close_queue(qo);
 	qo = NULL;
+
+SFQ_ENTP_LEAVE
 
 	return SFQ_LIB_RC();
 }

@@ -128,10 +128,10 @@ SFQ_LIB_CHECKPOINT
 		sfq_free_ioelm_buff(&ioeb);
 	}
 
-SFQ_ENTP_LEAVE
-
 	sfq_close_queue(qo);
 	qo = NULL;
+
+SFQ_ENTP_LEAVE
 
 	return SFQ_LIB_RC();
 }

@@ -12,7 +12,7 @@ char* sfq_safe_strcpy(char* dst, const char* org)
 }
 #endif
 
-pid_t gettid(void)
+pid_t sfq_gettid(void)
 {
 	return syscall(SYS_gettid);
 }

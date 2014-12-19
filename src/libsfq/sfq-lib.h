@@ -129,7 +129,7 @@ SFQ_FAIL_CATCH_LABEL__:
 			"reason=%d [%s]\n\t" \
 			"errno=%d [%s]\n\n", \
 			nowstr__, __FILE__, fire_line__, __func__, \
-			getppid(), getpid(), gettid(), \
+			getppid(), getpid(), sfq_gettid(), \
 			fire_rc__, fire_reason__, \
 			fire_errno__, fire_errstr__); \
 	}
@@ -161,12 +161,14 @@ SFQ_FAIL_CATCH_LABEL__:
 #define SFQ_ENTP_ENTER \
 \
 SFQ_LIB_ENTER \
+	sfq_entp_critical_section_enter(); \
 	errno = 0;
 
 
 #define SFQ_ENTP_LEAVE \
 \
-SFQ_LIB_LEAVE
+SFQ_LIB_LEAVE \
+	sfq_entp_critical_section_leave();
 
 
 
@@ -326,7 +328,6 @@ struct sfq_open_names
 	const char* queproclogdir;
 	const char* queexeclogdir;
 	const char* semname;
-
 };
 
 struct sfq_queue_object
@@ -384,7 +385,10 @@ struct sfq_queue_create_params
  * 関数プロトタイプ
  *
  */
-pid_t gettid(void);
+pid_t sfq_gettid(void);
+
+void sfq_entp_critical_section_enter();
+void sfq_entp_critical_section_leave();
 
 void sfq_print_sizes(void);
 void sfq_print_qo(const struct sfq_queue_object* qo);
