@@ -5,7 +5,6 @@
  */
 static struct sem_name_obj_set* GLOBAL_snos_arr = NULL;
 static size_t GLOBAL_snos_arr_num = 0;
-static pthread_mutex_t GLOBAL_snos_arr_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /*
 void __attribute__((constructor)) localvars_create_(void);
@@ -17,13 +16,6 @@ void localvars_create_(void)
 
 void __attribute__((destructor))  localvars_destroy_(void);
 
-void localvars_destroy_(void)
-{
-	sfq_unlock_semaphore(NULL);
-
-	pthread_mutex_destroy(&GLOBAL_snos_arr_mutex);
-}
-
 /* */
 struct sem_name_obj_set
 {
@@ -31,7 +23,34 @@ struct sem_name_obj_set
 
 	const char* semname;
 	sem_t* semobj;
+
+	int refcount;
 };
+
+static sfq_bool is_registered_(const char* semname)
+{
+	sfq_bool ret = SFQ_false;
+	int i = 0;
+
+	assert(semname);
+	assert(semname[0]);
+
+	for (i=0; i<GLOBAL_snos_arr_num; i++)
+	{
+		struct sem_name_obj_set* snos = &GLOBAL_snos_arr[i];
+
+		if (snos->enable)
+		{
+			if (strcmp(semname, snos->semname) == 0)
+			{
+				ret = SFQ_true;
+				break;
+			}
+		}
+	}
+
+	return ret;
+}
 
 static sfq_bool register_(const char* semname, sem_t* semobj)
 {
@@ -42,9 +61,6 @@ static sfq_bool register_(const char* semname, sem_t* semobj)
 	char* semname_dup = NULL;
 
 SFQ_LIB_ENTER
-
-	pthread_mutex_lock(&GLOBAL_snos_arr_mutex);
-
 	snos_size = sizeof(struct sem_name_obj_set);
 
 	assert(semname);
@@ -84,38 +100,7 @@ SFQ_LIB_LEAVE
 		semname_dup = NULL;
 	}
 
-	pthread_mutex_unlock(&GLOBAL_snos_arr_mutex);
-
 	return SFQ_LIB_IS_SUCCESS();
-}
-
-static sfq_bool is_registered_(const char* semname)
-{
-	sfq_bool ret = SFQ_false;
-	int i = 0;
-
-	assert(semname);
-	assert(semname[0]);
-
-	pthread_mutex_lock(&GLOBAL_snos_arr_mutex);
-
-	for (i=0; i<GLOBAL_snos_arr_num; i++)
-	{
-		struct sem_name_obj_set* snos = &GLOBAL_snos_arr[i];
-
-		if (snos->enable)
-		{
-			if (strcmp(semname, snos->semname) == 0)
-			{
-				ret = SFQ_true;
-				break;
-			}
-		}
-	}
-
-	pthread_mutex_unlock(&GLOBAL_snos_arr_mutex);
-
-	return ret;
 }
 
 static sfq_bool unregister_(const char* semname)
@@ -123,8 +108,6 @@ static sfq_bool unregister_(const char* semname)
 	sfq_bool ret = SFQ_false;
 	int i = 0;
 	int loop_num = 0;
-
-	pthread_mutex_lock(&GLOBAL_snos_arr_mutex);
 
 	loop_num = GLOBAL_snos_arr_num;
 
@@ -181,48 +164,81 @@ static sfq_bool unregister_(const char* semname)
 		GLOBAL_snos_arr = NULL;
 	}
 
-	pthread_mutex_unlock(&GLOBAL_snos_arr_mutex);
-
 	return ret;
 }
 
-/*
-セマフォのアンロック
+/* -----------------------------------------------------------------------------
+ *
+ここから上の関数はグローバル変数を操作するため、利用前後で GLOBAL_snos_arr_mutex
+をロックする
 */
-void sfq_unlock_semaphore(const char* semname)
+static pthread_mutex_t GLOBAL_snos_arr_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+/*
+ * DLL アンロード時の処理
+ */
+void localvars_destroy_(void)
 {
-	unregister_(semname);
+	sfq_unlock_semaphore(NULL);
+
+	pthread_mutex_destroy(&GLOBAL_snos_arr_mutex);
 }
 
 /*
-セマフォのロック
+ *セマフォのアンロック
+ */
+void sfq_unlock_semaphore(const char* semname)
+{
+/* lock mutex */
+	pthread_mutex_lock(&GLOBAL_snos_arr_mutex);
 
---> ロックが獲得できたときのみ global に保存する
-*/
+	unregister_(semname);
+
+/* unlock mutex */
+	pthread_mutex_unlock(&GLOBAL_snos_arr_mutex);
+}
+
+/*
+ * セマフォのロック
+ *
+ * --> ロックが獲得できたときのみ global に保存する
+ */
+
+//
+// セマフォ待ち時間を設ける場合は 1 に変更
+//
+#define SEM_TIMEDWAIT		(0)
+
 sfq_bool sfq_lock_semaphore(const char* semname)
 {
 	int irc = -1;
 	sfq_bool locked = SFQ_false;
 	sfq_bool registered = SFQ_false;
 
+#if SEM_TIMEDWAIT
 	struct timespec tspec;
+#endif
 	sem_t* semobj = NULL;
 
 SFQ_LIB_ENTER
-
 	assert(semname);
+
+/* lock mutex */
+	pthread_mutex_lock(&GLOBAL_snos_arr_mutex);
 
 	if (is_registered_(semname))
 	{
 		SFQ_FAIL(EA_SEMEXISTS, "semaphore(name=%s) is already registered", semname);
 	}
 
+#if SEM_TIMEDWAIT
 	irc = clock_gettime(CLOCK_REALTIME, &tspec);
 	if (irc == -1)
 	{
 		SFQ_FAIL(ES_CLOCKGET, "clock_gettime");
 	}
 	tspec.tv_sec += 5;
+#endif
 
 /* open semaphore */
 /*
@@ -236,23 +252,24 @@ SFQ_LIB_ENTER
 			semname);
 	}
 
-//printf("lock attempt to get\n");
+#if SEM_TIMEDWAIT
+	irc = sem_timedwait(semobj, &tspec);
+#else
 	irc = sem_wait(semobj);
-	//irc = sem_timedwait(semobj, &tspec);
+#endif
 
 	if (irc == -1)
 	{
-		SFQ_FAIL(ES_SEMIO, "semaphore lock wait timeout, unlock command=[sfqc-sets semunlock on]");
+		SFQ_FAIL(ES_SEMIO,
+			"semaphore lock wait timeout, unlock command=[sfqc-sets semunlock on]");
 	}
 	locked = SFQ_true;
 
-//printf("lock get\n");
 	registered = register_(semname, semobj);
 	if (! registered)
 	{
 		SFQ_FAIL(EA_REGSEMAPHORE, "register semaphore fault(name=%s)", semname);
 	}
-//printf("lock reg done\n");
 
 SFQ_LIB_CHECKPOINT
 
@@ -262,18 +279,15 @@ SFQ_LIB_CHECKPOINT
 		{
 			if (registered)
 			{
-//printf("lock unreg\n");
 				unregister_(semname);
 			}
 			else
 			{
 				if (locked)
 				{
-//printf("lock release\n");
 					sem_post(semobj);
 				}
 
-//printf("lock close\n");
 				sem_close(semobj);
 				semobj = NULL;
 			}
@@ -281,6 +295,9 @@ SFQ_LIB_CHECKPOINT
 	}
 
 SFQ_LIB_LEAVE
+
+/* unlock mutex */
+	pthread_mutex_unlock(&GLOBAL_snos_arr_mutex);
 
 	return SFQ_LIB_IS_SUCCESS();
 }

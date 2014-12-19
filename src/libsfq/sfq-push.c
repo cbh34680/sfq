@@ -41,6 +41,8 @@ SFQ_ENTP_ENTER
 	bzero(&prev_eh, sizeof(prev_eh));
 	bzero(&ioeb, sizeof(ioeb));
 
+sleep(5);
+
 /* get current directory */
 	pushwkdir = getcwd(NULL, 0);
 	if (! pushwkdir)

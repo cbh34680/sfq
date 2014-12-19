@@ -22,6 +22,7 @@
 #include <fcntl.h>           /* For O_* constants */
 #include <math.h>
 #include <stddef.h>
+#include <sys/syscall.h>     /* for SYS_gettid */
 
 #ifdef SFQ_SEMUNLOCK_AT_SIGCATCH
 	#include <signal.h>
@@ -123,8 +124,12 @@ SFQ_FAIL_CATCH_LABEL__:
 		if (fire_errno__) { \
 			strerror_r(fire_errno__, fire_errstr__, sizeof(fire_errstr__)); \
 		} \
-		fprintf(stderr, "= %s =\n\t%s(%d)# %s\n\treason=%d [%s]\n\terrno=%d [%s]\n\n", \
+		fprintf(stderr, "= %s =\n\t%s(%d)# %s\n\t" \
+			"ppid=%d pid=%d tid=%d\n\t" \
+			"reason=%d [%s]\n\t" \
+			"errno=%d [%s]\n\n", \
 			nowstr__, __FILE__, fire_line__, __func__, \
+			getppid(), getpid(), gettid(), \
 			fire_rc__, fire_reason__, \
 			fire_errno__, fire_errstr__); \
 	}
@@ -379,6 +384,8 @@ struct sfq_queue_create_params
  * 関数プロトタイプ
  *
  */
+pid_t gettid(void);
+
 void sfq_print_sizes(void);
 void sfq_print_qo(const struct sfq_queue_object* qo);
 void sfq_print_qf_header(const struct sfq_file_header*);
