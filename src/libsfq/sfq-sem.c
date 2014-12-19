@@ -272,12 +272,13 @@ void sfq_entp_critical_section_leave()
  */
 void localvars_destroy_(void)
 {
+	pthread_mutex_destroy(&GLOBAL_snos_arr_mutex);
+
 /*
 全てのセマフォをアンロック
 */
 	unlock_semaphore_(NULL);
 
-	pthread_mutex_destroy(&GLOBAL_snos_arr_mutex);
 }
 
 /*
