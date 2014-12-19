@@ -7,15 +7,13 @@ SFQ_ENTP_ENTER
 	struct sfq_queue_object* qo = NULL;
 
 	sfq_bool b = SFQ_false;
-	size_t eh_size = 0;
-	off_t elm_pos = 0;
+	off_t elmpos = 0;
+	off_t* unlink_pos = NULL;
 
 	struct sfq_ioelm_buff ioeb;
 	struct sfq_file_header qfh;
 
 /* initialize */
-	eh_size = sizeof(struct sfq_e_header);
-
 	bzero(&qfh, sizeof(qfh));
 	bzero(&ioeb, sizeof(ioeb));
 
@@ -59,10 +57,10 @@ SFQ_ENTP_ENTER
 		SFQ_FAIL(EA_ASSERT, "qfh.qh.dval.elm_next_pop_pos == 0");
 	}
 
-	elm_pos = qfh.qh.dval.elm_next_pop_pos;
+	elmpos = qfh.qh.dval.elm_next_pop_pos;
 
 /* read element */
-	b = sfq_readelm(qo, elm_pos, &ioeb);
+	b = sfq_readelm(qo, elmpos, &ioeb);
 	if (! b)
 	{
 		SFQ_FAIL(EA_RWELEMENT, "sfq_readelm");
@@ -83,27 +81,15 @@ SFQ_ENTP_ENTER
 	}
 	else
 	{
-/* update next-element-prev_elmpos */
-		struct sfq_e_header prev_eh;
-
-		b = sfq_seek_set_and_read(qo->fp, ioeb.eh.prev_elmpos, &prev_eh, eh_size);
-		if (! b)
-		{
-			SFQ_FAIL(EA_SEEKSETIO, "sfq_seek_set_and_read(prev_eh)");
-		}
-
-		/* 前の要素の next_elmpos に 0 を設定し、リンクを切る */
-		prev_eh.next_elmpos = 0;
-
-		b = sfq_seek_set_and_write(qo->fp, ioeb.eh.prev_elmpos, &prev_eh, eh_size);
-		if (! b)
-		{
-			SFQ_FAIL(EA_SEEKSETIO, "sfq_seek_set_and_write(prev_eh)");
-		}
+		unlink_pos = &ioeb.eh.prev_elmpos;
 
 /* update next shift pos */
 		qfh.qh.dval.elm_next_pop_pos = ioeb.eh.prev_elmpos;
-		qfh.qh.dval.elm_next_push_pos = elm_pos;
+
+/*
+pop したときは次回の push 位置も書き換える
+*/
+		qfh.qh.dval.elm_next_push_pos = elmpos;
 	}
 
 /* set val */
@@ -120,6 +106,21 @@ SFQ_ENTP_ENTER
 		SFQ_FAIL(EA_WRITEQFH, "sfq_writeqfh(qfh)");
 	}
 
+	if (unlink_pos)
+	{
+/*
+要素の next_elmpos を書き換えるが、writeqfh() より前に行うとシグナルにより
+終了したときに回復できない状態になるので、ヘッダ書き換え後に行う。
+*/
+		b = sfq_unlink_nextelm(qo, (*unlink_pos));
+		if (! b)
+		{
+			SFQ_FAIL(EA_UNLINKELM, "sfq_unlink_nextelm");
+		}
+
+		unlink_pos = NULL;
+	}
+
 SFQ_LIB_CHECKPOINT
 
 	if (SFQ_LIB_IS_FAIL())
@@ -127,10 +128,10 @@ SFQ_LIB_CHECKPOINT
 		sfq_free_ioelm_buff(&ioeb);
 	}
 
-SFQ_ENTP_LEAVE
-
 	sfq_close_queue(qo);
 	qo = NULL;
+
+SFQ_ENTP_LEAVE
 
 	return SFQ_LIB_RC();
 }

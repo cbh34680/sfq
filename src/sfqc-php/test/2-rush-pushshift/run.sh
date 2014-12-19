@@ -18,7 +18,7 @@ EOF
   php_pid=$!
 
   #sleepsec=$(( 3 + $i ))
-  sleepsec=5
+  sleepsec=20
 
   echo "sleep ${sleepsec} sec"
 

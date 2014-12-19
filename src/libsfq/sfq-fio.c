@@ -465,6 +465,60 @@ SFQ_LIB_LEAVE
 	return qo;
 }
 
+static sfq_bool unlink_elmpos(FILE* fp, off_t elmpos, int type /* 1=prev, 2=next */)
+{
+	sfq_bool b = SFQ_false;
+	struct sfq_e_header eh;
+
+	b = sfq_seek_set_and_read(fp, elmpos, &eh, sizeof(eh));
+	if (! b)
+	{
+		return SFQ_false;
+	}
+
+	switch (type)
+	{
+		case 1:
+		{
+		/* 次の要素の prev_elmpos に 0 を設定し、リンクを切る */
+
+			eh.prev_elmpos = 0;
+			break;
+		}
+
+		case 2:
+		{
+		/* 前の要素の next_elmpos に 0 を設定し、リンクを切る */
+
+			eh.next_elmpos = 0;
+			break;
+		}
+
+		default:
+		{
+			abort();
+		}
+	}
+
+	b = sfq_seek_set_and_write(fp, elmpos, &eh, sizeof(eh));
+	if (! b)
+	{
+		return SFQ_false;
+	}
+
+	return SFQ_true;
+}
+
+sfq_bool sfq_unlink_prevelm(struct sfq_queue_object* qo, off_t elmpos)
+{
+	return unlink_elmpos(qo->fp, elmpos, 1);
+}
+
+sfq_bool sfq_unlink_nextelm(struct sfq_queue_object* qo, off_t elmpos)
+{
+	return unlink_elmpos(qo->fp, elmpos, 2);
+}
+
 sfq_bool sfq_writeqfh(struct sfq_queue_object* qo, struct sfq_file_header* qfh,
 	const struct sfq_process_info* procs, const char* lastoper)
 {

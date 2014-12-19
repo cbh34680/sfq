@@ -1,3 +1,0 @@
-Manifest-Version: 1.0
-Bundle-NativeCode: a.dll;b.dll;c.dll
-Main-Class: Main

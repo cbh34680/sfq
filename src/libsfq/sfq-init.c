@@ -229,10 +229,10 @@ root の場合、"-U" か "-G" の指定があるときのみ通過させる
 
 SFQ_LIB_CHECKPOINT
 
-SFQ_ENTP_LEAVE
-
 	sfq_close_queue(qo);
 	qo = NULL;
+
+SFQ_ENTP_LEAVE
 
 	return SFQ_LIB_RC();
 }

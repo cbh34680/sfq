@@ -22,6 +22,7 @@
 #include <fcntl.h>           /* For O_* constants */
 #include <math.h>
 #include <stddef.h>
+#include <sys/syscall.h>     /* for SYS_gettid */
 
 #ifdef SFQ_SEMUNLOCK_AT_SIGCATCH
 	#include <signal.h>
@@ -123,8 +124,12 @@ SFQ_FAIL_CATCH_LABEL__:
 		if (fire_errno__) { \
 			strerror_r(fire_errno__, fire_errstr__, sizeof(fire_errstr__)); \
 		} \
-		fprintf(stderr, "= %s =\n\t%s(%d)# %s\n\treason=%d [%s]\n\terrno=%d [%s]\n\n", \
+		fprintf(stderr, "= %s =\n\t%s(%d)# %s\n\t" \
+			"ppid=%d pid=%d tid=%d\n\t" \
+			"reason=%d [%s]\n\t" \
+			"errno=%d [%s]\n\n", \
 			nowstr__, __FILE__, fire_line__, __func__, \
+			getppid(), getpid(), sfq_gettid(), \
 			fire_rc__, fire_reason__, \
 			fire_errno__, fire_errstr__); \
 	}
@@ -156,12 +161,14 @@ SFQ_FAIL_CATCH_LABEL__:
 #define SFQ_ENTP_ENTER \
 \
 SFQ_LIB_ENTER \
+	sfq_entp_critical_section_enter(); \
 	errno = 0;
 
 
 #define SFQ_ENTP_LEAVE \
 \
-SFQ_LIB_LEAVE
+SFQ_LIB_LEAVE \
+	sfq_entp_critical_section_leave();
 
 
 
@@ -321,7 +328,6 @@ struct sfq_open_names
 	const char* queproclogdir;
 	const char* queexeclogdir;
 	const char* semname;
-
 };
 
 struct sfq_queue_object
@@ -379,6 +385,11 @@ struct sfq_queue_create_params
  * 関数プロトタイプ
  *
  */
+pid_t sfq_gettid(void);
+
+void sfq_entp_critical_section_enter();
+void sfq_entp_critical_section_leave();
+
 void sfq_print_sizes(void);
 void sfq_print_qo(const struct sfq_queue_object* qo);
 void sfq_print_qf_header(const struct sfq_file_header*);
@@ -416,6 +427,9 @@ sfq_bool sfq_readqfh(struct sfq_queue_object* qo,
 
 sfq_bool sfq_writeqfh(struct sfq_queue_object* qo, struct sfq_file_header* qfh,
 	const struct sfq_process_info* procs, const char* lastoper);
+
+sfq_bool sfq_unlink_prevelm(struct sfq_queue_object* qo, off_t elmpos);
+sfq_bool sfq_unlink_nextelm(struct sfq_queue_object* qo, off_t elmpos);
 
 void sfq_output_reopen_4exec(FILE* fp, const time_t* now, const char* arg_wpath,
 	const char* logdir, const uuid_t uuid, ulong id, const char* ext, const char* env_key,

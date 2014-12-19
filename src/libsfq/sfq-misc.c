@@ -12,6 +12,11 @@ char* sfq_safe_strcpy(char* dst, const char* org)
 }
 #endif
 
+pid_t sfq_gettid(void)
+{
+	return syscall(SYS_gettid);
+}
+
 size_t sfq_payload_len(const struct sfq_value* val)
 {
 	size_t ret = 0;

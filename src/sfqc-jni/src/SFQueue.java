@@ -5,25 +5,25 @@ import java.util.Map;
 
 public class SFQueue
 {
-	static SFQueueClientInterface newClient()
+	public static SFQueueClientInterface newClient()
 		throws SFQueueClientException
 	{
 		return newClient(null, new HashMap<String, Object>());
 	}
 
-	static SFQueueClientInterface newClient(Map<String, Object> params)
+	public static SFQueueClientInterface newClient(Map<String, Object> params)
 		throws SFQueueClientException
 	{
 		return newClient(null, params);
 	}
 
-	static SFQueueClientInterface newClient(String quename)
+	public static SFQueueClientInterface newClient(String quename)
 		throws SFQueueClientException
 	{
 		return newClient(quename, null);
 	}
 
-	static SFQueueClientInterface newClient(String quename, Map<String, Object> params)
+	public static SFQueueClientInterface newClient(String quename, Map<String, Object> params)
 		throws SFQueueClientException
 	{
 		if (params.containsKey("host"))
