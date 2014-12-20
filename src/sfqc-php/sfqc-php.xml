@@ -50,7 +50,7 @@ This is wrap_libsfq PHP extension module.
 #include "../sfqc-php.h"
   ?></code>
 
-  <xi:include href="sfqc-php_push.xi"    parse="xml" />
-  <xi:include href="sfqc-php_takeout.xi" parse="xml" />
+  <xi:include href="sfqc-php_push.xml"    parse="xml" />
+  <xi:include href="sfqc-php_takeout.xml" parse="xml" />
 
 </extension>
