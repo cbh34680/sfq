@@ -7,6 +7,7 @@ rm -rf test
 
 javac -cp .:../../sfqc-jni.jar -d . TestMain.java
 javac -cp .:../../sfqc-jni.jar -d . TestMain2.java
+javac -cp .:../../sfqc-jni.jar -d . TestMain3.java
 
 exit 0
 

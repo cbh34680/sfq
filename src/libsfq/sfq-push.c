@@ -146,7 +146,7 @@ push 可能条件の判定
 	}
 
 /* open queue-file */
-	qo = sfq_open_queue_rw(querootdir, quename);
+	qo = sfq_open_queue_rw(querootdir, quename, 0);
 	if (! qo)
 	{
 		SFQ_FAIL(EA_OPENQUEUE, "sfq_open_queue_rw");

@@ -2,8 +2,11 @@
 #define SFQ_LIB_H_INCLUDE_ONCE_
 
 /*
+シグナルハンドラによるセマフォの開放
+
+--> DLL のアンロードにより実行
 */
-#define SFQ_SEMUNLOCK_AT_SIGCATCH	(1)
+//#define SFQ_SEMUNLOCK_AT_SIGCATCH
 
 /*
 #pragma GCC diagnostic ignored "-Wunused-label"
@@ -161,14 +164,12 @@ SFQ_FAIL_CATCH_LABEL__:
 #define SFQ_ENTP_ENTER \
 \
 SFQ_LIB_ENTER \
-	sfq_entp_critical_section_enter(); \
 	errno = 0;
 
 
 #define SFQ_ENTP_LEAVE \
 \
-SFQ_LIB_LEAVE \
-	sfq_entp_critical_section_leave();
+SFQ_LIB_LEAVE
 
 
 
@@ -387,9 +388,6 @@ struct sfq_queue_create_params
  */
 pid_t sfq_gettid(void);
 
-void sfq_entp_critical_section_enter();
-void sfq_entp_critical_section_leave();
-
 void sfq_print_sizes(void);
 void sfq_print_qo(const struct sfq_queue_object* qo);
 void sfq_print_qf_header(const struct sfq_file_header*);
@@ -403,12 +401,16 @@ void sfq_free_ioelm_buff(struct sfq_ioelm_buff* ioeb);
 void sfq_free_open_names(struct sfq_open_names* om);
 void sfq_reopen_4proc(const char* logdir, ushort slotno, questate_t questate, mode_t file_perm);
 
-sfq_bool sfq_lock_semaphore(const char* semname);
+sfq_bool sfq_lock_semaphore(const char* semname, int semlock_wait_sec);
 void sfq_unlock_semaphore(const char* semname);
 
+struct sfq_queue_object* sfq_open_queue_rw(const char* querootdir, const char* quename,
+	int semlock_wait_sec);
+
+struct sfq_queue_object* sfq_open_queue_ro(const char* querootdir, const char* quename,
+	int semlock_wait_sec);
+
 struct sfq_queue_object* sfq_open_queue_wo(const struct sfq_queue_create_params* qcp);
-struct sfq_queue_object* sfq_open_queue_rw(const char* querootdir, const char* quename);
-struct sfq_queue_object* sfq_open_queue_ro(const char* querootdir, const char* quename);
 struct sfq_open_names* sfq_alloc_open_names(const char* querootdir, const char* quename);
 
 int sfq_reserve_proc(struct sfq_process_info* procs, ushort procs_num);

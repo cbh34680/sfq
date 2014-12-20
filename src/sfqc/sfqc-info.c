@@ -23,7 +23,7 @@ SFQC_MAIN_ENTER
 		goto EXIT_LABEL;
 	}
 
-	irc = sfq_info(pgargs.querootdir, pgargs.quename);
+	irc = sfq_info(pgargs.querootdir, pgargs.quename, 3);
 	if (irc != SFQ_RC_SUCCESS)
 	{
 		message = "sfq_info";

@@ -96,7 +96,7 @@ SFQC_MAIN_ENTER
 		goto EXIT_LABEL;
 	}
 
-	irc = sfq_get_questate(pgargs.querootdir, pgargs.quename, &questate);
+	irc = sfq_get_questate(pgargs.querootdir, pgargs.quename, &questate, 3);
 	if (irc != SFQ_RC_SUCCESS)
 	{
 		if ((modify_bit & SFQ_QST_DEV_SEMUNLOCK_ON) && (irc == SFQ_RC_EA_OPENQUEUE))
@@ -144,7 +144,7 @@ SFQC_MAIN_ENTER
 
 	questate ^= modify_bit;
 
-	irc = sfq_set_questate(pgargs.querootdir, pgargs.quename, questate);
+	irc = sfq_set_questate(pgargs.querootdir, pgargs.quename, questate, 3);
 	if (irc != SFQ_RC_SUCCESS)
 	{
 		message = "sfq_set_questate";

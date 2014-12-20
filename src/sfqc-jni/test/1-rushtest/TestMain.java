@@ -64,7 +64,7 @@ public class TestMain
 	{
 		for (int i=0; true; i++)
 		{
-o.printf("BIG LOOP %d\n", i);
+o.printf("JAVA LOOP %d\n", i);
 
 			cont = true;
 
@@ -74,7 +74,7 @@ o.printf("BIG LOOP %d\n", i);
 			Thread t4 = startThread(2);
 			Thread t5 = startThread(3);
 
-			Thread.sleep(20 * 1000);
+			Thread.sleep(10 * 1000);
 
 			cont = false;
 
