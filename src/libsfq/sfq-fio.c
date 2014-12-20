@@ -62,7 +62,7 @@ static void unlock_semaphore_sighandler(int signo)
 #endif
 
 static struct sfq_queue_object* open_queue_(const char* querootdir, const char* quename,
-	sfq_uchar queue_openmode)
+	sfq_uchar queue_openmode, int semlock_wait_sec)
 {
 SFQ_LIB_ENTER
 
@@ -92,7 +92,7 @@ SFQ_LIB_ENTER
 	save_umask = umask(0);
 
 /* lock semaphore */
-	b = sfq_lock_semaphore(om->semname);
+	b = sfq_lock_semaphore(om->semname, semlock_wait_sec);
 	if (! b)
 	{
 		SFQ_FAIL(EA_LOCKSEMAPHORE, "sfq_lock_semaphore");
@@ -335,14 +335,17 @@ void sfq_close_queue(struct sfq_queue_object* qo)
 	free(qo);
 }
 
-struct sfq_queue_object* sfq_open_queue_rw(const char* querootdir, const char* quename)
+struct sfq_queue_object* sfq_open_queue_rw(const char* querootdir, const char* quename,
+	int semlock_wait_sec)
 {
-	return open_queue_(querootdir, quename, (SFQ_FOM_READ | SFQ_FOM_WRITE));
+	return open_queue_(querootdir, quename, (SFQ_FOM_READ | SFQ_FOM_WRITE),
+		semlock_wait_sec);
 }
 
-struct sfq_queue_object* sfq_open_queue_ro(const char* querootdir, const char* quename)
+struct sfq_queue_object* sfq_open_queue_ro(const char* querootdir, const char* quename,
+	int semlock_wait_sec)
 {
-	return open_queue_(querootdir, quename, SFQ_FOM_READ);
+	return open_queue_(querootdir, quename, SFQ_FOM_READ, semlock_wait_sec);
 }
 
 struct sfq_queue_object* sfq_open_queue_wo(const struct sfq_queue_create_params* qcp)
@@ -419,7 +422,7 @@ SFQ_LIB_ENTER
 	}
 
 /* open queue (w) */
-	qo = open_queue_(om->querootdir, om->quename, SFQ_FOM_WRITE);
+	qo = open_queue_(om->querootdir, om->quename, SFQ_FOM_WRITE, 0);
 	if (! qo)
 	{
 		SFQ_FAIL(EA_OPENQUEUE, "queue open error name=[%s] file=[%s/%s]",

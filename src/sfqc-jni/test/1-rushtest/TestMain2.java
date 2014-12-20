@@ -11,15 +11,13 @@ public class TestMain2
 	static boolean cont = true;
 	static Object lock = new Object();
 
-	static Thread startThread(final int type)
+	static Thread startThread(final String quename)
 	{
 		Thread ret = new Thread()
 		{
 			public void run()
 			{
 				final String name = getName();
-
-o.println(name + "(" + type + "): start");
 
 				Map<String, Object> params = new HashMap<String, Object>() {
 				{
@@ -28,22 +26,15 @@ o.println(name + "(" + type + "): start");
 
 				try
 				{
-					SFQueueClientInterface sfqc = SFQueue.newClient();
+					SFQueueClientInterface sfqc = SFQueue.newClient(quename);
 
-o.println(name + "(" + type + "): before push");
 					params.put("payload", name);
-					//synchronized (lock)
-					{
-						sfqc.push(params);
-					}
-o.println(name + "(" + type + "): after push");
+					sfqc.push(params);
 				}
 				catch (Exception ex)
 				{
 					ex.printStackTrace();
 				}
-
-o.println(name + "(" + type + "): stop");
 			}
 		};
 
@@ -54,21 +45,13 @@ o.println(name + "(" + type + "): stop");
 
 	static void doTest() throws Exception
 	{
-		Thread t1 = startThread(1);
-/*
-		Thread t2 = startThread(1);
-		Thread t3 = startThread(1);
-		Thread t4 = startThread(2);
-		Thread t5 = startThread(3);
-*/
+		Thread t1 = startThread(null);
+		Thread t2 = startThread(null);
+		Thread t3 = startThread("jni2");
 
 		t1.join();
-/*
 		t2.join();
 		t3.join();
-		t4.join();
-		t5.join();
-*/
 	}
 
 	public static void main(String[] args)

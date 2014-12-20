@@ -20,7 +20,7 @@ public class SFQueue
 	public static SFQueueClientInterface newClient(String quename)
 		throws SFQueueClientException
 	{
-		return newClient(quename, null);
+		return newClient(quename, new HashMap<String, Object>());
 	}
 
 	public static SFQueueClientInterface newClient(String quename, Map<String, Object> params)

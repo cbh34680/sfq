@@ -58,7 +58,8 @@ int sfq_reserve_proc(struct sfq_process_info* procs, ushort procs_num)
 	return -1;
 }
 
-int sfq_get_questate(const char* querootdir, const char* quename, questate_t* questate_ptr)
+int sfq_get_questate(const char* querootdir, const char* quename,
+	questate_t* questate_ptr, int semlock_wait_sec)
 {
 SFQ_LIB_ENTER
 
@@ -75,7 +76,7 @@ SFQ_LIB_ENTER
 		SFQ_FAIL(EA_FUNCARG, "questate_ptr is null");
 	}
 
-	qo = sfq_open_queue_ro(querootdir, quename);
+	qo = sfq_open_queue_ro(querootdir, quename, semlock_wait_sec);
 	if (! qo)
 	{
 		SFQ_FAIL(EA_OPENQUEUE, "sfq_open_queue_ro");
@@ -99,7 +100,8 @@ SFQ_LIB_LEAVE
 	return SFQ_LIB_RC();
 }
 
-int sfq_set_questate(const char* querootdir, const char* quename, questate_t questate)
+int sfq_set_questate(const char* querootdir, const char* quename,
+	questate_t questate, int semlock_wait_sec)
 {
 SFQ_LIB_ENTER
 
@@ -147,7 +149,7 @@ SFQ_LIB_ENTER
 	}
 
 /* open queue */
-	qo = sfq_open_queue_rw(querootdir, quename);
+	qo = sfq_open_queue_rw(querootdir, quename, semlock_wait_sec);
 	if (! qo)
 	{
 		SFQ_FAIL(EA_OPENQUEUE, "sfq_open_queue_rw");

@@ -1,6 +1,6 @@
 #include "sfq-lib.h"
 
-int sfq_info(const char* querootdir, const char* quename)
+int sfq_info(const char* querootdir, const char* quename, int semlock_wait_sec)
 {
 SFQ_ENTP_ENTER
 
@@ -15,7 +15,7 @@ SFQ_ENTP_ENTER
 	bzero(&qfh, sizeof(qfh));
 
 /* open queue-file */
-	qo = sfq_open_queue_ro(querootdir, quename);
+	qo = sfq_open_queue_ro(querootdir, quename, semlock_wait_sec);
 	if (! qo)
 	{
 		SFQ_FAIL(EA_OPENQUEUE, "sfq_open_queue_ro");

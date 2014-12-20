@@ -22,7 +22,7 @@ SFQ_ENTP_ENTER
 	bzero(&ioeb, sizeof(ioeb));
 
 /* open queue-file */
-	qo = sfq_open_queue_ro(querootdir, quename);
+	qo = sfq_open_queue_ro(querootdir, quename, 0);
 	if (! qo)
 	{
 		SFQ_FAIL(EA_OPENQUEUE, "sfq_open_queue_ro");

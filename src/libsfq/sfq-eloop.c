@@ -15,7 +15,7 @@ SFQ_LIB_ENTER
 	bzero(&qfh, sizeof(qfh));
 
 /* open queue-file */
-	qo = sfq_open_queue_rw(elop->om_querootdir, elop->om_quename);
+	qo = sfq_open_queue_rw(elop->om_querootdir, elop->om_quename, 0);
 	if (! qo)
 	{
 		SFQ_FAIL(EA_OPENQUEUE, "sfq_open_queue_rw");
