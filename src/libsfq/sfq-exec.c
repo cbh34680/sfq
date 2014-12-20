@@ -162,10 +162,10 @@ SFQ_LIB_ENTER
 /* */
 fprintf(stderr, "\tprepare exec\n");
 
-#ifdef SFQ_DEBUG_BUILD
-	assert(elop->om_quename);
-	assert(val);
-#endif
+//#ifdef SFQ_DEBUG_BUILD
+//	assert(elop->om_quename);
+//	assert(val);
+//#endif
 
 /*
 ヒープに入れたままだと exec() されたときにメモリリーク扱いになるので

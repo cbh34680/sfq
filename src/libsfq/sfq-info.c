@@ -21,9 +21,9 @@ SFQ_ENTP_ENTER
 		SFQ_FAIL(EA_OPENQUEUE, "sfq_open_queue_ro");
 	}
 
-#ifdef SFQ_DEBUG_BUILD
-	//sfq_print_sizes();
-#endif
+//#ifdef SFQ_DEBUG_BUILD
+//	sfq_print_sizes();
+//#endif
 
 /* read file-header */
 	b = sfq_readqfh(qo, &qfh, &procs);
