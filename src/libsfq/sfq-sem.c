@@ -46,15 +46,38 @@ struct sem_name_obj_set
 
 static sfq_bool register_(const char* semname, sem_t* semobj)
 {
+	int i = 0;
+	int loop_num = 0;
+
 	size_t realloc_size = 0;
 	struct sem_name_obj_set* snos = NULL;
 	const char* semname_dup = NULL;
+
+	pid_t pid = getpid();
+	pid_t tid = sfq_gettid();
 
 LOG_("a-1");
 	pthread_mutex_lock(&GLOBAL_snos_arr_mutex);
 LOG_("a-2");
 
 SFQ_LIB_ENTER
+	for (i=0; i<loop_num; i++)
+	{
+		struct sem_name_obj_set* snos = &GLOBAL_snos_arr[i];
+
+		if (! snos->enable)
+		{
+			continue;
+		}
+
+		if (strcmp(semname, snos->semname) == 0)
+		{
+			if ((snos->pid == pid) && (snos->tid == tid))
+			{
+				SFQ_FAIL(EA_REGSEMAPHORE, "already exists [%s]", semname);
+			}
+		}
+	}
 
 	semname_dup = strdup(semname);
 	if (! semname_dup)
@@ -86,8 +109,8 @@ SFQ_LIB_ENTER
 	snos->enable = SFQ_true;
 	snos->semname= semname_dup;
 	snos->semobj = semobj;
-	snos->pid = getpid();
-	snos->tid = sfq_gettid();
+	snos->pid = pid;
+	snos->tid = tid;
 LOG_("a-3");
 
 SFQ_LIB_CHECKPOINT
