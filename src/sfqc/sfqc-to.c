@@ -574,7 +574,6 @@ SFQC_MAIN_ENTER
 	}
 
 #if 0
-SFQ_DEBUG_BUILD
 	irc = sfq_alloc_print_value(&val, &pval);
 	if (irc != SFQ_RC_SUCCESS)
 	{

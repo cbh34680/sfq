@@ -298,9 +298,9 @@ id, pushtime, uuid はここで生成する
 		}
 	}
 
-#ifdef SFQ_DEBUG_BUILD
-	sfq_print_e_header(&ioeb.eh);
-#endif
+//#ifdef SFQ_DEBUG_BUILD
+//	sfq_print_e_header(&ioeb.eh);
+//#endif
 
 /* add element */
 	b = sfq_writeelm(qo, elm_pos, &ioeb);

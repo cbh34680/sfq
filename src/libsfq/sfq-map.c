@@ -80,14 +80,13 @@ SFQ_ENTP_ENTER
 			SFQ_FAIL(EA_RWELEMENT, "sfq_readelm");
 		}
 
-#ifdef SFQ_DEBUG_BUILD
-		sfq_print_e_header(&ioeb.eh);
-#else
+//#ifdef SFQ_DEBUG_BUILD
+//		sfq_print_e_header(&ioeb.eh);
+//#endif
 		if (loop_limit)
 		{
 			sfq_print_e_header(&ioeb.eh);
 		}
-#endif
 
 /* set val */
 		b = sfq_copy_ioeb2val(&ioeb, &val);

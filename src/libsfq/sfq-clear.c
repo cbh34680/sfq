@@ -36,9 +36,9 @@ SFQ_ENTP_ENTER
 		SFQ_FAIL(EA_WRITEQFH, "sfq_writeqfh");
 	}
 
-#ifdef SFQ_DEBUG_BUILD
-	sfq_print_q_header(&qfh.qh);
-#endif
+//#ifdef SFQ_DEBUG_BUILD
+//	sfq_print_q_header(&qfh.qh);
+//#endif
 
 SFQ_LIB_CHECKPOINT
 

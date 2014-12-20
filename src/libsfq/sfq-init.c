@@ -274,9 +274,9 @@ SFQ_LIB_ENTER
 			SFQ_FAIL(ES_MEMALLOC, "specified user not found");
 		}
 
-#ifdef SFQ_DEBUG_BUILD
-		fprintf(stderr, "user[%s] = %u\n", queuser, pwd.pw_uid);
-#endif
+//#ifdef SFQ_DEBUG_BUILD
+//		fprintf(stderr, "user[%s] = %u\n", queuser, pwd.pw_uid);
+//#endif
 
 		(*queuserid_ptr) = pwd.pw_uid;
 	}
@@ -293,9 +293,9 @@ SFQ_LIB_ENTER
 			SFQ_FAIL(ES_MEMALLOC, "specified group not found");
 		}
 
-#ifdef SFQ_DEBUG_BUILD
-		fprintf(stderr, "group[%s] = %u\n", quegroup, grp.gr_gid);
-#endif
+//#ifdef SFQ_DEBUG_BUILD
+//		fprintf(stderr, "group[%s] = %u\n", quegroup, grp.gr_gid);
+//#endif
 
 		(*quegroupid_ptr) = grp.gr_gid;
 	}

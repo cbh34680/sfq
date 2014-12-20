@@ -618,11 +618,9 @@ SFQ_LIB_ENTER
 				SFQ_FAIL(ES_FILEIO, "FILE-READ(procs)");
 			}
 
-#ifdef SFQ_DEBUG_BUILD
-/*
-			sfq_print_procs(procs, qfh->qh.sval.procs_num);
-*/
-#endif
+//#ifdef SFQ_DEBUG_BUILD
+//			sfq_print_procs(procs, qfh->qh.sval.procs_num);
+//#endif
 
 			(*procs_ptr) = procs;
 		}

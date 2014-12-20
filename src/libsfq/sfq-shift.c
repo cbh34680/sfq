@@ -50,9 +50,10 @@ SFQ_ENTP_ENTER
 		SFQ_FAIL_SILENT(W_NOELEMENT);
 	}
 
-#ifdef SFQ_DEBUG_BUILD
-        assert(qfh.qh.dval.elm_next_shift_pos);
-#endif
+//#ifdef SFQ_DEBUG_BUILD
+//        assert(qfh.qh.dval.elm_next_shift_pos);
+//#endif
+
 	if (qfh.qh.dval.elm_next_shift_pos == 0)
 	{
 		SFQ_FAIL(EA_ASSERT, "qfh.qh.dval.elm_next_shift_pos == 0");
@@ -67,9 +68,9 @@ SFQ_ENTP_ENTER
 		SFQ_FAIL(EA_RWELEMENT, "sfq_readelm");
 	}
 
-#ifdef SFQ_DEBUG_BUILD
-	sfq_print_e_header(&ioeb.eh);
-#endif
+//#ifdef SFQ_DEBUG_BUILD
+//	sfq_print_e_header(&ioeb.eh);
+//#endif
 
 /* update queue file header */
 	qfh.qh.dval.elm_num--;
