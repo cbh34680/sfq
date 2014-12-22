@@ -15,7 +15,7 @@ SFQ_ENTP_ENTER
 	bzero(&qfh, sizeof(qfh));
 
 /* open queue-file */
-	qo = sfq_open_queue_ro(querootdir, quename, semlock_wait_sec);
+	qo = sfq_open_queue_ro_lws(querootdir, quename, semlock_wait_sec);
 	if (! qo)
 	{
 		SFQ_FAIL(EA_OPENQUEUE, "sfq_open_queue_ro");

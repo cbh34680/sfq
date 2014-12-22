@@ -114,10 +114,10 @@ static void sfq_print_qh_dval_(const struct sfq_qh_dval* p, char c)
 	fprintf(stderr, "%c q_header.elm_next_shift_pos = %zu\n", c, p->elm_next_shift_pos);
 	fprintf(stderr, "%c q_header.elm_num            = %zu\n", c, p->elm_num);
 	fprintf(stderr, "%c q_header.elm_lastid         = %zu\n", c, p->elm_lastid);
-	fprintf(stderr, "%c q_header.lastoper           = %s\n",  c, p->lastoper);
 	fprintf(stderr, "%c q_header.questate           = %u\n",  c, p->questate);
 	fprintf(stderr, "%c q_header.update_cnt         = %zu\n", c, p->update_cnt);
 	fprintf(stderr, "%c q_header.updatetime         = %zu\n", c, p->updatetime);
+	fprintf(stderr, "%c q_header.lastoper           = %s\n",  c, p->lastoper);
 	fprintf(stderr, "\n");
 }
 

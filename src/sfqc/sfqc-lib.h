@@ -53,8 +53,8 @@ struct sfqc_program_args
 	size_t filesize_limit;		/* S */
 	size_t payloadsize_limit;	/* L */
 	ushort boota_proc_num;		/* B */
-	const char* queuser;		/* U */
-	const char* quegroup;		/* G */
+	const char* username;		/* U */
+	const char* groupname;		/* G */
 	const char* execpath;		/* x */
 	const char* execargs;		/* a */
 	const char* textdata;		/* v */
@@ -66,7 +66,7 @@ struct sfqc_program_args
 
 	sfq_bool quiet;			/* q */
 	sfq_bool reverse;		/* r */
-	ulong loop_limit;		/* -1 */
+	sfq_uchar num1char;		/* -0 to -9 */
 
 	const char** commands;
 	int command_num;

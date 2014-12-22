@@ -47,8 +47,8 @@ enum
 	SFQ_RC_EA_FUNCARG,
 	SFQ_RC_EA_ILLEGALVER,
 	SFQ_RC_EA_ASSERT,
-	SFQ_RC_EA_SEEKSETIO,
 	SFQ_RC_EA_OVERLIMIT,
+	SFQ_RC_EA_SEEKSETIO,
 
 	SFQ_RC_EA_RWELEMENT,
 	SFQ_RC_EA_COPYVALUE,
@@ -149,14 +149,13 @@ struct sfq_value
 	const sfq_byte* payload;		/* 8 */
 };
 
-typedef void (*sfq_map_callback)(ulong order, off_t elm_pos, const struct sfq_value* val, void* userdata);
+typedef sfq_bool (*sfq_map_callback)(ulong order, off_t elm_pos, const struct sfq_value* val, void* userdata);
+
+int sfq_map(const char* querootdir, const char* quename,
+	sfq_map_callback callback, sfq_bool reverse, void* userdata);
 
 int sfq_init(const char* querootdir, const char* quename,
 	const struct sfq_queue_init_params* qip);
-
-int sfq_map(const char* querootdir, const char* quename,
-	sfq_map_callback callback, void* userdata,
-	sfq_bool reverse, ulong loop_limit);
 
 int sfq_push(const char* querootdir, const char* quename, struct sfq_value* val);
 int sfq_pop(const char* querootdir, const char* quename, struct sfq_value* val);

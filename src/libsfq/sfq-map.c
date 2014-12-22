@@ -1,7 +1,7 @@
 #include "sfq-lib.h"
 
-int sfq_map(const char* querootdir, const char* quename, sfq_map_callback callback, void* userdata,
-	sfq_bool reserve, ulong loop_limit)
+int sfq_map(const char* querootdir, const char* quename, sfq_map_callback callback,
+	sfq_bool reserve, void* userdata)
 {
 SFQ_ENTP_ENTER
 
@@ -17,12 +17,14 @@ SFQ_ENTP_ENTER
 	struct sfq_file_header qfh;
 	struct sfq_ioelm_buff ioeb;
 
+	sfq_bool loop_next = SFQ_true;
+
 /* initialize */
 	bzero(&qfh, sizeof(qfh));
 	bzero(&ioeb, sizeof(ioeb));
 
 /* open queue-file */
-	qo = sfq_open_queue_ro(querootdir, quename, 0);
+	qo = sfq_open_queue_ro(querootdir, quename);
 	if (! qo)
 	{
 		SFQ_FAIL(EA_OPENQUEUE, "sfq_open_queue_ro");
@@ -58,7 +60,7 @@ SFQ_ENTP_ENTER
 --> currpos はシグナルでの強制終了時に不正な値となることが考えられるのであてにしないこと
 --> currpos を条件から外した
 */
-	for (num=0; /*currpos && */(savepos != endpos); num++)
+	for (num=0; /*currpos && */(savepos != endpos) && loop_next; num++)
 	{
 		struct sfq_value val;
 
@@ -66,27 +68,15 @@ SFQ_ENTP_ENTER
 		savepos = currpos;
 		bzero(&val, sizeof(val));
 
-		if (loop_limit)
-		{
-			if (num >= loop_limit)
-			{
-				break;
-			}
-		}
-
 		b = sfq_readelm(qo, currpos, &ioeb);
 		if (! b)
 		{
 			SFQ_FAIL(EA_RWELEMENT, "sfq_readelm");
 		}
 
-//#ifdef SFQ_DEBUG_BUILD
-//		sfq_print_e_header(&ioeb.eh);
-//#endif
-		if (loop_limit)
-		{
-			sfq_print_e_header(&ioeb.eh);
-		}
+#ifdef SFQ_DEBUG_BUILD
+		sfq_print_e_header(&ioeb.eh);
+#endif
 
 /* set val */
 		b = sfq_copy_ioeb2val(&ioeb, &val);
@@ -95,7 +85,7 @@ SFQ_ENTP_ENTER
 			SFQ_FAIL(EA_COPYVALUE, "sfq_copy_ioeb2val");
 		}
 
-		callback(num, currpos, &val, userdata);
+		loop_next = callback(num, currpos, &val, userdata);
 
 /* copy next element-offset to pos */
 		currpos = reserve

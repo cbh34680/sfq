@@ -1,5 +1,75 @@
 #include "sfq-lib.h"
 
+static sfq_bool seek_set_read_(FILE* fp, off_t set_pos, void* mem, size_t mem_size)
+{
+	int irc = 0;
+	size_t iosize = 0;
+
+	if (! fp)
+	{
+		return SFQ_false;
+	}
+
+	if (! mem)
+	{
+		return SFQ_false;
+	}
+
+	if (mem_size == 0)
+	{
+		return SFQ_false;
+	}
+
+	irc = fseeko(fp, set_pos, SEEK_SET);
+	if (irc == -1)
+	{
+		return SFQ_false;
+	}
+
+	iosize = fread(mem, mem_size, 1, fp);
+	if (iosize != 1)
+	{
+		return SFQ_false;
+	}
+
+	return SFQ_true;
+}
+
+static sfq_bool seek_set_write_(FILE* fp, off_t set_pos, const void* mem, size_t mem_size)
+{
+	int irc = 0;
+	size_t iosize = 0;
+
+	if (! fp)
+	{
+		return SFQ_false;
+	}
+
+	if (! mem)
+	{
+		return SFQ_false;
+	}
+
+	if (mem_size == 0)
+	{
+		return SFQ_false;
+	}
+
+	irc = fseeko(fp, set_pos, SEEK_SET);
+	if (irc == -1)
+	{
+		return SFQ_false;
+	}
+
+	iosize = fwrite(mem, mem_size, 1, fp);
+	if (iosize != 1)
+	{
+		return SFQ_false;
+	}
+
+	return SFQ_true;
+}
+
 static sfq_bool mkdir_withUGW(const char* dir, const struct sfq_queue_create_params* qcp)
 {
 	int irc = -1;
@@ -154,14 +224,13 @@ SFQ_LIB_ENTER
 /* */
 	if (queue_openmode & SFQ_FOM_READ)
 	{
-		size_t iosize = 0; 
-		off_t orc = 0;
+		ssize_t siosize = 0; 
 		struct sfq_file_stamp qfs;
 
 		bzero(&qfs, sizeof(qfs));
 
-		iosize = fread(&qfs, sizeof(qfs), 1, fp);
-		if (iosize != 1)
+		siosize = pread(fileno(fp), &qfs, sizeof(qfs), 0);
+		if (siosize == -1)
 		{
 			SFQ_FAIL(ES_FILEIO, "FILE-READ(qfs)");
 		}
@@ -176,15 +245,6 @@ SFQ_LIB_ENTER
 		if (qfs.qfh_size != sizeof(struct sfq_file_header))
 		{
 			SFQ_FAIL(EA_ILLEGALVER, "sfq_file_header size not match");
-		}
-
-/*
-qfs を読んだので先頭に戻す
-*/
-		orc = fseeko(fp, 0, SEEK_SET);
-		if (orc == (off_t)-1)
-		{
-			SFQ_FAIL(ES_FILEIO, "fseeko");
 		}
 	}
 
@@ -335,14 +395,24 @@ void sfq_close_queue(struct sfq_queue_object* qo)
 	free(qo);
 }
 
-struct sfq_queue_object* sfq_open_queue_rw(const char* querootdir, const char* quename,
+struct sfq_queue_object* sfq_open_queue_rw(const char* querootdir, const char* quename)
+{
+	return open_queue_(querootdir, quename, (SFQ_FOM_READ | SFQ_FOM_WRITE), 0);
+}
+
+struct sfq_queue_object* sfq_open_queue_rw_lws(const char* querootdir, const char* quename,
 	int semlock_wait_sec)
 {
 	return open_queue_(querootdir, quename, (SFQ_FOM_READ | SFQ_FOM_WRITE),
 		semlock_wait_sec);
 }
 
-struct sfq_queue_object* sfq_open_queue_ro(const char* querootdir, const char* quename,
+struct sfq_queue_object* sfq_open_queue_ro(const char* querootdir, const char* quename)
+{
+	return open_queue_(querootdir, quename, SFQ_FOM_READ, 0);
+}
+
+struct sfq_queue_object* sfq_open_queue_ro_lws(const char* querootdir, const char* quename,
 	int semlock_wait_sec)
 {
 	return open_queue_(querootdir, quename, SFQ_FOM_READ, semlock_wait_sec);
@@ -468,32 +538,36 @@ SFQ_LIB_LEAVE
 	return qo;
 }
 
-static sfq_bool unlink_elmpos(FILE* fp, off_t elmpos, int type /* 1=prev, 2=next */)
+enum
 {
-	sfq_bool b = SFQ_false;
+	UPDATE_PREV_ELMPOS = 1,
+	UPDATE_NEXT_ELMPOS = 2,
+};
+
+static sfq_bool update_elmpos_(FILE* fp, off_t seek_pos, int type, off_t updval)
+{
+	ssize_t siosize = 0;
+	//sfq_bool b = SFQ_false;
 	struct sfq_e_header eh;
 
-	b = sfq_seek_set_and_read(fp, elmpos, &eh, sizeof(eh));
-	if (! b)
+	siosize = pread(fileno(fp), &eh, sizeof(eh), seek_pos);
+	if (siosize == -1)
 	{
 		return SFQ_false;
 	}
 
 	switch (type)
 	{
-		case 1:
+		case UPDATE_PREV_ELMPOS:
 		{
-		/* 次の要素の prev_elmpos に 0 を設定し、リンクを切る */
-
-			eh.prev_elmpos = 0;
+			eh.prev_elmpos = updval;
 			break;
 		}
 
-		case 2:
+		case UPDATE_NEXT_ELMPOS:
 		{
-		/* 前の要素の next_elmpos に 0 を設定し、リンクを切る */
 
-			eh.next_elmpos = 0;
+			eh.next_elmpos = updval;
 			break;
 		}
 
@@ -503,8 +577,8 @@ static sfq_bool unlink_elmpos(FILE* fp, off_t elmpos, int type /* 1=prev, 2=next
 		}
 	}
 
-	b = sfq_seek_set_and_write(fp, elmpos, &eh, sizeof(eh));
-	if (! b)
+	siosize = pwrite(fileno(fp), &eh, sizeof(eh), seek_pos);
+	if (siosize == -1)
 	{
 		return SFQ_false;
 	}
@@ -512,22 +586,32 @@ static sfq_bool unlink_elmpos(FILE* fp, off_t elmpos, int type /* 1=prev, 2=next
 	return SFQ_true;
 }
 
-sfq_bool sfq_unlink_prevelm(struct sfq_queue_object* qo, off_t elmpos)
+sfq_bool sfq_unlink_prevelm(struct sfq_queue_object* qo, off_t seek_pos)
 {
-	return unlink_elmpos(qo->fp, elmpos, 1);
+	/* prev_elmpos に 0 を設定し、リンクを切る */
+
+	return update_elmpos_(qo->fp, seek_pos, UPDATE_PREV_ELMPOS, 0);
 }
 
-sfq_bool sfq_unlink_nextelm(struct sfq_queue_object* qo, off_t elmpos)
+sfq_bool sfq_unlink_nextelm(struct sfq_queue_object* qo, off_t seek_pos)
 {
-	return unlink_elmpos(qo->fp, elmpos, 2);
+	/* next_elmpos に 0 を設定し、リンクを切る */
+
+	return update_elmpos_(qo->fp, seek_pos, UPDATE_NEXT_ELMPOS, 0);
+}
+
+sfq_bool sfq_link_nextelm(struct sfq_queue_object* qo, off_t seek_pos, off_t updval)
+{
+	return update_elmpos_(qo->fp, seek_pos, UPDATE_NEXT_ELMPOS, updval);
 }
 
 sfq_bool sfq_writeqfh(struct sfq_queue_object* qo, struct sfq_file_header* qfh,
 	const struct sfq_process_info* procs, const char* lastoper)
 {
-SFQ_LIB_ENTER
-
 	sfq_bool b = SFQ_false;
+	size_t iosize = 0;
+
+SFQ_LIB_ENTER
 
 	if (! qo)
 	{
@@ -542,15 +626,15 @@ SFQ_LIB_ENTER
 	qfh->qh.dval.update_cnt++;
 	qfh->qh.dval.updatetime = qo->opentime;
 
-	b = sfq_seek_set_and_write(qo->fp, 0, qfh, sizeof(*qfh));
+/* */
+	b = seek_set_write_(qo->fp, 0, qfh, sizeof(*qfh));
 	if (! b)
 	{
-		SFQ_FAIL(EA_WRITEQFH, "sfq_seek_set_and_write");
+		SFQ_FAIL(EA_WRITEQFH, "seek_set_write_");
 	}
 
 	if (procs)
 	{
-		size_t iosize = 0;
 		size_t procs_size = 0;
 		size_t pi_size = 0;
 
@@ -576,10 +660,11 @@ SFQ_LIB_LEAVE
 sfq_bool sfq_readqfh(struct sfq_queue_object* qo, struct sfq_file_header* qfh,
 	struct sfq_process_info** procs_ptr)
 {
-SFQ_LIB_ENTER
-
 	struct sfq_process_info* procs = NULL;
 	sfq_bool b = SFQ_false;
+	size_t iosize = 0;
+
+SFQ_LIB_ENTER
 
 /* */
 	if (! qo)
@@ -590,10 +675,10 @@ SFQ_LIB_ENTER
 	bzero(qfh, sizeof(*qfh));
 
 /* read file-header */
-	b = sfq_seek_set_and_read(qo->fp, 0, qfh, sizeof(*qfh));
+	b = seek_set_read_(qo->fp, 0, qfh, sizeof(*qfh));
 	if (! b)
 	{
-		SFQ_FAIL(EA_SEEKSETIO, "sfq_seek_set_and_read(qfh)");
+		SFQ_FAIL(EA_SEEKSETIO, "seek_set_read_(qfh)");
 	}
 
 /* read process-table */
@@ -601,7 +686,6 @@ SFQ_LIB_ENTER
 	{
 		if (qfh->qh.sval.procs_num)
 		{
-			size_t iosize = 0;
 			size_t procs_size = 0;
 
 			procs_size = qfh->qh.sval.procs_num * sizeof(struct sfq_process_info);
@@ -660,20 +744,20 @@ SFQ_LIB_LEAVE
  */
 sfq_bool sfq_writeelm(struct sfq_queue_object* qo, off_t seek_pos, const struct sfq_ioelm_buff* ioeb)
 {
-SFQ_LIB_ENTER
-
 	sfq_bool b = SFQ_false;
 	size_t iosize = 0;
+
+SFQ_LIB_ENTER
 
 	if (! qo)
 	{
 		SFQ_FAIL(EA_FUNCARG, "qo");
 	}
 
-	b = sfq_seek_set_and_write(qo->fp, seek_pos, &ioeb->eh, sizeof(ioeb->eh));
+	b = seek_set_write_(qo->fp, seek_pos, &ioeb->eh, sizeof(ioeb->eh));
 	if (! b)
 	{
-		SFQ_FAIL(EA_SEEKSETIO, "sfq_seek_set_and_write");
+		SFQ_FAIL(EA_SEEKSETIO, "seek_set_write_(eh)");
 	}
 
 	if (ioeb->eh.payload_size)
@@ -783,10 +867,10 @@ SFQ_LIB_ENTER
 /* read element */
 
 	/* r: header */
-	b = sfq_seek_set_and_read(qo->fp, seek_pos, &ioeb->eh, eh_size);
+	b = seek_set_read_(qo->fp, seek_pos, &ioeb->eh, eh_size);
 	if (! b)
 	{
-		SFQ_FAIL(EA_SEEKSETIO, "sfq_seek_set_and_read(eh)");
+		SFQ_FAIL(EA_SEEKSETIO, "seek_set_read_(eh)");
 	}
 
 	if (ioeb->eh.eh_size != eh_size)
@@ -931,75 +1015,6 @@ void sfq_free_ioelm_buff(struct sfq_ioelm_buff* ioeb)
 	bzero(ioeb, sizeof(*ioeb));
 }
 
-sfq_bool sfq_seek_set_and_read(FILE* fp, off_t set_pos, void* mem, size_t mem_size)
-{
-	off_t orc = 0;
-	size_t iosize = 0;
-
-	if (! fp)
-	{
-		return SFQ_false;
-	}
-
-	if (! mem)
-	{
-		return SFQ_false;
-	}
-
-	if (mem_size == 0)
-	{
-		return SFQ_false;
-	}
-
-	orc = fseeko(fp, set_pos, SEEK_SET);
-	if (orc == (off_t)-1)
-	{
-		return SFQ_false;
-	}
-
-	iosize = fread(mem, mem_size, 1, fp);
-	if (iosize != 1)
-	{
-		return SFQ_false;
-	}
-
-	return SFQ_true;
-}
-
-sfq_bool sfq_seek_set_and_write(FILE* fp, off_t set_pos, const void* mem, size_t mem_size)
-{
-	off_t orc = 0;
-	size_t iosize = 0;
-
-	if (! fp)
-	{
-		return SFQ_false;
-	}
-
-	if (! mem)
-	{
-		return SFQ_false;
-	}
-
-	if (mem_size == 0)
-	{
-		return SFQ_false;
-	}
-
-	orc = fseeko(fp, set_pos, SEEK_SET);
-	if (orc == (off_t)-1)
-	{
-		return SFQ_false;
-	}
-
-	iosize = fwrite(mem, mem_size, 1, fp);
-	if (iosize != 1)
-	{
-		return SFQ_false;
-	}
-
-	return SFQ_true;
-}
 
 void sfq_qh_init_pos(struct sfq_q_header* p)
 {

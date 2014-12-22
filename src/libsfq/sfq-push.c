@@ -23,7 +23,6 @@ SFQ_ENTP_ENTER
 	sfq_bool b = SFQ_false;
 
 	int slotno = -1;
-	size_t eh_size = 0;
 	off_t elm_pos = 0;
 	questate_t questate = 0;
 
@@ -35,8 +34,6 @@ SFQ_ENTP_ENTER
 	struct sfq_ioelm_buff ioeb;
 
 /* initialize */
-	eh_size = sizeof(struct sfq_e_header);
-
 	bzero(&qfh, sizeof(qfh));
 	bzero(&prev_eh, sizeof(prev_eh));
 	bzero(&ioeb, sizeof(ioeb));
@@ -146,7 +143,7 @@ push 可能条件の判定
 	}
 
 /* open queue-file */
-	qo = sfq_open_queue_rw(querootdir, quename, 0);
+	qo = sfq_open_queue_rw(querootdir, quename);
 	if (! qo)
 	{
 		SFQ_FAIL(EA_OPENQUEUE, "sfq_open_queue_rw");
@@ -322,18 +319,10 @@ id, pushtime, uuid はここで生成する
 /* update prev-element */
 		/* next_elmpos を書き換え、リンクをつなげる */
 
-		b = sfq_seek_set_and_read(qo->fp, ioeb.eh.prev_elmpos, &prev_eh, eh_size);
+		b = sfq_link_nextelm(qo, ioeb.eh.prev_elmpos, elm_pos);
 		if (! b)
 		{
-			SFQ_FAIL(EA_SEEKSETIO, "sfq_seek_set_and_read(prev_eh)");
-		}
-
-		prev_eh.next_elmpos = elm_pos;
-
-		b = sfq_seek_set_and_write(qo->fp, ioeb.eh.prev_elmpos, &prev_eh, eh_size);
-		if (! b)
-		{
-			SFQ_FAIL(EA_SEEKSETIO, "sfq_seek_set_and_write(prev_eh)");
+			SFQ_FAIL(EA_SEEKSETIO, "sfq_link_nextelm(prev_eh)");
 		}
 	}
 

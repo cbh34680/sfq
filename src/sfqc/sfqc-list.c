@@ -3,7 +3,13 @@
 #define _T_	"\t"
 #define LF	"\n"
 
-void print_element(ulong order, off_t elm_pos, const struct sfq_value* val, void* userdata)
+struct prtelm_data
+{
+	ulong count;
+	sfq_uchar loop_limit;
+};
+
+sfq_bool print_element(ulong order, off_t elm_pos, const struct sfq_value* val, void* userdata)
 {
 	int irc = 0;
 	struct tm tmp;
@@ -11,6 +17,7 @@ void print_element(ulong order, off_t elm_pos, const struct sfq_value* val, void
 	char dt[32] = "";
 	char uuid_s[37] = "";
 
+	struct prtelm_data* ped = (struct prtelm_data*)userdata;
 	struct sfq_value pval;
 
 	bzero(&pval, sizeof(pval));
@@ -29,7 +36,14 @@ void print_element(ulong order, off_t elm_pos, const struct sfq_value* val, void
 		sfq_free_value(&pval);
 	}
 
-	(*((ulong*)userdata))++;
+	ped->count++;
+
+	if (ped->loop_limit)
+	{
+		return ((order + 1) < ped->loop_limit);
+	}
+
+	return SFQ_true;
 }
 
 int main(int argc, char** argv)
@@ -37,15 +51,16 @@ int main(int argc, char** argv)
 	int irc = 0;
 	char* message = NULL;
 	int jumppos = 0;
-	ulong cnt = 0;
 
 /* */
 	struct sfqc_program_args pgargs;
+	struct prtelm_data ped;
 
 /* */
 SFQC_MAIN_ENTER
 
 	bzero(&pgargs, sizeof(pgargs));
+	bzero(&ped, sizeof(ped));
 
 /* */
 	irc = sfqc_parse_program_args(argc, argv, "D:N:r123456789", SFQ_false, &pgargs);
@@ -56,8 +71,9 @@ SFQC_MAIN_ENTER
 		goto EXIT_LABEL;
 	}
 
-	irc = sfq_map(pgargs.querootdir, pgargs.quename, print_element, &cnt,
-		pgargs.reverse, pgargs.loop_limit);
+	ped.loop_limit = pgargs.num1char;
+
+	irc = sfq_map(pgargs.querootdir, pgargs.quename, print_element, pgargs.reverse, &ped);
 
 	if (irc != SFQ_RC_SUCCESS)
 	{
@@ -69,23 +85,23 @@ SFQC_MAIN_ENTER
 		}
 	}
 
-	if (pgargs.loop_limit)
+	if (pgargs.num1char)
 	{
-		puts("");
+		fprintf(stderr, "\n");
 	}
 	else
 	{
-		if (cnt == 0)
+		if (ped.count == 0)
 		{
-			printf("element does not exist in the queue\n");
+			fprintf(stderr, "element does not exist in the queue\n");
 		}
-		else if (cnt == 1)
+		else if (ped.count == 1)
 		{
-			printf("\nthere is one element in the queue\n");
+			fprintf(stderr, "\nthere is one element in the queue\n");
 		}
 		else
 		{
-			printf("\nthere are %zu elements in the queue\n", cnt);
+			fprintf(stderr, "\nthere are %zu elements in the queue\n", ped.count);
 		}
 	}
 

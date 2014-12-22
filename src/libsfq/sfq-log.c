@@ -424,7 +424,8 @@ static sfq_bool output_reopen_4proc(FILE* fp, const char* logdir, ushort slotno,
 	return SFQ_false;
 }
 
-void sfq_reopen_4proc(const char* logdir, ushort slotno, questate_t questate, mode_t file_perm)
+void sfq_reopen_4proc(const char* logdir, ushort slotno,
+	questate_t questate, mode_t file_perm)
 {
 	sfq_bool sout_ok = SFQ_false;
 	sfq_bool serr_ok = SFQ_false;

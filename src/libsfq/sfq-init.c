@@ -1,10 +1,5 @@
 #include "sfq-lib.h"
 
-static sfq_bool pwd_nam2id(const char* queuser, const char* quegroup,
-	uid_t* queuserid_ptr, gid_t* quegroupid_ptr);
-
-static sfq_bool caps_isset(cap_value_t cap);
-
 int sfq_init(const char* querootdir, const char* quename, const struct sfq_queue_init_params* qip)
 {
 SFQ_ENTP_ENTER
@@ -18,12 +13,12 @@ SFQ_ENTP_ENTER
 	size_t procs_size = 0;
 	size_t elmseg_start_pos = 0;
 	sfq_bool b = SFQ_false;
-
-	uid_t euid = (uid_t)-1;
-	gid_t egid = (uid_t)-1;
-	uid_t queuserid = (uid_t)-1;
-	gid_t quegroupid = (uid_t)-1;
 	sfq_bool chmod_GaW = SFQ_false;
+
+	uid_t euid = SFQ_UID_NONE;
+	gid_t egid = SFQ_GID_NONE;
+	uid_t queuserid = SFQ_UID_NONE;
+	gid_t quegroupid = SFQ_GID_NONE;
 
 	struct sfq_queue_create_params qcp;
 	struct sfq_file_header qfh;
@@ -33,11 +28,11 @@ SFQ_ENTP_ENTER
 	eh_size = sizeof(struct sfq_e_header);
 	pi_size = sizeof(struct sfq_process_info);
 
-	euid = geteuid();
-	egid = getegid();
-
 	bzero(&qcp, sizeof(qcp));
 	bzero(&qfh, qfh_size);
+
+	euid = geteuid();
+	egid = getegid();
 
 /*
 queue header の初期値を設定
@@ -53,16 +48,14 @@ queue header の初期値を設定
 /*
 "-U", "-G" が有効なのは euid == 0(root) のときのみ
 */
-	SFQ_UNSET_UID(queuserid);
-	SFQ_UNSET_GID(quegroupid);
 
-	b = pwd_nam2id(qip->queuser, qip->quegroup, &queuserid, &quegroupid);
+	b = sfq_pwdgrp_nam2id(qip->queuser, qip->quegroup, &queuserid, &quegroupid);
 	if (! b)
 	{
 		SFQ_FAIL(EA_PWDNAME2ID, "pwd_nam2id");
 	}
 
-	if (caps_isset(CAP_CHOWN))
+	if (sfq_caps_isset(CAP_CHOWN))
 	{
 		if (SFQ_ISSET_UID(queuserid))
 		{
@@ -120,8 +113,8 @@ root の場合、"-U" か "-G" の指定があるときのみ通過させる
 			chmod_GaW = SFQ_true;
 		}
 
-		SFQ_UNSET_UID(queuserid);
-		SFQ_UNSET_GID(quegroupid);
+		queuserid = SFQ_UID_NONE;
+		quegroupid = SFQ_GID_NONE;
 	}
 
 /* check process num */
@@ -235,104 +228,5 @@ SFQ_LIB_CHECKPOINT
 SFQ_ENTP_LEAVE
 
 	return SFQ_LIB_RC();
-}
-
-static sfq_bool pwd_nam2id(const char* queuser, const char* quegroup,
-	uid_t* queuserid_ptr, gid_t* quegroupid_ptr)
-{
-	long sysmax = 0;
-	char* buf = NULL;
-	size_t bufsize = 0;
-
-SFQ_LIB_ENTER
-
-	sysmax = sysconf(SFQ_MAX(_SC_GETPW_R_SIZE_MAX, _SC_GETGR_R_SIZE_MAX));
-	if (sysmax > 0)
-	{
-		bufsize = (size_t)sysmax;
-	}
-	else
-	{
-		bufsize = 1024U;
-	}
-
-	buf = alloca(bufsize);
-	if (! buf)
-	{
-		SFQ_FAIL(ES_MEMALLOC, "ALLOC(buf)");
-	}
-
-/* user */
-	if (queuser)
-	{
-		struct passwd pwd;
-		struct passwd *result;
-
-		getpwnam_r(queuser, &pwd, buf, bufsize, &result);
-		if (! result)
-		{
-			SFQ_FAIL(ES_MEMALLOC, "specified user not found");
-		}
-
-//#ifdef SFQ_DEBUG_BUILD
-//		fprintf(stderr, "user[%s] = %u\n", queuser, pwd.pw_uid);
-//#endif
-
-		(*queuserid_ptr) = pwd.pw_uid;
-	}
-
-/* group */
-	if (quegroup)
-	{
-		struct group grp;
-		struct group *result;
-
-		getgrnam_r(quegroup, &grp, buf, bufsize, &result);
-		if (! result)
-		{
-			SFQ_FAIL(ES_MEMALLOC, "specified group not found");
-		}
-
-//#ifdef SFQ_DEBUG_BUILD
-//		fprintf(stderr, "group[%s] = %u\n", quegroup, grp.gr_gid);
-//#endif
-
-		(*quegroupid_ptr) = grp.gr_gid;
-	}
-
-SFQ_LIB_CHECKPOINT
-
-SFQ_LIB_LEAVE
-
-	return SFQ_LIB_IS_SUCCESS();
-}
-
-/*
-https://github.com/dotcloud/lxc/blob/master/src/lxc/caps.c
-*/
-static sfq_bool caps_isset(cap_value_t cap)
-{
-	sfq_bool ret = SFQ_false;
-
-#ifdef __GNUC__
-	cap_t cap_p = NULL;
-
-	cap_p = cap_get_pid(getpid());
-	if (cap_p)
-	{
-		int irc = -1;
-		cap_flag_value_t flag = 0;
-
-		irc = cap_get_flag(cap_p, cap, CAP_EFFECTIVE, &flag);
-		if (irc == 0)
-		{
-			ret = (flag == CAP_SET);
-		}
-
-		cap_free(cap_p);
-	}
-#endif
-
-	return ret;
 }
 

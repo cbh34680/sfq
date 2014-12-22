@@ -17,6 +17,107 @@ pid_t sfq_gettid(void)
 	return syscall(SYS_gettid);
 }
 
+/*
+https://github.com/dotcloud/lxc/blob/master/src/lxc/caps.c
+*/
+sfq_bool sfq_caps_isset(cap_value_t cap)
+{
+	sfq_bool ret = SFQ_false;
+
+#ifdef __GNUC__
+	cap_t cap_p = NULL;
+
+	cap_p = cap_get_pid(getpid());
+	if (cap_p)
+	{
+		int irc = -1;
+		cap_flag_value_t flag = 0;
+
+		irc = cap_get_flag(cap_p, cap, CAP_EFFECTIVE, &flag);
+		if (irc == 0)
+		{
+			ret = (flag == CAP_SET);
+		}
+
+		cap_free(cap_p);
+	}
+#endif
+
+	return ret;
+}
+
+sfq_bool sfq_pwdgrp_nam2id(const char* queuser, const char* quegroup,
+	uid_t* queuserid_ptr, gid_t* quegroupid_ptr)
+{
+	long sysmax = 0;
+	char* buf = NULL;
+	size_t bufsize = 0;
+
+SFQ_LIB_ENTER
+
+	sysmax = sysconf(SFQ_MAX(_SC_GETPW_R_SIZE_MAX, _SC_GETGR_R_SIZE_MAX));
+	if (sysmax > 0)
+	{
+		bufsize = (size_t)sysmax;
+	}
+	else
+	{
+		bufsize = 1024U;
+	}
+
+	buf = alloca(bufsize);
+	if (! buf)
+	{
+		SFQ_FAIL(ES_MEMALLOC, "ALLOC(buf)");
+	}
+
+/* user */
+	if (queuser)
+	{
+		struct passwd pwd;
+		struct passwd *result;
+
+		getpwnam_r(queuser, &pwd, buf, bufsize, &result);
+		if (! result)
+		{
+			SFQ_FAIL(ES_MEMALLOC, "specified user not found");
+		}
+
+//#ifdef SFQ_DEBUG_BUILD
+//		fprintf(stderr, "user[%s] = %u\n", queuser, pwd.pw_uid);
+//#endif
+
+		assert(queuserid_ptr);
+		(*queuserid_ptr) = pwd.pw_uid;
+	}
+
+/* group */
+	if (quegroup)
+	{
+		struct group grp;
+		struct group *result;
+
+		getgrnam_r(quegroup, &grp, buf, bufsize, &result);
+		if (! result)
+		{
+			SFQ_FAIL(ES_MEMALLOC, "specified group not found");
+		}
+
+//#ifdef SFQ_DEBUG_BUILD
+//		fprintf(stderr, "group[%s] = %u\n", quegroup, grp.gr_gid);
+//#endif
+
+		assert(quegroupid_ptr);
+		(*quegroupid_ptr) = grp.gr_gid;
+	}
+
+SFQ_LIB_CHECKPOINT
+
+SFQ_LIB_LEAVE
+
+	return SFQ_LIB_IS_SUCCESS();
+}
+
 size_t sfq_payload_len(const struct sfq_value* val)
 {
 	size_t ret = 0;
@@ -56,198 +157,6 @@ int sfq_reserve_proc(struct sfq_process_info* procs, ushort procs_num)
 	}
 
 	return -1;
-}
-
-int sfq_get_questate(const char* querootdir, const char* quename,
-	questate_t* questate_ptr, int semlock_wait_sec)
-{
-SFQ_LIB_ENTER
-
-	struct sfq_queue_object* qo = NULL;
-
-	struct sfq_file_header qfh;
-	sfq_bool b = SFQ_false;
-
-/* initialize */
-	bzero(&qfh, sizeof(qfh));
-
-	if (! questate_ptr)
-	{
-		SFQ_FAIL(EA_FUNCARG, "questate_ptr is null");
-	}
-
-	qo = sfq_open_queue_ro(querootdir, quename, semlock_wait_sec);
-	if (! qo)
-	{
-		SFQ_FAIL(EA_OPENQUEUE, "sfq_open_queue_ro");
-	}
-
-	b = sfq_readqfh(qo, &qfh, NULL);
-	if (! b)
-	{
-		SFQ_FAIL(EA_READQFH, "sfq_readqfh");
-	}
-
-	(*questate_ptr) = qfh.qh.dval.questate;
-
-SFQ_LIB_CHECKPOINT
-
-SFQ_LIB_LEAVE
-
-	sfq_close_queue(qo);
-	qo = NULL;
-
-	return SFQ_LIB_RC();
-}
-
-int sfq_set_questate(const char* querootdir, const char* quename,
-	questate_t questate, int semlock_wait_sec)
-{
-SFQ_LIB_ENTER
-
-	struct sfq_open_names* om = NULL;
-	struct sfq_queue_object* qo = NULL;
-	struct sfq_process_info* procs = NULL;
-
-	int irc = -1;
-	int slotno = -1;
-	sfq_bool b = SFQ_false;
-
-	sfq_bool forceLeakQueue = SFQ_false;
-
-	struct sfq_file_header qfh;
-
-/* initialize */
-	bzero(&qfh, sizeof(qfh));
-
-/* create names */
-	if (questate & SFQ_QST_DEV_SEMUNLOCK_ON)
-	{
-/*
-!! デバッグ用 !!
-
-強制的にセマフォのロックを解除する
-*/
-		om = sfq_alloc_open_names(querootdir, quename);
-		if (! om)
-		{
-			SFQ_FAIL(EA_CREATENAMES, "sfq_alloc_open_names");
-		}
-
-		irc = sem_unlink(om->semname);
-		if (irc == -1)
-		{
-			if (errno != ENOENT)
-			{
-				SFQ_FAIL(ES_UNLINK,
-					"delete semaphore fault, check permission (e.g. /dev/shm%s)",
-					om->semname);
-			}
-		}
-
-		SFQ_FAIL(DEV_SEMUNLOCK, "success unlock semaphore [%s] (for develop)\n", om->semname);
-	}
-
-/* open queue */
-	qo = sfq_open_queue_rw(querootdir, quename, semlock_wait_sec);
-	if (! qo)
-	{
-		SFQ_FAIL(EA_OPENQUEUE, "sfq_open_queue_rw");
-	}
-
-/* */
-	if (questate & SFQ_QST_DEV_SEMLOCK_ON)
-	{
-/*
-!! デバッグ用 !!
-
-セマフォをロッセしたままにする
---> メモリリークは発生する
-*/
-		forceLeakQueue = SFQ_true;
-
-		SFQ_FAIL(DEV_SEMLOCK, "success lock semaphore [%s] (for develop)\n", qo->om->semname);
-	}
-
-/* read queue header */
-	b = sfq_readqfh(qo, &qfh, &procs);
-	if (! b)
-	{
-		SFQ_FAIL(EA_READQFH, "sfq_readqfh");
-	}
-
-/* update state */
-	if (qfh.qh.dval.questate == questate)
-	{
-/*
-変更前後が同じ値なら更新の必要はない
-*/
-		SFQ_FAIL(W_NOCHANGE_STATE, "there is no change in the state");
-	}
-
-	if (questate & SFQ_QST_EXEC_ON)
-	{
-/*
-exec が OFF から ON に変わった
-*/
-		if (qfh.qh.dval.elm_num)
-		{
-/*
-キューに要素が存在する
-*/
-			if (procs)
-			{
-/*
-プロセステーブルが存在するので、実行予約を試みる
-*/
-				slotno = sfq_reserve_proc(procs, qfh.qh.sval.procs_num);
-			}
-		}
-	}
-
-	if (slotno == -1)
-	{
-/*
-プロセステーブルが更新されていないので開放
-*/
-		free(procs);
-		procs = NULL;
-	}
-
-	qfh.qh.dval.questate = questate;
-
-	b = sfq_writeqfh(qo, &qfh, procs, "SET");
-	if (! b)
-	{
-		SFQ_FAIL(EA_WRITEQFH, "sfq_writeqfh");
-	}
-
-SFQ_LIB_CHECKPOINT
-
-SFQ_LIB_LEAVE
-
-	sfq_free_open_names(om);
-	om = NULL;
-
-	free(procs);
-	procs = NULL;
-
-	if (forceLeakQueue)
-	{
-		/* for Debug */
-	}
-	else
-	{
-		sfq_close_queue(qo);
-		qo = NULL;
-	}
-
-	if (slotno != -1)
-	{
-		sfq_go_exec(querootdir, quename, (ushort)slotno, questate);
-	}
-
-	return SFQ_LIB_RC();
 }
 
 sfq_bool sfq_copy_val2ioeb(const struct sfq_value* val, struct sfq_ioelm_buff* ioeb)
