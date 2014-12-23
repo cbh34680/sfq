@@ -20,7 +20,7 @@ SFQC_MAIN_ENTER
 	bzero(&qip, sizeof(qip));
 
 /* */
-	irc = sfqc_parse_program_args(argc, argv, "D:N:S:L:B:U:G:oe", SFQ_false, &pgargs);
+	irc = sfqc_parse_program_args(argc, argv, "D:N:U:G:S:L:B:oe", SFQ_false, &pgargs);
 	if (irc != 0)
 	{
 		message = "parse_program_args: parse error";
@@ -66,8 +66,8 @@ SFQC_MAIN_ENTER
 	qip.procs_num = procs_num;
 	qip.boota_proc_num = pgargs.boota_proc_num;
 	qip.questate = questate;
-	qip.queuser = pgargs.queuser;
-	qip.quegroup = pgargs.quegroup;
+	qip.queuser = pgargs.username;
+	qip.quegroup = pgargs.groupname;
 
 	irc = sfq_init(pgargs.querootdir, pgargs.quename, &qip);
 

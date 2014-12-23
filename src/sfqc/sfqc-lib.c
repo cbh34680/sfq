@@ -188,8 +188,8 @@ void sfqc_free_program_args(struct sfqc_program_args* pgargs)
 
 	free((char*)pgargs->querootdir);
 	free((char*)pgargs->quename);
-	free((char*)pgargs->queuser);
-	free((char*)pgargs->quegroup);
+	free((char*)pgargs->username);
+	free((char*)pgargs->groupname);
 	free((char*)pgargs->execpath);
 	free((char*)pgargs->execargs);
 	free((char*)pgargs->metatext);
@@ -350,8 +350,8 @@ int sfqc_parse_program_args(int argc, char** argv, const char* optstring,
 
 			case 'N': { RESET_STR(optarg, quename);		break; } // QUEUE 名
 			case 'D': { RESET_STR(optarg, querootdir);	break; } // QUEUE ディレクトリ
-			case 'U': { RESET_STR(optarg, queuser);		break; } // QUEUE ユーザ
-			case 'G': { RESET_STR(optarg, quegroup);	break; } // QUEUE グループ
+			case 'U': { RESET_STR(optarg, username);	break; } // QUEUE ユーザ
+			case 'G': { RESET_STR(optarg, groupname);	break; } // QUEUE グループ
 			case 'x': { RESET_STR(optarg, execpath);	break; } // exec() パス
 			case 'v': { RESET_STR(optarg, textdata);	break; } // データ# テキスト
 			case 'f': { RESET_STR(optarg, inputfile);	break; } // データ# ファイル名
@@ -405,6 +405,7 @@ int sfqc_parse_program_args(int argc, char** argv, const char* optstring,
 				break;
 			}
 
+			case '0':
 			case '1':
 			case '2':
 			case '3':
@@ -415,7 +416,7 @@ int sfqc_parse_program_args(int argc, char** argv, const char* optstring,
 			case '8':
 			case '9':
 			{
-				pgargs->loop_limit = (opt - '0');
+				pgargs->num1char = (opt - '0');
 				break;
 			}
 

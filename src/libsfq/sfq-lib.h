@@ -78,16 +78,14 @@
 /* --------------------------------------------------------------
  *
  * uid = 0 は root になって uid_t の初期値には使えないから
- * uid_t, gid_t はマクロを多用する
+ * uid_t, gid_t はマクロを利用する
  *
  */
-#define SFQ_IS_ROOTUID(a)	( (a) == 0)
+#define SFQ_UID_NONE		( (uid_t)-1 )
+#define SFQ_GID_NONE		( (gid_t)-1 )
 
-#define SFQ_UNSET_UID(a)	( (a) = (uid_t)-1 )
-#define SFQ_UNSET_GID(a)	( (a) = (gid_t)-1 )
-
-#define SFQ_ISSET_UID(a)	( (a) != (uid_t)-1 )
-#define SFQ_ISSET_GID(a)	( (a) != (gid_t)-1 )
+#define SFQ_ISSET_UID(a)	( (a) != SFQ_UID_NONE )
+#define SFQ_ISSET_GID(a)	( (a) != SFQ_GID_NONE )
 
 #define SFQ_MAX(a, b)		(((a)>(b))?(a):(b))
 
@@ -306,7 +304,6 @@ struct sfq_e_header
 	ulong id;			/* 8 */
 	time_t pushtime;		/* 8 */
 	uuid_t uuid;			/* 16 */
-
 	size_t payload_size;		/* 8 */
 
 	size_t elmsize_;		/* 8 ... for debug, set by sfq_copy_val2ioeb() */
@@ -387,6 +384,13 @@ struct sfq_queue_create_params
  *
  */
 pid_t sfq_gettid(void);
+sfq_bool sfq_caps_isset(cap_value_t cap);
+
+sfq_bool sfq_pwdgrp_nam2id(const char* queuser, const char* quegroup,
+	uid_t* queuserid_ptr, gid_t* quegroupid_ptr);
+
+sfq_bool sfq_pwdgrp_id2nam_alloc(uid_t uid, gid_t gid,
+        const char** username_ptr, const char** groupname_ptr);
 
 void sfq_print_sizes(void);
 void sfq_print_qo(const struct sfq_queue_object* qo);
@@ -401,13 +405,19 @@ void sfq_free_ioelm_buff(struct sfq_ioelm_buff* ioeb);
 void sfq_free_open_names(struct sfq_open_names* om);
 void sfq_reopen_4proc(const char* logdir, ushort slotno, questate_t questate, mode_t file_perm);
 
+void sfq_init_ioeb(struct sfq_ioelm_buff* ioeb);
+
 sfq_bool sfq_lock_semaphore(const char* semname, int semlock_wait_sec);
 void sfq_unlock_semaphore(const char* semname);
 
-struct sfq_queue_object* sfq_open_queue_rw(const char* querootdir, const char* quename,
+struct sfq_queue_object* sfq_open_queue_rw(const char* querootdir, const char* quename);
+
+struct sfq_queue_object* sfq_open_queue_rw_lws(const char* querootdir, const char* quename,
 	int semlock_wait_sec);
 
-struct sfq_queue_object* sfq_open_queue_ro(const char* querootdir, const char* quename,
+struct sfq_queue_object* sfq_open_queue_ro(const char* querootdir, const char* quename);
+
+struct sfq_queue_object* sfq_open_queue_ro_lws(const char* querootdir, const char* quename,
 	int semlock_wait_sec);
 
 struct sfq_queue_object* sfq_open_queue_wo(const struct sfq_queue_create_params* qcp);
@@ -416,9 +426,13 @@ struct sfq_open_names* sfq_alloc_open_names(const char* querootdir, const char* 
 int sfq_reserve_proc(struct sfq_process_info* procs, ushort procs_num);
 
 sfq_bool sfq_writeelm(struct sfq_queue_object* qo, off_t seek_pos, const struct sfq_ioelm_buff* ioeb);
-sfq_bool sfq_readelm(struct sfq_queue_object* qo, off_t seek_pos, struct sfq_ioelm_buff* ioeb);
+sfq_bool sfq_readelm_alloc(struct sfq_queue_object* qo, off_t seek_pos, struct sfq_ioelm_buff* ioeb);
+
+/*
 sfq_bool sfq_seek_set_and_read(FILE* fp, off_t pos, void* mem, size_t mem_size);
 sfq_bool sfq_seek_set_and_write(FILE* fp, off_t pos, const void* mem, size_t mem_size);
+*/
+
 sfq_bool sfq_go_exec(const char* querootdir, const char* quename, ushort slotno, questate_t questate);
 sfq_bool sfq_copy_ioeb2val(const struct sfq_ioelm_buff* ioeb, struct sfq_value* val);
 sfq_bool sfq_copy_val2ioeb(const struct sfq_value* val, struct sfq_ioelm_buff* ioeb);
@@ -430,8 +444,9 @@ sfq_bool sfq_readqfh(struct sfq_queue_object* qo,
 sfq_bool sfq_writeqfh(struct sfq_queue_object* qo, struct sfq_file_header* qfh,
 	const struct sfq_process_info* procs, const char* lastoper);
 
-sfq_bool sfq_unlink_prevelm(struct sfq_queue_object* qo, off_t elmpos);
-sfq_bool sfq_unlink_nextelm(struct sfq_queue_object* qo, off_t elmpos);
+sfq_bool sfq_unlink_prevelm(struct sfq_queue_object* qo, off_t seek_pos);
+sfq_bool sfq_unlink_nextelm(struct sfq_queue_object* qo, off_t seek_pos);
+sfq_bool sfq_link_nextelm(struct sfq_queue_object* qo, off_t seek_pos, off_t updval);
 
 void sfq_output_reopen_4exec(FILE* fp, const time_t* now, const char* arg_wpath,
 	const char* logdir, const uuid_t uuid, ulong id, const char* ext, const char* env_key,

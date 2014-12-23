@@ -15,7 +15,7 @@ SFQ_ENTP_ENTER
 
 /* initialize */
 	bzero(&qfh, sizeof(qfh));
-	bzero(&ioeb, sizeof(ioeb));
+	sfq_init_ioeb(&ioeb);
 
 /* check argument */
 	if (! val)
@@ -24,7 +24,7 @@ SFQ_ENTP_ENTER
 	}
 
 /* open queue-file */
-	qo = sfq_open_queue_rw(querootdir, quename, 0);
+	qo = sfq_open_queue_rw(querootdir, quename);
 	if (! qo)
 	{
 		SFQ_FAIL(EA_OPENQUEUE, "sfq_open_queue_rw");
@@ -61,10 +61,10 @@ SFQ_ENTP_ENTER
 	elmpos = qfh.qh.dval.elm_next_pop_pos;
 
 /* read element */
-	b = sfq_readelm(qo, elmpos, &ioeb);
+	b = sfq_readelm_alloc(qo, elmpos, &ioeb);
 	if (! b)
 	{
-		SFQ_FAIL(EA_RWELEMENT, "sfq_readelm");
+		SFQ_FAIL(EA_RWELEMENT, "sfq_readelm_alloc");
 	}
 
 //#ifdef SFQ_DEBUG_BUILD

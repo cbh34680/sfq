@@ -15,7 +15,7 @@ SFQ_LIB_ENTER
 	bzero(&qfh, sizeof(qfh));
 
 /* open queue-file */
-	qo = sfq_open_queue_rw(elop->om_querootdir, elop->om_quename, 0);
+	qo = sfq_open_queue_rw(elop->om_querootdir, elop->om_quename);
 	if (! qo)
 	{
 		SFQ_FAIL(EA_OPENQUEUE, "sfq_open_queue_rw");
@@ -264,7 +264,8 @@ fprintf(stderr, "\n");
 SFQ_LIB_LEAVE
 }
 
-sfq_bool sfq_go_exec(const char* querootdir, const char* quename, ushort slotno, questate_t questate)
+sfq_bool sfq_go_exec(const char* querootdir, const char* quename,
+	ushort slotno, questate_t questate)
 {
 	pid_t pid = (pid_t)-1;
 

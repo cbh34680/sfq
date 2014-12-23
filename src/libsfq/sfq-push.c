@@ -23,7 +23,6 @@ SFQ_ENTP_ENTER
 	sfq_bool b = SFQ_false;
 
 	int slotno = -1;
-	size_t eh_size = 0;
 	off_t elm_pos = 0;
 	questate_t questate = 0;
 
@@ -35,11 +34,9 @@ SFQ_ENTP_ENTER
 	struct sfq_ioelm_buff ioeb;
 
 /* initialize */
-	eh_size = sizeof(struct sfq_e_header);
-
 	bzero(&qfh, sizeof(qfh));
 	bzero(&prev_eh, sizeof(prev_eh));
-	bzero(&ioeb, sizeof(ioeb));
+	sfq_init_ioeb(&ioeb);
 
 /* get current directory */
 	pushwkdir = getcwd(NULL, 0);
@@ -97,40 +94,6 @@ str[0] == '\0' のときは str に NULL を設定
 	}
 
 /*
-payload, payload_size, payload_type は必ず同期する
-*/
-	if (val->payload)
-	{
-		if (! val->payload_type)
-		{
-			SFQ_FAIL(EA_NOTPAYLOADTYPE, "payload_type is not set");
-		}
-
-		if (! val->payload_size)
-		{
-			if (val->payload_type & (SFQ_PLT_CHARARRAY | SFQ_PLT_NULLTERM))
-			{
-/*
-null-term 文字列の場合に payload_size が未設定の場合は自動算出
-*/
-
-				val->payload_size = strlen((char*)val->payload) + 1;
-			}
-			else
-			{
-				SFQ_FAIL(EA_NOTPAYLOADSIZE, "payload_size is not set");
-			}
-		}
-	}
-	else
-	{
-		if (val->payload_size)
-		{
-			SFQ_FAIL(EA_NOTPAYLOAD, "payload is not set [size=%zu]", val->payload_size);
-		}
-	}
-
-/*
 push 可能条件の判定
 */
 	if ((! val->execpath) && (! val->execargs) && (! val->payload))
@@ -146,7 +109,7 @@ push 可能条件の判定
 	}
 
 /* open queue-file */
-	qo = sfq_open_queue_rw(querootdir, quename, 0);
+	qo = sfq_open_queue_rw(querootdir, quename);
 	if (! qo)
 	{
 		SFQ_FAIL(EA_OPENQUEUE, "sfq_open_queue_rw");
@@ -322,18 +285,10 @@ id, pushtime, uuid はここで生成する
 /* update prev-element */
 		/* next_elmpos を書き換え、リンクをつなげる */
 
-		b = sfq_seek_set_and_read(qo->fp, ioeb.eh.prev_elmpos, &prev_eh, eh_size);
+		b = sfq_link_nextelm(qo, ioeb.eh.prev_elmpos, elm_pos);
 		if (! b)
 		{
-			SFQ_FAIL(EA_SEEKSETIO, "sfq_seek_set_and_read(prev_eh)");
-		}
-
-		prev_eh.next_elmpos = elm_pos;
-
-		b = sfq_seek_set_and_write(qo->fp, ioeb.eh.prev_elmpos, &prev_eh, eh_size);
-		if (! b)
-		{
-			SFQ_FAIL(EA_SEEKSETIO, "sfq_seek_set_and_write(prev_eh)");
+			SFQ_FAIL(EA_SEEKSETIO, "sfq_link_nextelm(prev_eh)");
 		}
 	}
 
@@ -437,8 +392,10 @@ SFQ_ENTP_LEAVE
 }
 
 int sfq_push_text(const char* querootdir, const char* quename,
+	const char* execuser, const char* execgroup,
 	const char* execpath, const char* execargs, const char* metatext,
-	const char* soutpath, const char* serrpath, uuid_t uuid,
+	const char* soutpath, const char* serrpath,
+	uuid_t uuid,
 	const char* textdata)
 {
 	int irc = 0;
@@ -446,20 +403,12 @@ int sfq_push_text(const char* querootdir, const char* quename,
 
 	bzero(&val, sizeof(val));
 
-/*
-(char*) cast for show-off warning
- */
-	val.execpath = (char*)execpath;
-	val.execargs = (char*)execargs;
-	val.metatext = (char*)metatext;
-	val.soutpath = (char*)soutpath;
-	val.serrpath = (char*)serrpath;
+	val.execpath = execpath;
+	val.execargs = execargs;
+	val.metatext = metatext;
+	val.soutpath = soutpath;
+	val.serrpath = serrpath;
 	val.payload_type = SFQ_PLT_CHARARRAY | SFQ_PLT_NULLTERM;
-/*
-if null-terminated string, can auto-detect of size
-
-	val.payload_size = (textdata ? (strlen(textdata) + 1) : 0);
-*/
 	val.payload = (sfq_byte*)textdata;
 
 	irc = sfq_push(querootdir, quename, &val);
@@ -476,8 +425,10 @@ if null-terminated string, can auto-detect of size
 }
 
 int sfq_push_binary(const char* querootdir, const char* quename,
+	const char* execuser, const char* execgroup,
 	const char* execpath, const char* execargs, const char* metatext,
-	const char* soutpath, const char* serrpath, uuid_t uuid,
+	const char* soutpath, const char* serrpath,
+	uuid_t uuid,
 	const sfq_byte* payload, size_t payload_size)
 {
 	int irc = 0;
@@ -485,14 +436,11 @@ int sfq_push_binary(const char* querootdir, const char* quename,
 
 	bzero(&val, sizeof(val));
 
-/*
-(char*) cast for show-off warning
- */
-	val.execpath = (char*)execpath;
-	val.execargs = (char*)execargs;
-	val.metatext = (char*)metatext;
-	val.soutpath = (char*)soutpath;
-	val.serrpath = (char*)serrpath;
+	val.execpath = execpath;
+	val.execargs = execargs;
+	val.metatext = metatext;
+	val.soutpath = soutpath;
+	val.serrpath = serrpath;
 	val.payload_type = SFQ_PLT_BINARY;
 	val.payload_size = payload_size;
 	val.payload = (sfq_byte*)payload;

@@ -17,6 +17,190 @@ pid_t sfq_gettid(void)
 	return syscall(SYS_gettid);
 }
 
+/*
+https://github.com/dotcloud/lxc/blob/master/src/lxc/caps.c
+*/
+sfq_bool sfq_caps_isset(cap_value_t cap)
+{
+	sfq_bool ret = SFQ_false;
+
+#ifdef __GNUC__
+	cap_t cap_p = NULL;
+
+	cap_p = cap_get_pid(getpid());
+	if (cap_p)
+	{
+		int irc = -1;
+		cap_flag_value_t flag = 0;
+
+		irc = cap_get_flag(cap_p, cap, CAP_EFFECTIVE, &flag);
+		if (irc == 0)
+		{
+			ret = (flag == CAP_SET);
+		}
+
+		cap_free(cap_p);
+	}
+#endif
+
+	return ret;
+}
+
+sfq_bool sfq_pwdgrp_id2nam_alloc(uid_t uid, gid_t gid,
+	const char** username_ptr, const char** groupname_ptr)
+{
+	long sysmax = 0;
+	char* buf = NULL;
+	size_t bufsize = 0;
+
+	char* username = NULL;
+	char* groupname = NULL;
+
+SFQ_LIB_ENTER
+
+	sysmax = sysconf(SFQ_MAX(_SC_GETPW_R_SIZE_MAX, _SC_GETGR_R_SIZE_MAX));
+	if (sysmax > 0)
+	{
+		bufsize = (size_t)sysmax;
+	}
+	else
+	{
+		bufsize = 1024U;
+	}
+
+	buf = alloca(bufsize);
+	if (! buf)
+	{
+		SFQ_FAIL(ES_MEMALLOC, "ALLOC(buf)");
+	}
+
+/* uid */
+	if (SFQ_ISSET_UID(uid))
+	{
+		struct passwd pwd;
+		struct passwd* result = NULL;
+
+		getpwuid_r(uid, &pwd, buf, bufsize, &result);
+		if (! result)
+		{
+			SFQ_FAIL(ES_MEMALLOC, "specified uid not found");
+		}
+
+		username = strdup(pwd.pw_name);
+		if (! username)
+		{
+			SFQ_FAIL(ES_MEMALLOC, "strdup(pw_name)");
+		}
+
+		assert(username_ptr);
+		(*username_ptr) = username;
+	}
+
+/* gid */
+	if (SFQ_ISSET_GID(gid))
+	{
+		struct group grp;
+		struct group* result = NULL;
+
+		getgrgid_r(gid, &grp, buf, bufsize, &result);
+		if (! result)
+		{
+			SFQ_FAIL(ES_MEMALLOC, "specified gid not found");
+		}
+
+		groupname = strdup(grp.gr_name);
+		if (! groupname)
+		{
+			SFQ_FAIL(ES_MEMALLOC, "strdup(gr_name)");
+		}
+
+
+		assert(groupname_ptr);
+		(*groupname_ptr) = groupname;
+	}
+
+
+SFQ_LIB_CHECKPOINT
+
+	if (SFQ_LIB_IS_FAIL())
+	{
+		free(username);
+		username = NULL;
+
+		free(groupname);
+		groupname = NULL;
+	}
+
+
+SFQ_LIB_LEAVE
+
+	return SFQ_LIB_IS_SUCCESS();
+}
+
+sfq_bool sfq_pwdgrp_nam2id(const char* username, const char* groupname,
+	uid_t* uidptr, gid_t* gidptr)
+{
+	long sysmax = 0;
+	char* buf = NULL;
+	size_t bufsize = 0;
+
+SFQ_LIB_ENTER
+
+	sysmax = sysconf(SFQ_MAX(_SC_GETPW_R_SIZE_MAX, _SC_GETGR_R_SIZE_MAX));
+	if (sysmax > 0)
+	{
+		bufsize = (size_t)sysmax;
+	}
+	else
+	{
+		bufsize = 1024U;
+	}
+
+	buf = alloca(bufsize);
+	if (! buf)
+	{
+		SFQ_FAIL(ES_MEMALLOC, "ALLOC(buf)");
+	}
+
+/* user */
+	if (username)
+	{
+		struct passwd pwd;
+		struct passwd* result = NULL;
+
+		getpwnam_r(username, &pwd, buf, bufsize, &result);
+		if (! result)
+		{
+			SFQ_FAIL(ES_MEMALLOC, "specified user not found");
+		}
+
+		assert(uidptr);
+		(*uidptr) = pwd.pw_uid;
+	}
+
+/* group */
+	if (groupname)
+	{
+		struct group grp;
+		struct group* result = NULL;
+
+		getgrnam_r(groupname, &grp, buf, bufsize, &result);
+		if (! result)
+		{
+			SFQ_FAIL(ES_MEMALLOC, "specified group not found");
+		}
+
+		assert(gidptr);
+		(*gidptr) = grp.gr_gid;
+	}
+
+SFQ_LIB_CHECKPOINT
+
+SFQ_LIB_LEAVE
+
+	return SFQ_LIB_IS_SUCCESS();
+}
+
 size_t sfq_payload_len(const struct sfq_value* val)
 {
 	size_t ret = 0;
@@ -58,203 +242,17 @@ int sfq_reserve_proc(struct sfq_process_info* procs, ushort procs_num)
 	return -1;
 }
 
-int sfq_get_questate(const char* querootdir, const char* quename,
-	questate_t* questate_ptr, int semlock_wait_sec)
+void sfq_init_ioeb(struct sfq_ioelm_buff* ioeb)
 {
-SFQ_LIB_ENTER
+	assert(ioeb);
 
-	struct sfq_queue_object* qo = NULL;
-
-	struct sfq_file_header qfh;
-	sfq_bool b = SFQ_false;
-
-/* initialize */
-	bzero(&qfh, sizeof(qfh));
-
-	if (! questate_ptr)
-	{
-		SFQ_FAIL(EA_FUNCARG, "questate_ptr is null");
-	}
-
-	qo = sfq_open_queue_ro(querootdir, quename, semlock_wait_sec);
-	if (! qo)
-	{
-		SFQ_FAIL(EA_OPENQUEUE, "sfq_open_queue_ro");
-	}
-
-	b = sfq_readqfh(qo, &qfh, NULL);
-	if (! b)
-	{
-		SFQ_FAIL(EA_READQFH, "sfq_readqfh");
-	}
-
-	(*questate_ptr) = qfh.qh.dval.questate;
-
-SFQ_LIB_CHECKPOINT
-
-SFQ_LIB_LEAVE
-
-	sfq_close_queue(qo);
-	qo = NULL;
-
-	return SFQ_LIB_RC();
-}
-
-int sfq_set_questate(const char* querootdir, const char* quename,
-	questate_t questate, int semlock_wait_sec)
-{
-SFQ_LIB_ENTER
-
-	struct sfq_open_names* om = NULL;
-	struct sfq_queue_object* qo = NULL;
-	struct sfq_process_info* procs = NULL;
-
-	int irc = -1;
-	int slotno = -1;
-	sfq_bool b = SFQ_false;
-
-	sfq_bool forceLeakQueue = SFQ_false;
-
-	struct sfq_file_header qfh;
-
-/* initialize */
-	bzero(&qfh, sizeof(qfh));
-
-/* create names */
-	if (questate & SFQ_QST_DEV_SEMUNLOCK_ON)
-	{
-/*
-!! デバッグ用 !!
-
-強制的にセマフォのロックを解除する
-*/
-		om = sfq_alloc_open_names(querootdir, quename);
-		if (! om)
-		{
-			SFQ_FAIL(EA_CREATENAMES, "sfq_alloc_open_names");
-		}
-
-		irc = sem_unlink(om->semname);
-		if (irc == -1)
-		{
-			if (errno != ENOENT)
-			{
-				SFQ_FAIL(ES_UNLINK,
-					"delete semaphore fault, check permission (e.g. /dev/shm%s)",
-					om->semname);
-			}
-		}
-
-		SFQ_FAIL(DEV_SEMUNLOCK, "success unlock semaphore [%s] (for develop)\n", om->semname);
-	}
-
-/* open queue */
-	qo = sfq_open_queue_rw(querootdir, quename, semlock_wait_sec);
-	if (! qo)
-	{
-		SFQ_FAIL(EA_OPENQUEUE, "sfq_open_queue_rw");
-	}
-
-/* */
-	if (questate & SFQ_QST_DEV_SEMLOCK_ON)
-	{
-/*
-!! デバッグ用 !!
-
-セマフォをロッセしたままにする
---> メモリリークは発生する
-*/
-		forceLeakQueue = SFQ_true;
-
-		SFQ_FAIL(DEV_SEMLOCK, "success lock semaphore [%s] (for develop)\n", qo->om->semname);
-	}
-
-/* read queue header */
-	b = sfq_readqfh(qo, &qfh, &procs);
-	if (! b)
-	{
-		SFQ_FAIL(EA_READQFH, "sfq_readqfh");
-	}
-
-/* update state */
-	if (qfh.qh.dval.questate == questate)
-	{
-/*
-変更前後が同じ値なら更新の必要はない
-*/
-		SFQ_FAIL(W_NOCHANGE_STATE, "there is no change in the state");
-	}
-
-	if (questate & SFQ_QST_EXEC_ON)
-	{
-/*
-exec が OFF から ON に変わった
-*/
-		if (qfh.qh.dval.elm_num)
-		{
-/*
-キューに要素が存在する
-*/
-			if (procs)
-			{
-/*
-プロセステーブルが存在するので、実行予約を試みる
-*/
-				slotno = sfq_reserve_proc(procs, qfh.qh.sval.procs_num);
-			}
-		}
-	}
-
-	if (slotno == -1)
-	{
-/*
-プロセステーブルが更新されていないので開放
-*/
-		free(procs);
-		procs = NULL;
-	}
-
-	qfh.qh.dval.questate = questate;
-
-	b = sfq_writeqfh(qo, &qfh, procs, "SET");
-	if (! b)
-	{
-		SFQ_FAIL(EA_WRITEQFH, "sfq_writeqfh");
-	}
-
-SFQ_LIB_CHECKPOINT
-
-SFQ_LIB_LEAVE
-
-	sfq_free_open_names(om);
-	om = NULL;
-
-	free(procs);
-	procs = NULL;
-
-	if (forceLeakQueue)
-	{
-		/* for Debug */
-	}
-	else
-	{
-		sfq_close_queue(qo);
-		qo = NULL;
-	}
-
-	if (slotno != -1)
-	{
-		sfq_go_exec(querootdir, quename, (ushort)slotno, questate);
-	}
-
-	return SFQ_LIB_RC();
+	bzero(ioeb, sizeof(*ioeb));
 }
 
 sfq_bool sfq_copy_val2ioeb(const struct sfq_value* val, struct sfq_ioelm_buff* ioeb)
 {
 SFQ_LIB_ENTER
 
-	size_t eh_size = 0;
 	size_t add_all = 0;
 	sfq_uchar elmmargin_ = 0;
 
@@ -269,17 +267,16 @@ SFQ_LIB_ENTER
 	}
 
 /* initialize */
-	eh_size = sizeof(ioeb->eh);
-
-	bzero(ioeb, sizeof(*ioeb));
+	sfq_init_ioeb(ioeb);
 
 /* */
-	ioeb->eh.eh_size = eh_size;
+	ioeb->eh.eh_size = sizeof(ioeb->eh);
 	ioeb->eh.id = val->id;
 	ioeb->eh.pushtime = val->pushtime;
 
 	uuid_copy(ioeb->eh.uuid, val->uuid);
 
+/* */
 	if (val->execpath)
 	{
 		size_t execpath_len = strlen(val->execpath);
@@ -344,14 +341,46 @@ SFQ_LIB_ENTER
 		}
 	}
 
-	if (val->payload_size)
+/*
+payload, payload_size, payload_type は必ず同期する
+*/
+	if (val->payload)
 	{
-		assert(val->payload_type);
-		assert(val->payload);
+		size_t payload_size = 0;
 
-		ioeb->eh.payload_size = val->payload_size;
-		ioeb->eh.payload_type = val->payload_type;
+		if (! val->payload_type)
+		{
+			SFQ_FAIL(EA_NOTPAYLOADTYPE, "payload_type is not set");
+		}
+
+		payload_size = val->payload_size;
+
+		if (! payload_size)
+		{
+			if (val->payload_type & (SFQ_PLT_CHARARRAY | SFQ_PLT_NULLTERM))
+			{
+/*
+null-term 文字列の場合に payload_size が未設定の場合は自動算出
+*/
+				payload_size = strlen((char*)val->payload) + 1;
+			}
+			else
+			{
+				SFQ_FAIL(EA_NOTPAYLOADSIZE, "payload_size is not set");
+			}
+		}
+
 		ioeb->payload = val->payload;
+		ioeb->eh.payload_type = val->payload_type;
+		ioeb->eh.payload_size = payload_size;
+	}
+	else
+	{
+		if (val->payload_size || val->payload_type)
+		{
+			SFQ_FAIL(EA_NOTPAYLOAD, "payload is not set [size=%zu] [type=%u]",
+				val->payload_size, val->payload_type);
+		}
 	}
 
 	if (val->soutpath)
@@ -399,7 +428,7 @@ SFQ_LIB_ENTER
 /* for debug */
 	add_all =
 	(
-		eh_size +
+		sizeof(ioeb->eh) +
 		ioeb->eh.execpath_size +
 		ioeb->eh.execargs_size +
 		ioeb->eh.metatext_size +
@@ -439,6 +468,7 @@ sfq_bool sfq_copy_ioeb2val(const struct sfq_ioelm_buff* ioeb, struct sfq_value* 
 
 	uuid_copy(val->uuid, ioeb->eh.uuid);
 
+/* */
 	if (ioeb->eh.execpath_size)
 	{
 		assert(ioeb->execpath);
@@ -557,6 +587,9 @@ SFQ_LIB_ENTER
 
 	if (val->payload)
 	{
+		assert(val->payload_type);
+		assert(val->payload_size);
+
 		if (val->payload_type & SFQ_PLT_CHARARRAY)
 		{
 			if (val->payload_type & SFQ_PLT_NULLTERM)
