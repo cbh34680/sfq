@@ -21,7 +21,7 @@ SFQ_ENTP_ENTER
 
 /* initialize */
 	bzero(&qfh, sizeof(qfh));
-	bzero(&ioeb, sizeof(ioeb));
+	sfq_init_ioeb(&ioeb);
 
 /* open queue-file */
 	qo = sfq_open_queue_ro(querootdir, quename);
@@ -68,10 +68,10 @@ SFQ_ENTP_ENTER
 		savepos = currpos;
 		bzero(&val, sizeof(val));
 
-		b = sfq_readelm(qo, currpos, &ioeb);
+		b = sfq_readelm_alloc(qo, currpos, &ioeb);
 		if (! b)
 		{
-			SFQ_FAIL(EA_RWELEMENT, "sfq_readelm");
+			SFQ_FAIL(EA_RWELEMENT, "sfq_readelm_alloc");
 		}
 
 #ifdef SFQ_DEBUG_BUILD

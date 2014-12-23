@@ -63,6 +63,7 @@ SFQC_MAIN_ENTER
 	}
 
 	irc = sfq_push_binary(pgargs.querootdir, pgargs.quename,
+		pgargs.username, pgargs.groupname,
 		pgargs.execpath, pgargs.execargs, pgargs.metatext,
 		pgargs.soutpath, pgargs.serrpath,
 		NULL,

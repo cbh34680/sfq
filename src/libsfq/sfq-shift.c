@@ -15,7 +15,7 @@ SFQ_ENTP_ENTER
 
 /* initialize */
 	bzero(&qfh, sizeof(qfh));
-	bzero(&ioeb, sizeof(ioeb));
+	sfq_init_ioeb(&ioeb);
 
 /* */
 	if (! val)
@@ -62,10 +62,10 @@ SFQ_ENTP_ENTER
 	elmpos = qfh.qh.dval.elm_next_shift_pos;
 
 /* read element */
-	b = sfq_readelm(qo, elmpos, &ioeb);
+	b = sfq_readelm_alloc(qo, elmpos, &ioeb);
 	if (! b)
 	{
-		SFQ_FAIL(EA_RWELEMENT, "sfq_readelm");
+		SFQ_FAIL(EA_RWELEMENT, "sfq_readelm_alloc");
 	}
 
 //#ifdef SFQ_DEBUG_BUILD

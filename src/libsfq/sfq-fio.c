@@ -839,7 +839,7 @@ SFQ_LIB_LEAVE
 	return SFQ_LIB_IS_SUCCESS();
 }
 
-sfq_bool sfq_readelm(struct sfq_queue_object* qo, off_t seek_pos, struct sfq_ioelm_buff* ioeb)
+sfq_bool sfq_readelm_alloc(struct sfq_queue_object* qo, off_t seek_pos, struct sfq_ioelm_buff* ioeb)
 {
 SFQ_LIB_ENTER
 
@@ -862,7 +862,7 @@ SFQ_LIB_ENTER
 		SFQ_FAIL(EA_FUNCARG, "qo");
 	}
 
-	bzero(ioeb, sizeof(*ioeb));
+	sfq_init_ioeb(ioeb);
 
 /* read element */
 
@@ -1012,7 +1012,7 @@ void sfq_free_ioelm_buff(struct sfq_ioelm_buff* ioeb)
 	free((char*)ioeb->soutpath);
 	free((char*)ioeb->serrpath);
 
-	bzero(ioeb, sizeof(*ioeb));
+	sfq_init_ioeb(ioeb);
 }
 
 

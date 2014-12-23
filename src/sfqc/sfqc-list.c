@@ -20,6 +20,7 @@ sfq_bool print_element(ulong order, off_t elm_pos, const struct sfq_value* val, 
 	struct prtelm_data* ped = (struct prtelm_data*)userdata;
 	struct sfq_value pval;
 
+/* */
 	bzero(&pval, sizeof(pval));
 
 	localtime_r(&val->pushtime, &tmp);
@@ -27,11 +28,17 @@ sfq_bool print_element(ulong order, off_t elm_pos, const struct sfq_value* val, 
 
 	uuid_unparse_upper(val->uuid, uuid_s);
 
+/* */
 	irc = sfq_alloc_print_value(val, &pval);
 	if (irc == SFQ_RC_SUCCESS)
 	{
-		printf("%lu" _T_ "%zu" _T_ "%zu" _T_ "%s" _T_ "%s" _T_ "%s" _T_       "%s" _T_       "%s" _T_       "%s" _T_       "%s" _T_       "%u" _T_           "%zu" _T_          "%s"                LF,
-		       order,    elm_pos,  pval.id,  dt,      uuid_s,  pval.execpath, pval.execargs, pval.metatext, pval.soutpath, pval.serrpath, val->payload_type, val->payload_size, (char*)pval.payload);
+		printf("%lu" _T_ "%zu" _T_ "%zu" _T_ "%s" _T_ "%s" _T_
+				"%s" _T_       "%s" _T_       "%s" _T_       "%s" _T_       "%s" _T_
+				"%u" _T_           "%zu" _T_          "%s"                LF,
+
+		       order,    elm_pos,  pval.id,  dt,      uuid_s,
+				pval.execpath, pval.execargs, pval.metatext, pval.soutpath, pval.serrpath,
+				val->payload_type, val->payload_size, (char*)pval.payload);
 
 		sfq_free_value(&pval);
 	}

@@ -46,8 +46,99 @@ sfq_bool sfq_caps_isset(cap_value_t cap)
 	return ret;
 }
 
-sfq_bool sfq_pwdgrp_nam2id(const char* queuser, const char* quegroup,
-	uid_t* queuserid_ptr, gid_t* quegroupid_ptr)
+sfq_bool sfq_pwdgrp_id2nam_alloc(uid_t uid, gid_t gid,
+	const char** username_ptr, const char** groupname_ptr)
+{
+	long sysmax = 0;
+	char* buf = NULL;
+	size_t bufsize = 0;
+
+	char* username = NULL;
+	char* groupname = NULL;
+
+SFQ_LIB_ENTER
+
+	sysmax = sysconf(SFQ_MAX(_SC_GETPW_R_SIZE_MAX, _SC_GETGR_R_SIZE_MAX));
+	if (sysmax > 0)
+	{
+		bufsize = (size_t)sysmax;
+	}
+	else
+	{
+		bufsize = 1024U;
+	}
+
+	buf = alloca(bufsize);
+	if (! buf)
+	{
+		SFQ_FAIL(ES_MEMALLOC, "ALLOC(buf)");
+	}
+
+/* uid */
+	if (SFQ_ISSET_UID(uid))
+	{
+		struct passwd pwd;
+		struct passwd* result = NULL;
+
+		getpwuid_r(uid, &pwd, buf, bufsize, &result);
+		if (! result)
+		{
+			SFQ_FAIL(ES_MEMALLOC, "specified uid not found");
+		}
+
+		username = strdup(pwd.pw_name);
+		if (! username)
+		{
+			SFQ_FAIL(ES_MEMALLOC, "strdup(pw_name)");
+		}
+
+		assert(username_ptr);
+		(*username_ptr) = username;
+	}
+
+/* gid */
+	if (SFQ_ISSET_GID(gid))
+	{
+		struct group grp;
+		struct group* result = NULL;
+
+		getgrgid_r(gid, &grp, buf, bufsize, &result);
+		if (! result)
+		{
+			SFQ_FAIL(ES_MEMALLOC, "specified gid not found");
+		}
+
+		groupname = strdup(grp.gr_name);
+		if (! groupname)
+		{
+			SFQ_FAIL(ES_MEMALLOC, "strdup(gr_name)");
+		}
+
+
+		assert(groupname_ptr);
+		(*groupname_ptr) = groupname;
+	}
+
+
+SFQ_LIB_CHECKPOINT
+
+	if (SFQ_LIB_IS_FAIL())
+	{
+		free(username);
+		username = NULL;
+
+		free(groupname);
+		groupname = NULL;
+	}
+
+
+SFQ_LIB_LEAVE
+
+	return SFQ_LIB_IS_SUCCESS();
+}
+
+sfq_bool sfq_pwdgrp_nam2id(const char* username, const char* groupname,
+	uid_t* uidptr, gid_t* gidptr)
 {
 	long sysmax = 0;
 	char* buf = NULL;
@@ -72,43 +163,35 @@ SFQ_LIB_ENTER
 	}
 
 /* user */
-	if (queuser)
+	if (username)
 	{
 		struct passwd pwd;
-		struct passwd *result;
+		struct passwd* result = NULL;
 
-		getpwnam_r(queuser, &pwd, buf, bufsize, &result);
+		getpwnam_r(username, &pwd, buf, bufsize, &result);
 		if (! result)
 		{
 			SFQ_FAIL(ES_MEMALLOC, "specified user not found");
 		}
 
-//#ifdef SFQ_DEBUG_BUILD
-//		fprintf(stderr, "user[%s] = %u\n", queuser, pwd.pw_uid);
-//#endif
-
-		assert(queuserid_ptr);
-		(*queuserid_ptr) = pwd.pw_uid;
+		assert(uidptr);
+		(*uidptr) = pwd.pw_uid;
 	}
 
 /* group */
-	if (quegroup)
+	if (groupname)
 	{
 		struct group grp;
-		struct group *result;
+		struct group* result = NULL;
 
-		getgrnam_r(quegroup, &grp, buf, bufsize, &result);
+		getgrnam_r(groupname, &grp, buf, bufsize, &result);
 		if (! result)
 		{
 			SFQ_FAIL(ES_MEMALLOC, "specified group not found");
 		}
 
-//#ifdef SFQ_DEBUG_BUILD
-//		fprintf(stderr, "group[%s] = %u\n", quegroup, grp.gr_gid);
-//#endif
-
-		assert(quegroupid_ptr);
-		(*quegroupid_ptr) = grp.gr_gid;
+		assert(gidptr);
+		(*gidptr) = grp.gr_gid;
 	}
 
 SFQ_LIB_CHECKPOINT
@@ -159,11 +242,17 @@ int sfq_reserve_proc(struct sfq_process_info* procs, ushort procs_num)
 	return -1;
 }
 
+void sfq_init_ioeb(struct sfq_ioelm_buff* ioeb)
+{
+	assert(ioeb);
+
+	bzero(ioeb, sizeof(*ioeb));
+}
+
 sfq_bool sfq_copy_val2ioeb(const struct sfq_value* val, struct sfq_ioelm_buff* ioeb)
 {
 SFQ_LIB_ENTER
 
-	size_t eh_size = 0;
 	size_t add_all = 0;
 	sfq_uchar elmmargin_ = 0;
 
@@ -178,17 +267,16 @@ SFQ_LIB_ENTER
 	}
 
 /* initialize */
-	eh_size = sizeof(ioeb->eh);
-
-	bzero(ioeb, sizeof(*ioeb));
+	sfq_init_ioeb(ioeb);
 
 /* */
-	ioeb->eh.eh_size = eh_size;
+	ioeb->eh.eh_size = sizeof(ioeb->eh);
 	ioeb->eh.id = val->id;
 	ioeb->eh.pushtime = val->pushtime;
 
 	uuid_copy(ioeb->eh.uuid, val->uuid);
 
+/* */
 	if (val->execpath)
 	{
 		size_t execpath_len = strlen(val->execpath);
@@ -253,14 +341,46 @@ SFQ_LIB_ENTER
 		}
 	}
 
-	if (val->payload_size)
+/*
+payload, payload_size, payload_type は必ず同期する
+*/
+	if (val->payload)
 	{
-		assert(val->payload_type);
-		assert(val->payload);
+		size_t payload_size = 0;
 
-		ioeb->eh.payload_size = val->payload_size;
-		ioeb->eh.payload_type = val->payload_type;
+		if (! val->payload_type)
+		{
+			SFQ_FAIL(EA_NOTPAYLOADTYPE, "payload_type is not set");
+		}
+
+		payload_size = val->payload_size;
+
+		if (! payload_size)
+		{
+			if (val->payload_type & (SFQ_PLT_CHARARRAY | SFQ_PLT_NULLTERM))
+			{
+/*
+null-term 文字列の場合に payload_size が未設定の場合は自動算出
+*/
+				payload_size = strlen((char*)val->payload) + 1;
+			}
+			else
+			{
+				SFQ_FAIL(EA_NOTPAYLOADSIZE, "payload_size is not set");
+			}
+		}
+
 		ioeb->payload = val->payload;
+		ioeb->eh.payload_type = val->payload_type;
+		ioeb->eh.payload_size = payload_size;
+	}
+	else
+	{
+		if (val->payload_size || val->payload_type)
+		{
+			SFQ_FAIL(EA_NOTPAYLOAD, "payload is not set [size=%zu] [type=%u]",
+				val->payload_size, val->payload_type);
+		}
 	}
 
 	if (val->soutpath)
@@ -308,7 +428,7 @@ SFQ_LIB_ENTER
 /* for debug */
 	add_all =
 	(
-		eh_size +
+		sizeof(ioeb->eh) +
 		ioeb->eh.execpath_size +
 		ioeb->eh.execargs_size +
 		ioeb->eh.metatext_size +
@@ -348,6 +468,7 @@ sfq_bool sfq_copy_ioeb2val(const struct sfq_ioelm_buff* ioeb, struct sfq_value* 
 
 	uuid_copy(val->uuid, ioeb->eh.uuid);
 
+/* */
 	if (ioeb->eh.execpath_size)
 	{
 		assert(ioeb->execpath);
@@ -466,6 +587,9 @@ SFQ_LIB_ENTER
 
 	if (val->payload)
 	{
+		assert(val->payload_type);
+		assert(val->payload_size);
+
 		if (val->payload_type & SFQ_PLT_CHARARRAY)
 		{
 			if (val->payload_type & SFQ_PLT_NULLTERM)

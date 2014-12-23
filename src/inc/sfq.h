@@ -158,6 +158,7 @@ int sfq_init(const char* querootdir, const char* quename,
 	const struct sfq_queue_init_params* qip);
 
 int sfq_push(const char* querootdir, const char* quename, struct sfq_value* val);
+
 int sfq_pop(const char* querootdir, const char* quename, struct sfq_value* val);
 int sfq_shift(const char* querootdir, const char* quename, struct sfq_value* val);
 int sfq_info(const char* querootdir, const char* quename, int semlock_wait_sec);
@@ -167,13 +168,17 @@ void sfq_free_value(struct sfq_value* p);
 
 /* short-cut */
 int sfq_push_text(const char* querootdir, const char* quename,
+	const char* username, const char* groupname,
 	const char* execpath, const char* execargs, const char* metatext,
-	const char* soutpath, const char* serrpath, uuid_t uuid,
+	const char* soutpath, const char* serrpath,
+	uuid_t uuid,
 	const char* textdata);
 
 int sfq_push_binary(const char* querootdir, const char* quename,
+	const char* username, const char* groupname,
 	const char* execpath, const char* execargs, const char* metatext,
-	const char* soutpath, const char* serrpath, uuid_t uuid,
+	const char* soutpath, const char* serrpath,
+	uuid_t uuid,
 	const sfq_byte* payload, size_t payload_size);
 
 int sfq_get_questate(const char* querootdir, const char* quename,

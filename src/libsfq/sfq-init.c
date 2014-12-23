@@ -46,7 +46,7 @@ queue header の初期値を設定
 	strcpy(qfh.last_qhd2.lastoper, "---");
 
 /*
-"-U", "-G" が有効なのは euid == 0(root) のときのみ
+"-U", "-G" が有効なのは CAP_CHOWN 権限を持つときのみ
 */
 
 	b = sfq_pwdgrp_nam2id(qip->queuser, qip->quegroup, &queuserid, &quegroupid);

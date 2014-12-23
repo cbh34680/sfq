@@ -523,13 +523,17 @@ int sfqc_takeout(int argc, char** argv, sfq_takeoutfunc_t takeoutfunc)
 /* */
 	struct sfqc_program_args pgargs;
 	struct sfq_value val;
+#if 0
 	struct sfq_value pval;
+#endif
 
 SFQC_MAIN_ENTER
 
 	bzero(&pgargs, sizeof(pgargs));
 	bzero(&val, sizeof(val));
+#if 0
 	bzero(&pval, sizeof(pval));
+#endif
 
 /* */
 	irc = sfqc_parse_program_args(argc, argv, "D:N:p:q", SFQ_false, &pgargs);
@@ -605,7 +609,9 @@ SFQC_MAIN_ENTER
 EXIT_LABEL:
 
 	sfq_free_value(&val);
+#if 0
 	sfq_free_value(&pval);
+#endif
 
 	if (printmethod & SFQC_PRM_HTTP_HEADER)
 	{
