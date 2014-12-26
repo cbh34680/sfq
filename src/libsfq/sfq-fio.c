@@ -744,6 +744,18 @@ SFQ_LIB_LEAVE
  *    - serrpath   (eh.serrpath_size >= 0)   ... nullterm string
  *
  */
+#define WRITEELM_NTSTR(key_) \
+	\
+	if (ioeb->eh.key_ ## _size) \
+	{ \
+		assert(ioeb->key_); \
+		if (fwrite(ioeb->key_, ioeb->eh.key_ ## _size, 1, qo->fp) != 1) \
+		{ \
+			SFQ_FAIL(ES_FILEIO, "fwrite"); \
+		} \
+	}
+
+
 sfq_bool sfq_writeelm(struct sfq_queue_object* qo, off_t seek_pos, const struct sfq_ioelm_buff* ioeb)
 {
 	sfq_bool b = SFQ_false;
@@ -762,6 +774,7 @@ SFQ_LIB_ENTER
 		SFQ_FAIL(EA_SEEKSETIO, "seek_set_write_(eh)");
 	}
 
+/* */
 	if (ioeb->eh.payload_size)
 	{
 		assert(ioeb->payload);
@@ -776,6 +789,14 @@ SFQ_LIB_ENTER
 
 /* null term strings */
 
+	WRITEELM_NTSTR(execusrnam);
+	WRITEELM_NTSTR(execgrpnam);
+	WRITEELM_NTSTR(execpath);
+	WRITEELM_NTSTR(execargs);
+	WRITEELM_NTSTR(metatext);
+	WRITEELM_NTSTR(soutpath);
+	WRITEELM_NTSTR(serrpath);
+#if 0
 	if (ioeb->eh.execusrnam_size)
 	{
 		assert(ioeb->execusrnam);
@@ -859,6 +880,7 @@ SFQ_LIB_ENTER
 			SFQ_FAIL(ES_FILEIO, "FILE-WRITE(serrpath)");
 		}
 	}
+#endif
 
 SFQ_LIB_CHECKPOINT
 
@@ -866,6 +888,23 @@ SFQ_LIB_LEAVE
 
 	return SFQ_LIB_IS_SUCCESS();
 }
+
+#define READELM_NTSTR(key_) \
+	\
+	if (ioeb->eh.key_ ## _size) \
+	{ \
+		key_ = malloc(ioeb->eh.key_ ## _size); \
+		if (! key_) \
+		{ \
+			SFQ_FAIL(ES_MEMALLOC, "malloc"); \
+		} \
+		if (fread(key_, ioeb->eh.key_ ## _size, 1, qo->fp) != 1) \
+		{ \
+			SFQ_FAIL(ES_FILEIO, "fread"); \
+		} \
+printf("[%.*s] %zu\n", (int)ioeb->eh.key_ ## _size, key_, (size_t)ioeb->eh.key_ ## _size); \
+	}
+
 
 sfq_bool sfq_readelm_alloc(struct sfq_queue_object* qo, off_t seek_pos, struct sfq_ioelm_buff* ioeb)
 {
@@ -908,6 +947,7 @@ SFQ_LIB_ENTER
 		SFQ_FAIL(EA_ILLEGALVER, "ioeb->eh.eh_size != eh_size");
 	}
 
+/* */
 	if (ioeb->eh.payload_size)
 	{
 	/* r: payload */
@@ -924,6 +964,15 @@ SFQ_LIB_ENTER
 		}
 	}
 
+/* */
+	READELM_NTSTR(execusrnam);
+	READELM_NTSTR(execgrpnam);
+	READELM_NTSTR(execpath);
+	READELM_NTSTR(execargs);
+	READELM_NTSTR(metatext);
+	READELM_NTSTR(soutpath);
+	READELM_NTSTR(serrpath);
+#if 0
 	if (ioeb->eh.execusrnam_size)
 	{
 	/* r: execusrnam */
@@ -1035,6 +1084,7 @@ SFQ_LIB_ENTER
 			SFQ_FAIL(ES_FILEIO, "FILE-READ(serrpath)");
 		}
 	}
+#endif
 
 	ioeb->payload = payload;
 	ioeb->execusrnam = execusrnam;

@@ -56,11 +56,20 @@ str[0] == '\0' のときは str に NULL を設定
 
 --> 空文字列は存在しない状態にする
 */
+	STR_SET_NULL_IFEMPTY(val->execusrnam);
+	STR_SET_NULL_IFEMPTY(val->execgrpnam);
 	STR_SET_NULL_IFEMPTY(val->execpath);
 	STR_SET_NULL_IFEMPTY(val->execargs);
 	STR_SET_NULL_IFEMPTY(val->metatext);
 	STR_SET_NULL_IFEMPTY(val->soutpath);
 	STR_SET_NULL_IFEMPTY(val->serrpath);
+
+/* */
+	b = sfq_pwdgrp_nam2id(val->execusrnam, val->execgrpnam, NULL, NULL);
+	if (! b)
+	{
+		SFQ_FAIL(EA_PWDNAME2ID, "username or group is invalid");
+	}
 
 /*
 ログ関連は相対パスから絶対パスに変換

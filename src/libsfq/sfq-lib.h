@@ -87,7 +87,8 @@
 #define SFQ_ISSET_UID(a)	( (a) != SFQ_UID_NONE )
 #define SFQ_ISSET_GID(a)	( (a) != SFQ_GID_NONE )
 
-#define SFQ_MAX(a, b)		(((a)>(b))?(a):(b))
+#define SFQ_MAX(a, b)		( ( (a) > (b) ) ? (a) : (b) )
+#define SFQ_MIN(a, b)		( ( (a) > (b) ) ? (b) : (a) )
 
 /* --------------------------------------------------------------
  *
