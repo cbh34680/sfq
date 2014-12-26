@@ -46,15 +46,15 @@ sfq_bool sfq_caps_isset(cap_value_t cap)
 	return ret;
 }
 
-sfq_bool sfq_pwdgrp_id2nam_alloc(uid_t uid, gid_t gid,
-	const char** username_ptr, const char** groupname_ptr)
+sfq_bool sfq_pwdgrp_id2nam_alloc(uid_t usrid, gid_t grpid,
+	const char** usrnam_ptr, const char** grpnam_ptr)
 {
 	long sysmax = 0;
 	char* buf = NULL;
 	size_t bufsize = 0;
 
-	char* username = NULL;
-	char* groupname = NULL;
+	char* usrnam = NULL;
+	char* grpnam = NULL;
 
 SFQ_LIB_ENTER
 
@@ -74,49 +74,49 @@ SFQ_LIB_ENTER
 		SFQ_FAIL(ES_MEMALLOC, "ALLOC(buf)");
 	}
 
-/* uid */
-	if (SFQ_ISSET_UID(uid))
+/* usrid */
+	if (SFQ_ISSET_UID(usrid))
 	{
 		struct passwd pwd;
 		struct passwd* result = NULL;
 
-		getpwuid_r(uid, &pwd, buf, bufsize, &result);
+		getpwuid_r(usrid, &pwd, buf, bufsize, &result);
 		if (! result)
 		{
 			SFQ_FAIL(ES_MEMALLOC, "specified uid not found");
 		}
 
-		username = strdup(pwd.pw_name);
-		if (! username)
+		usrnam = strdup(pwd.pw_name);
+		if (! usrnam)
 		{
 			SFQ_FAIL(ES_MEMALLOC, "strdup(pw_name)");
 		}
 
-		assert(username_ptr);
-		(*username_ptr) = username;
+		assert(usrnam_ptr);
+		(*usrnam_ptr) = usrnam;
 	}
 
-/* gid */
-	if (SFQ_ISSET_GID(gid))
+/* grpid */
+	if (SFQ_ISSET_GID(grpid))
 	{
 		struct group grp;
 		struct group* result = NULL;
 
-		getgrgid_r(gid, &grp, buf, bufsize, &result);
+		getgrgid_r(grpid, &grp, buf, bufsize, &result);
 		if (! result)
 		{
 			SFQ_FAIL(ES_MEMALLOC, "specified gid not found");
 		}
 
-		groupname = strdup(grp.gr_name);
-		if (! groupname)
+		grpnam = strdup(grp.gr_name);
+		if (! grpnam)
 		{
 			SFQ_FAIL(ES_MEMALLOC, "strdup(gr_name)");
 		}
 
 
-		assert(groupname_ptr);
-		(*groupname_ptr) = groupname;
+		assert(grpnam_ptr);
+		(*grpnam_ptr) = grpnam;
 	}
 
 
@@ -124,11 +124,11 @@ SFQ_LIB_CHECKPOINT
 
 	if (SFQ_LIB_IS_FAIL())
 	{
-		free(username);
-		username = NULL;
+		free(usrnam);
+		usrnam = NULL;
 
-		free(groupname);
-		groupname = NULL;
+		free(grpnam);
+		grpnam = NULL;
 	}
 
 
@@ -137,8 +137,8 @@ SFQ_LIB_LEAVE
 	return SFQ_LIB_IS_SUCCESS();
 }
 
-sfq_bool sfq_pwdgrp_nam2id(const char* username, const char* groupname,
-	uid_t* uidptr, gid_t* gidptr)
+sfq_bool sfq_pwdgrp_nam2id(const char* usrnam, const char* grpnam,
+	uid_t* usrid_ptr, gid_t* grpid_ptr)
 {
 	long sysmax = 0;
 	char* buf = NULL;
@@ -163,35 +163,35 @@ SFQ_LIB_ENTER
 	}
 
 /* user */
-	if (username)
+	if (usrnam)
 	{
 		struct passwd pwd;
 		struct passwd* result = NULL;
 
-		getpwnam_r(username, &pwd, buf, bufsize, &result);
+		getpwnam_r(usrnam, &pwd, buf, bufsize, &result);
 		if (! result)
 		{
 			SFQ_FAIL(ES_MEMALLOC, "specified user not found");
 		}
 
-		assert(uidptr);
-		(*uidptr) = pwd.pw_uid;
+		assert(usrid_ptr);
+		(*usrid_ptr) = pwd.pw_uid;
 	}
 
 /* group */
-	if (groupname)
+	if (grpnam)
 	{
 		struct group grp;
 		struct group* result = NULL;
 
-		getgrnam_r(groupname, &grp, buf, bufsize, &result);
+		getgrnam_r(grpnam, &grp, buf, bufsize, &result);
 		if (! result)
 		{
 			SFQ_FAIL(ES_MEMALLOC, "specified group not found");
 		}
 
-		assert(gidptr);
-		(*gidptr) = grp.gr_gid;
+		assert(grpid_ptr);
+		(*grpid_ptr) = grp.gr_gid;
 	}
 
 SFQ_LIB_CHECKPOINT
@@ -277,6 +277,48 @@ SFQ_LIB_ENTER
 	uuid_copy(ioeb->eh.uuid, val->uuid);
 
 /* */
+	if (val->execusrnam)
+	{
+		size_t execusrnam_len = strlen(val->execusrnam);
+		if (execusrnam_len)
+		{
+			size_t execusrnam_size = execusrnam_len + 1;
+
+			if (execusrnam_size >= USHRT_MAX)
+			{
+				SFQ_FAIL(EA_OVERLIMIT, "execusrnam_size");
+			}
+			if (execusrnam_size >= LOGIN_NAME_MAX)
+			{
+				SFQ_FAIL(EA_OVERLIMIT, "execusrnam_size");
+			}
+
+			ioeb->execusrnam = val->execusrnam;
+			ioeb->eh.execusrnam_size = (ushort)execusrnam_size;
+		}
+	}
+
+	if (val->execgrpnam)
+	{
+		size_t execgrpnam_len = strlen(val->execgrpnam);
+		if (execgrpnam_len)
+		{
+			size_t execgrpnam_size = execgrpnam_len + 1;
+
+			if (execgrpnam_size >= USHRT_MAX)
+			{
+				SFQ_FAIL(EA_OVERLIMIT, "execgrpnam_size");
+			}
+			if (execgrpnam_size >= LOGIN_NAME_MAX)
+			{
+				SFQ_FAIL(EA_OVERLIMIT, "execgrpnam_size");
+			}
+
+			ioeb->execgrpnam = val->execgrpnam;
+			ioeb->eh.execgrpnam_size = (ushort)execgrpnam_size;
+		}
+	}
+
 	if (val->execpath)
 	{
 		size_t execpath_len = strlen(val->execpath);
@@ -429,6 +471,8 @@ null-term 文字列の場合に payload_size が未設定の場合は自動算�
 	add_all =
 	(
 		sizeof(ioeb->eh) +
+		ioeb->eh.execusrnam_size +
+		ioeb->eh.execgrpnam_size +
 		ioeb->eh.execpath_size +
 		ioeb->eh.execargs_size +
 		ioeb->eh.metatext_size +
@@ -469,6 +513,18 @@ sfq_bool sfq_copy_ioeb2val(const struct sfq_ioelm_buff* ioeb, struct sfq_value* 
 	uuid_copy(val->uuid, ioeb->eh.uuid);
 
 /* */
+	if (ioeb->eh.execusrnam_size)
+	{
+		assert(ioeb->execusrnam);
+		val->execusrnam = ioeb->execusrnam;
+	}
+
+	if (ioeb->eh.execgrpnam_size)
+	{
+		assert(ioeb->execgrpnam);
+		val->execgrpnam = ioeb->execgrpnam;
+	}
+
 	if (ioeb->eh.execpath_size)
 	{
 		assert(ioeb->execpath);
@@ -519,6 +575,8 @@ void sfq_free_value(struct sfq_value* val)
 		return;
 	}
 
+	free((char*)val->execusrnam);
+	free((char*)val->execgrpnam);
 	free((char*)val->execpath);
 	free((char*)val->execargs);
 	free((char*)val->metatext);
@@ -535,6 +593,8 @@ SFQ_LIB_ENTER
 
 	const char* NA = "N/A";
 
+	char* execusrnam = NULL;
+	char* execgrpnam = NULL;
 	char* execpath = NULL;
 	char* execargs = NULL;
 	char* metatext = NULL;
@@ -554,6 +614,18 @@ SFQ_LIB_ENTER
 	}
 
 	bzero(dst, sizeof(*dst));
+
+	execusrnam = strdup(val->execusrnam ? val->execusrnam : NA);
+	if (! execusrnam)
+	{
+		SFQ_FAIL(ES_STRDUP, "execusrnam");
+	}
+
+	execgrpnam = strdup(val->execgrpnam ? val->execgrpnam : NA);
+	if (! execgrpnam)
+	{
+		SFQ_FAIL(ES_STRDUP, "execgrpnam");
+	}
 
 	execpath = strdup(val->execpath ? val->execpath : NA);
 	if (! execpath)
@@ -629,6 +701,8 @@ SFQ_LIB_ENTER
 	dst->payload_size = val->payload_size;
 	dst->payload = (sfq_byte*)payload;
 
+	dst->execusrnam = execusrnam;
+	dst->execgrpnam = execgrpnam;
 	dst->execpath = execpath;
 	dst->execargs = execargs;
 	dst->metatext = metatext;
@@ -639,6 +713,8 @@ SFQ_LIB_CHECKPOINT
 
 	if (SFQ_LIB_IS_FAIL())
 	{
+		free(execusrnam);
+		free(execgrpnam);
 		free(execpath);
 		free(execargs);
 		free(metatext);

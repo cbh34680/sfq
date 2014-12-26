@@ -53,8 +53,8 @@ struct sfqc_program_args
 	size_t filesize_limit;		/* S */
 	size_t payloadsize_limit;	/* L */
 	ushort boota_proc_num;		/* B */
-	const char* username;		/* U */
-	const char* groupname;		/* G */
+	const char* usrnam;		/* U */
+	const char* grpnam;		/* G */
 	const char* execpath;		/* x */
 	const char* execargs;		/* a */
 	const char* textdata;		/* v */

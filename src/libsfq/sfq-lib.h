@@ -293,7 +293,7 @@ struct sfq_e_header
 /* value */
 	ushort eh_size;			/* 2 */
 	payload_type_t payload_type;	/* 1 */
-	sfq_uchar elmmargin_;		/* 1 ... for debug, set by sfq_copy_val2ioeb() */
+	sfq_byte filler1[1];		/* 1 */
 	ushort execpath_size;		/* 2 ... (x) USHRT_MAX PATH_MAX */
 	ushort metatext_size;		/* 2 ... (m) USHRT_MAX */
 
@@ -305,6 +305,11 @@ struct sfq_e_header
 	time_t pushtime;		/* 8 */
 	uuid_t uuid;			/* 16 */
 	size_t payload_size;		/* 8 */
+
+	ushort execusrnam_size;		/* 2 ... (U) USHRT_MAX LOGIN_NAME_MAX */
+	ushort execgrpnam_size;		/* 2 ... (G) USHRT_MAX LOGIN_NAME_MAX */
+	sfq_byte filler2[3];		/* 3 */
+	sfq_uchar elmmargin_;		/* 1 ... for debug, set by sfq_copy_val2ioeb() */
 
 	size_t elmsize_;		/* 8 ... for debug, set by sfq_copy_val2ioeb() */
 };
@@ -347,6 +352,8 @@ struct sfq_queue_object
 struct sfq_ioelm_buff
 {
 	struct sfq_e_header eh;
+	const char* execusrnam;
+	const char* execgrpnam;
 	const char* execpath;
 	const char* execargs;
 	const char* metatext;
@@ -373,8 +380,8 @@ struct sfq_queue_create_params
 {
 	const char* quename;
 	const char* querootdir;
-	uid_t queuserid;
-	gid_t quegroupid;
+	uid_t queusrid;
+	gid_t quegrpid;
 	sfq_bool chmod_GaW;
 };
 
@@ -387,10 +394,10 @@ pid_t sfq_gettid(void);
 sfq_bool sfq_caps_isset(cap_value_t cap);
 
 sfq_bool sfq_pwdgrp_nam2id(const char* queuser, const char* quegroup,
-	uid_t* queuserid_ptr, gid_t* quegroupid_ptr);
+	uid_t* usrid_ptr, gid_t* grpid_ptr);
 
 sfq_bool sfq_pwdgrp_id2nam_alloc(uid_t uid, gid_t gid,
-        const char** username_ptr, const char** groupname_ptr);
+        const char** usrnam_ptr, const char** grpnam_ptr);
 
 void sfq_print_sizes(void);
 void sfq_print_qo(const struct sfq_queue_object* qo);

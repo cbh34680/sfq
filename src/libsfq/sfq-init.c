@@ -17,8 +17,8 @@ SFQ_ENTP_ENTER
 
 	uid_t euid = SFQ_UID_NONE;
 	gid_t egid = SFQ_GID_NONE;
-	uid_t queuserid = SFQ_UID_NONE;
-	gid_t quegroupid = SFQ_GID_NONE;
+	uid_t queusrid = SFQ_UID_NONE;
+	gid_t quegrpid = SFQ_GID_NONE;
 
 	struct sfq_queue_create_params qcp;
 	struct sfq_file_header qfh;
@@ -49,7 +49,7 @@ queue header の初期値を設定
 "-U", "-G" が有効なのは CAP_CHOWN 権限を持つときのみ
 */
 
-	b = sfq_pwdgrp_nam2id(qip->queuser, qip->quegroup, &queuserid, &quegroupid);
+	b = sfq_pwdgrp_nam2id(qip->queusrnam, qip->quegrpnam, &queusrid, &quegrpid);
 	if (! b)
 	{
 		SFQ_FAIL(EA_PWDNAME2ID, "pwd_nam2id");
@@ -57,23 +57,23 @@ queue header の初期値を設定
 
 	if (sfq_caps_isset(CAP_CHOWN))
 	{
-		if (SFQ_ISSET_UID(queuserid))
+		if (SFQ_ISSET_UID(queusrid))
 		{
-			if (SFQ_ISSET_GID(quegroupid))
+			if (SFQ_ISSET_GID(quegrpid))
 			{
-				/* chown queuserid.quegroupid */
+				/* chown queusrid.quegrpid */
 				/* chmod g+w */
 
 				chmod_GaW= SFQ_true;
 			}
 			else
 			{
-				/* chown queuserid.root */
+				/* chown queusrid.root */
 			}
 		}
-		else if (SFQ_ISSET_GID(quegroupid))
+		else if (SFQ_ISSET_GID(quegrpid))
 		{
-			/* chown root.quegroupid */
+			/* chown root.quegrpid */
 			/* chmod g+w */
 
 			chmod_GaW= SFQ_true;
@@ -93,17 +93,17 @@ root の場合、"-U" か "-G" の指定があるときのみ通過させる
 /*
 一般ユーザが "-U" "-G" を指定しても、euid, egid と同じであれば通過させる
 */
-		if (SFQ_ISSET_UID(queuserid))
+		if (SFQ_ISSET_UID(queusrid))
 		{
-			if (queuserid != euid)
+			if (queusrid != euid)
 			{
 				SFQ_FAIL(EA_NOTPERMIT, "specified user, operation not permitted");
 			}
 		}
 
-		if (SFQ_ISSET_GID(quegroupid))
+		if (SFQ_ISSET_GID(quegrpid))
 		{
-			if (quegroupid != egid)
+			if (quegrpid != egid)
 			{
 				SFQ_FAIL(EA_NOTPERMIT, "specified group, operation not permitted");
 			}
@@ -113,8 +113,8 @@ root の場合、"-U" か "-G" の指定があるときのみ通過させる
 			chmod_GaW = SFQ_true;
 		}
 
-		queuserid = SFQ_UID_NONE;
-		quegroupid = SFQ_GID_NONE;
+		queusrid = SFQ_UID_NONE;
+		quegrpid = SFQ_GID_NONE;
 	}
 
 /* check process num */
@@ -162,8 +162,8 @@ root の場合、"-U" か "-G" の指定があるときのみ通過させる
 /* open queue-file */
 	qcp.querootdir = querootdir;
 	qcp.quename = quename;
-	qcp.queuserid = queuserid;
-	qcp.quegroupid = quegroupid;
+	qcp.queusrid = queusrid;
+	qcp.quegrpid = quegrpid;
 	qcp.chmod_GaW = chmod_GaW;
 
 	qo = sfq_open_queue_wo(&qcp);
