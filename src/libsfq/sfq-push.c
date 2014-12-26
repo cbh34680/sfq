@@ -56,11 +56,20 @@ str[0] == '\0' のときは str に NULL を設定
 
 --> 空文字列は存在しない状態にする
 */
+	STR_SET_NULL_IFEMPTY(val->execusrnam);
+	STR_SET_NULL_IFEMPTY(val->execgrpnam);
 	STR_SET_NULL_IFEMPTY(val->execpath);
 	STR_SET_NULL_IFEMPTY(val->execargs);
 	STR_SET_NULL_IFEMPTY(val->metatext);
 	STR_SET_NULL_IFEMPTY(val->soutpath);
 	STR_SET_NULL_IFEMPTY(val->serrpath);
+
+/* */
+	b = sfq_pwdgrp_nam2id(val->execusrnam, val->execgrpnam, NULL, NULL);
+	if (! b)
+	{
+		SFQ_FAIL(EA_PWDNAME2ID, "username or group is invalid");
+	}
 
 /*
 ログ関連は相対パスから絶対パスに変換
@@ -392,7 +401,7 @@ SFQ_ENTP_LEAVE
 }
 
 int sfq_push_text(const char* querootdir, const char* quename,
-	const char* execuser, const char* execgroup,
+	const char* execusrnam, const char* execgrpnam,
 	const char* execpath, const char* execargs, const char* metatext,
 	const char* soutpath, const char* serrpath,
 	uuid_t uuid,
@@ -403,6 +412,8 @@ int sfq_push_text(const char* querootdir, const char* quename,
 
 	bzero(&val, sizeof(val));
 
+	val.execusrnam = execusrnam;
+	val.execgrpnam = execgrpnam;
 	val.execpath = execpath;
 	val.execargs = execargs;
 	val.metatext = metatext;
@@ -425,7 +436,7 @@ int sfq_push_text(const char* querootdir, const char* quename,
 }
 
 int sfq_push_binary(const char* querootdir, const char* quename,
-	const char* execuser, const char* execgroup,
+	const char* execusrnam, const char* execgrpnam,
 	const char* execpath, const char* execargs, const char* metatext,
 	const char* soutpath, const char* serrpath,
 	uuid_t uuid,
@@ -436,6 +447,8 @@ int sfq_push_binary(const char* querootdir, const char* quename,
 
 	bzero(&val, sizeof(val));
 
+	val.execusrnam = execusrnam;
+	val.execgrpnam = execgrpnam;
 	val.execpath = execpath;
 	val.execargs = execargs;
 	val.metatext = metatext;

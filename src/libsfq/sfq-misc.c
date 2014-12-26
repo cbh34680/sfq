@@ -46,15 +46,15 @@ sfq_bool sfq_caps_isset(cap_value_t cap)
 	return ret;
 }
 
-sfq_bool sfq_pwdgrp_id2nam_alloc(uid_t uid, gid_t gid,
-	const char** username_ptr, const char** groupname_ptr)
+sfq_bool sfq_pwdgrp_id2nam_alloc(uid_t usrid, gid_t grpid,
+	const char** usrnam_ptr, const char** grpnam_ptr)
 {
 	long sysmax = 0;
 	char* buf = NULL;
 	size_t bufsize = 0;
 
-	char* username = NULL;
-	char* groupname = NULL;
+	char* usrnam = NULL;
+	char* grpnam = NULL;
 
 SFQ_LIB_ENTER
 
@@ -74,49 +74,52 @@ SFQ_LIB_ENTER
 		SFQ_FAIL(ES_MEMALLOC, "ALLOC(buf)");
 	}
 
-/* uid */
-	if (SFQ_ISSET_UID(uid))
+/* usrid */
+	if (SFQ_ISSET_UID(usrid))
 	{
 		struct passwd pwd;
 		struct passwd* result = NULL;
 
-		getpwuid_r(uid, &pwd, buf, bufsize, &result);
+		getpwuid_r(usrid, &pwd, buf, bufsize, &result);
 		if (! result)
 		{
 			SFQ_FAIL(ES_MEMALLOC, "specified uid not found");
 		}
 
-		username = strdup(pwd.pw_name);
-		if (! username)
+		if (usrnam_ptr)
 		{
-			SFQ_FAIL(ES_MEMALLOC, "strdup(pw_name)");
-		}
+			usrnam = strdup(pwd.pw_name);
+			if (! usrnam)
+			{
+				SFQ_FAIL(ES_MEMALLOC, "strdup(pw_name)");
+			}
 
-		assert(username_ptr);
-		(*username_ptr) = username;
+			(*usrnam_ptr) = usrnam;
+		}
 	}
 
-/* gid */
-	if (SFQ_ISSET_GID(gid))
+/* grpid */
+	if (SFQ_ISSET_GID(grpid))
 	{
 		struct group grp;
 		struct group* result = NULL;
 
-		getgrgid_r(gid, &grp, buf, bufsize, &result);
+		getgrgid_r(grpid, &grp, buf, bufsize, &result);
 		if (! result)
 		{
 			SFQ_FAIL(ES_MEMALLOC, "specified gid not found");
 		}
 
-		groupname = strdup(grp.gr_name);
-		if (! groupname)
+		if (grpnam_ptr)
 		{
-			SFQ_FAIL(ES_MEMALLOC, "strdup(gr_name)");
+			grpnam = strdup(grp.gr_name);
+			if (! grpnam)
+			{
+				SFQ_FAIL(ES_MEMALLOC, "strdup(gr_name)");
+			}
+
+			(*grpnam_ptr) = grpnam;
 		}
-
-
-		assert(groupname_ptr);
-		(*groupname_ptr) = groupname;
 	}
 
 
@@ -124,11 +127,11 @@ SFQ_LIB_CHECKPOINT
 
 	if (SFQ_LIB_IS_FAIL())
 	{
-		free(username);
-		username = NULL;
+		free(usrnam);
+		usrnam = NULL;
 
-		free(groupname);
-		groupname = NULL;
+		free(grpnam);
+		grpnam = NULL;
 	}
 
 
@@ -137,8 +140,8 @@ SFQ_LIB_LEAVE
 	return SFQ_LIB_IS_SUCCESS();
 }
 
-sfq_bool sfq_pwdgrp_nam2id(const char* username, const char* groupname,
-	uid_t* uidptr, gid_t* gidptr)
+sfq_bool sfq_pwdgrp_nam2id(const char* usrnam, const char* grpnam,
+	uid_t* usrid_ptr, gid_t* grpid_ptr)
 {
 	long sysmax = 0;
 	char* buf = NULL;
@@ -163,35 +166,39 @@ SFQ_LIB_ENTER
 	}
 
 /* user */
-	if (username)
+	if (usrnam)
 	{
 		struct passwd pwd;
 		struct passwd* result = NULL;
 
-		getpwnam_r(username, &pwd, buf, bufsize, &result);
+		getpwnam_r(usrnam, &pwd, buf, bufsize, &result);
 		if (! result)
 		{
 			SFQ_FAIL(ES_MEMALLOC, "specified user not found");
 		}
 
-		assert(uidptr);
-		(*uidptr) = pwd.pw_uid;
+		if (usrid_ptr)
+		{
+			(*usrid_ptr) = pwd.pw_uid;
+		}
 	}
 
 /* group */
-	if (groupname)
+	if (grpnam)
 	{
 		struct group grp;
 		struct group* result = NULL;
 
-		getgrnam_r(groupname, &grp, buf, bufsize, &result);
+		getgrnam_r(grpnam, &grp, buf, bufsize, &result);
 		if (! result)
 		{
 			SFQ_FAIL(ES_MEMALLOC, "specified group not found");
 		}
 
-		assert(gidptr);
-		(*gidptr) = grp.gr_gid;
+		if (grpid_ptr)
+		{
+			(*grpid_ptr) = grp.gr_gid;
+		}
 	}
 
 SFQ_LIB_CHECKPOINT
@@ -249,12 +256,38 @@ void sfq_init_ioeb(struct sfq_ioelm_buff* ioeb)
 	bzero(ioeb, sizeof(*ioeb));
 }
 
+#define VAL2IOEB_SET_NTSTR(key_, maxsiz_) \
+	\
+	if (val->key_) \
+	{ \
+		size_t len_ = strlen(val->key_); \
+		if (len_) \
+		{ \
+			size_t siz_ = len_ + 1; \
+			if (siz_ >= maxsiz_) \
+			{ \
+				SFQ_FAIL(EA_OVERLIMIT, "siz_ >= maxsiz_"); \
+			} \
+			ioeb->key_ = val->key_; \
+			ioeb->eh.key_ ## _size = siz_; \
+		} \
+	}
+
+
 sfq_bool sfq_copy_val2ioeb(const struct sfq_value* val, struct sfq_ioelm_buff* ioeb)
 {
 SFQ_LIB_ENTER
 
 	size_t add_all = 0;
 	sfq_uchar elmmargin_ = 0;
+
+	long sc_arg_max = 0;
+
+	sc_arg_max = sysconf(_SC_ARG_MAX);
+	if (sc_arg_max <= 0)
+	{
+		sc_arg_max = UINT_MAX;
+	}
 
 	if (! ioeb)
 	{
@@ -275,71 +308,6 @@ SFQ_LIB_ENTER
 	ioeb->eh.pushtime = val->pushtime;
 
 	uuid_copy(ioeb->eh.uuid, val->uuid);
-
-/* */
-	if (val->execpath)
-	{
-		size_t execpath_len = strlen(val->execpath);
-		if (execpath_len)
-		{
-			size_t execpath_size = execpath_len + 1;
-
-			if (execpath_size >= USHRT_MAX)
-			{
-				SFQ_FAIL(EA_OVERLIMIT, "execpath_size");
-			}
-			if (execpath_size >= PATH_MAX)
-			{
-				SFQ_FAIL(EA_OVERLIMIT, "execpath_size");
-			}
-
-			ioeb->execpath = val->execpath;
-			ioeb->eh.execpath_size = (ushort)execpath_size;
-		}
-	}
-
-	if (val->execargs)
-	{
-		size_t execargs_len = strlen(val->execargs);
-		if (execargs_len)
-		{
-			long sysmax = sysconf(_SC_ARG_MAX);
-			size_t execargs_size = execargs_len + 1;
-
-			if (execargs_size >= UINT_MAX)
-			{
-				SFQ_FAIL(EA_OVERLIMIT, "execargs_size");
-			}
-
-			if (sysmax > 0)
-			{
-				if (execargs_size >= (size_t)sysmax)
-				{
-					SFQ_FAIL(EA_OVERLIMIT, "execargs_size");
-				}
-			}
-
-			ioeb->execargs = val->execargs;
-			ioeb->eh.execargs_size = (uint)execargs_size;
-		}
-	}
-
-	if (val->metatext)
-	{
-		size_t metatext_len = strlen(val->metatext);
-		if (metatext_len)
-		{
-			size_t metatext_size = metatext_len + 1;
-
-			if (metatext_size >= USHRT_MAX)
-			{
-				SFQ_FAIL(EA_OVERLIMIT, "metatext_size");
-			}
-
-			ioeb->metatext = val->metatext;
-			ioeb->eh.metatext_size = (ushort)metatext_size;
-		}
-	}
 
 /*
 payload, payload_size, payload_type は必ず同期する
@@ -383,6 +351,127 @@ null-term 文字列の場合に payload_size が未設定の場合は自動算�
 		}
 	}
 
+/* */
+	VAL2IOEB_SET_NTSTR(execusrnam, SFQ_MIN(USHRT_MAX, LOGIN_NAME_MAX));
+
+#if 0
+	if (val->execusrnam)
+	{
+		size_t execusrnam_len = strlen(val->execusrnam);
+		if (execusrnam_len)
+		{
+			size_t execusrnam_size = execusrnam_len + 1;
+
+			if (execusrnam_size >= USHRT_MAX)
+			{
+				SFQ_FAIL(EA_OVERLIMIT, "execusrnam_size");
+			}
+			if (execusrnam_size >= LOGIN_NAME_MAX)
+			{
+				SFQ_FAIL(EA_OVERLIMIT, "execusrnam_size");
+			}
+
+			ioeb->execusrnam = val->execusrnam;
+			ioeb->eh.execusrnam_size = (ushort)execusrnam_size;
+		}
+	}
+#endif
+
+	VAL2IOEB_SET_NTSTR(execgrpnam, SFQ_MIN(USHRT_MAX, LOGIN_NAME_MAX));
+#if 0
+	if (val->execgrpnam)
+	{
+		size_t execgrpnam_len = strlen(val->execgrpnam);
+		if (execgrpnam_len)
+		{
+			size_t execgrpnam_size = execgrpnam_len + 1;
+
+			if (execgrpnam_size >= USHRT_MAX)
+			{
+				SFQ_FAIL(EA_OVERLIMIT, "execgrpnam_size");
+			}
+			if (execgrpnam_size >= LOGIN_NAME_MAX)
+			{
+				SFQ_FAIL(EA_OVERLIMIT, "execgrpnam_size");
+			}
+
+			ioeb->execgrpnam = val->execgrpnam;
+			ioeb->eh.execgrpnam_size = (ushort)execgrpnam_size;
+		}
+	}
+#endif
+
+	VAL2IOEB_SET_NTSTR(execpath,   SFQ_MIN(USHRT_MAX, PATH_MAX));
+#if 0
+	if (val->execpath)
+	{
+		size_t execpath_len = strlen(val->execpath);
+		if (execpath_len)
+		{
+			size_t execpath_size = execpath_len + 1;
+
+			if (execpath_size >= USHRT_MAX)
+			{
+				SFQ_FAIL(EA_OVERLIMIT, "execpath_size");
+			}
+			if (execpath_size >= PATH_MAX)
+			{
+				SFQ_FAIL(EA_OVERLIMIT, "execpath_size");
+			}
+
+			ioeb->execpath = val->execpath;
+			ioeb->eh.execpath_size = (ushort)execpath_size;
+		}
+	}
+#endif
+
+	VAL2IOEB_SET_NTSTR(execargs,   SFQ_MIN(UINT_MAX, sc_arg_max));
+#if 0
+	if (val->execargs)
+	{
+		size_t execargs_len = strlen(val->execargs);
+		if (execargs_len)
+		{
+			size_t execargs_size = execargs_len + 1;
+
+			if (execargs_size >= UINT_MAX)
+			{
+				SFQ_FAIL(EA_OVERLIMIT, "execargs_size");
+			}
+
+			if (execargs_size >= (size_t)sc_arg_max)
+			{
+				SFQ_FAIL(EA_OVERLIMIT, "execargs_size");
+			}
+
+			ioeb->execargs = val->execargs;
+			ioeb->eh.execargs_size = (uint)execargs_size;
+		}
+	}
+#endif
+
+	VAL2IOEB_SET_NTSTR(metatext,   USHRT_MAX);
+#if 0
+	if (val->metatext)
+	{
+		size_t metatext_len = strlen(val->metatext);
+		if (metatext_len)
+		{
+			size_t metatext_size = metatext_len + 1;
+
+			if (metatext_size >= USHRT_MAX)
+			{
+				SFQ_FAIL(EA_OVERLIMIT, "metatext_size");
+			}
+
+			ioeb->metatext = val->metatext;
+			ioeb->eh.metatext_size = (ushort)metatext_size;
+		}
+	}
+#endif
+
+	VAL2IOEB_SET_NTSTR(soutpath,   SFQ_MIN(USHRT_MAX, PATH_MAX));
+#if 0
 	if (val->soutpath)
 	{
 		size_t soutpath_len = strlen(val->soutpath);
@@ -403,7 +492,10 @@ null-term 文字列の場合に payload_size が未設定の場合は自動算�
 			ioeb->eh.soutpath_size = (ushort)soutpath_size;
 		}
 	}
+#endif
 
+	VAL2IOEB_SET_NTSTR(serrpath,   SFQ_MIN(USHRT_MAX, PATH_MAX));
+#if 0
 	if (val->serrpath)
 	{
 		size_t serrpath_len = strlen(val->serrpath);
@@ -424,15 +516,18 @@ null-term 文字列の場合に payload_size が未設定の場合は自動算�
 			ioeb->eh.serrpath_size = (ushort)serrpath_size;
 		}
 	}
+#endif
 
 /* for debug */
 	add_all =
 	(
 		sizeof(ioeb->eh) +
+		ioeb->eh.payload_size  +
+		ioeb->eh.execusrnam_size +
+		ioeb->eh.execgrpnam_size +
 		ioeb->eh.execpath_size +
 		ioeb->eh.execargs_size +
 		ioeb->eh.metatext_size +
-		ioeb->eh.payload_size  +
 		ioeb->eh.soutpath_size +
 		ioeb->eh.serrpath_size
 	);
@@ -448,6 +543,14 @@ SFQ_LIB_LEAVE
 
 	return SFQ_LIB_IS_SUCCESS();
 }
+
+#define IOEB2VAL_SET_NTSTR(key_) \
+\
+	if (ioeb->eh.key_ ## _size) \
+	{ \
+		assert(ioeb->key_); \
+		val->key_ = ioeb->key_; \
+	}
 
 sfq_bool sfq_copy_ioeb2val(const struct sfq_ioelm_buff* ioeb, struct sfq_value* val)
 {
@@ -469,6 +572,37 @@ sfq_bool sfq_copy_ioeb2val(const struct sfq_ioelm_buff* ioeb, struct sfq_value* 
 	uuid_copy(val->uuid, ioeb->eh.uuid);
 
 /* */
+	if (ioeb->eh.payload_size)
+	{
+		assert(ioeb->eh.payload_type);
+		assert(ioeb->payload);
+
+		val->payload_size = ioeb->eh.payload_size;
+		val->payload_type = ioeb->eh.payload_type;
+		val->payload = ioeb->payload;
+	}
+
+/* */
+	IOEB2VAL_SET_NTSTR(execusrnam);
+	IOEB2VAL_SET_NTSTR(execgrpnam);
+	IOEB2VAL_SET_NTSTR(execpath);
+	IOEB2VAL_SET_NTSTR(execargs);
+	IOEB2VAL_SET_NTSTR(metatext);
+	IOEB2VAL_SET_NTSTR(soutpath);
+	IOEB2VAL_SET_NTSTR(serrpath);
+#if 0
+	if (ioeb->eh.execusrnam_size)
+	{
+		assert(ioeb->execusrnam);
+		val->execusrnam = ioeb->execusrnam;
+	}
+
+	if (ioeb->eh.execgrpnam_size)
+	{
+		assert(ioeb->execgrpnam);
+		val->execgrpnam = ioeb->execgrpnam;
+	}
+
 	if (ioeb->eh.execpath_size)
 	{
 		assert(ioeb->execpath);
@@ -498,16 +632,7 @@ sfq_bool sfq_copy_ioeb2val(const struct sfq_ioelm_buff* ioeb, struct sfq_value* 
 		assert(ioeb->serrpath);
 		val->serrpath = ioeb->serrpath;
 	}
-
-	if (ioeb->eh.payload_size)
-	{
-		assert(ioeb->eh.payload_type);
-		assert(ioeb->payload);
-
-		val->payload_size = ioeb->eh.payload_size;
-		val->payload_type = ioeb->eh.payload_type;
-		val->payload = ioeb->payload;
-	}
+#endif
 
 	return SFQ_true;
 }
@@ -519,10 +644,12 @@ void sfq_free_value(struct sfq_value* val)
 		return;
 	}
 
+	free((char*)val->payload);
+	free((char*)val->execusrnam);
+	free((char*)val->execgrpnam);
 	free((char*)val->execpath);
 	free((char*)val->execargs);
 	free((char*)val->metatext);
-	free((char*)val->payload);
 	free((char*)val->soutpath);
 	free((char*)val->serrpath);
 
@@ -535,6 +662,8 @@ SFQ_LIB_ENTER
 
 	const char* NA = "N/A";
 
+	char* execusrnam = NULL;
+	char* execgrpnam = NULL;
 	char* execpath = NULL;
 	char* execargs = NULL;
 	char* metatext = NULL;
@@ -555,36 +684,7 @@ SFQ_LIB_ENTER
 
 	bzero(dst, sizeof(*dst));
 
-	execpath = strdup(val->execpath ? val->execpath : NA);
-	if (! execpath)
-	{
-		SFQ_FAIL(ES_STRDUP, "execpath");
-	}
-
-	execargs = strdup(val->execargs ? val->execargs : NA);
-	if (! execargs)
-	{
-		SFQ_FAIL(ES_STRDUP, "execargs");
-	}
-
-	metatext = strdup(val->metatext ? val->metatext : NA);
-	if (! metatext)
-	{
-		SFQ_FAIL(ES_STRDUP, "metatext");
-	}
-
-	soutpath = strdup(val->soutpath ? val->soutpath : NA);
-	if (! soutpath)
-	{
-		SFQ_FAIL(ES_STRDUP, "soutpath");
-	}
-
-	serrpath = strdup(val->serrpath ? val->serrpath : NA);
-	if (! serrpath)
-	{
-		SFQ_FAIL(ES_STRDUP, "serrpath");
-	}
-
+/* */
 	if (val->payload)
 	{
 		assert(val->payload_type);
@@ -621,6 +721,50 @@ SFQ_LIB_ENTER
 		SFQ_FAIL(ES_STRDUP, "payload");
 	}
 
+/* */
+	execusrnam = strdup(val->execusrnam ? val->execusrnam : NA);
+	if (! execusrnam)
+	{
+		SFQ_FAIL(ES_STRDUP, "execusrnam");
+	}
+
+	execgrpnam = strdup(val->execgrpnam ? val->execgrpnam : NA);
+	if (! execgrpnam)
+	{
+		SFQ_FAIL(ES_STRDUP, "execgrpnam");
+	}
+
+	execpath = strdup(val->execpath ? val->execpath : NA);
+	if (! execpath)
+	{
+		SFQ_FAIL(ES_STRDUP, "execpath");
+	}
+
+	execargs = strdup(val->execargs ? val->execargs : NA);
+	if (! execargs)
+	{
+		SFQ_FAIL(ES_STRDUP, "execargs");
+	}
+
+	metatext = strdup(val->metatext ? val->metatext : NA);
+	if (! metatext)
+	{
+		SFQ_FAIL(ES_STRDUP, "metatext");
+	}
+
+	soutpath = strdup(val->soutpath ? val->soutpath : NA);
+	if (! soutpath)
+	{
+		SFQ_FAIL(ES_STRDUP, "soutpath");
+	}
+
+	serrpath = strdup(val->serrpath ? val->serrpath : NA);
+	if (! serrpath)
+	{
+		SFQ_FAIL(ES_STRDUP, "serrpath");
+	}
+
+/* */
 	dst->id = val->id;
 	dst->pushtime = val->pushtime;
 	uuid_copy(dst->uuid, val->uuid);
@@ -629,6 +773,8 @@ SFQ_LIB_ENTER
 	dst->payload_size = val->payload_size;
 	dst->payload = (sfq_byte*)payload;
 
+	dst->execusrnam = execusrnam;
+	dst->execgrpnam = execgrpnam;
 	dst->execpath = execpath;
 	dst->execargs = execargs;
 	dst->metatext = metatext;
@@ -639,10 +785,12 @@ SFQ_LIB_CHECKPOINT
 
 	if (SFQ_LIB_IS_FAIL())
 	{
+		free(payload);
+		free(execusrnam);
+		free(execgrpnam);
 		free(execpath);
 		free(execargs);
 		free(metatext);
-		free(payload);
 		free(soutpath);
 		free(serrpath);
 	}

@@ -66,8 +66,8 @@ SFQC_MAIN_ENTER
 	qip.procs_num = procs_num;
 	qip.boota_proc_num = pgargs.boota_proc_num;
 	qip.questate = questate;
-	qip.queuser = pgargs.username;
-	qip.quegroup = pgargs.groupname;
+	qip.queusrnam = pgargs.usrnam;
+	qip.quegrpnam = pgargs.grpnam;
 
 	irc = sfq_init(pgargs.querootdir, pgargs.quename, &qip);
 
