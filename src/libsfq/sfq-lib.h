@@ -41,12 +41,18 @@
 
 	#include <semaphore.h>
 	#include <pthread.h>
-	#include <wait.h>
+
+	#ifdef __APPLE__
+		#include <sys/wait.h>
+	#else
+		#include <wait.h>
+		#include <sys/capability.h>
+	#endif
+
 	#include <libgen.h>
 
 	#include <pwd.h>
 	#include <grp.h>
-	#include <sys/capability.h>
 #endif
 
 #include "sfq.h"
