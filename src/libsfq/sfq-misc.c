@@ -353,121 +353,10 @@ null-term 文字列の場合に payload_size が未設定の場合は自動算�
 
 /* */
 	VAL2IOEB_SET_NTSTR(execpath,   SFQ_MIN(USHRT_MAX, PATH_MAX));
-#if 0
-	if (val->execpath)
-	{
-		size_t execpath_len = strlen(val->execpath);
-		if (execpath_len)
-		{
-			size_t execpath_size = execpath_len + 1;
-
-			if (execpath_size >= USHRT_MAX)
-			{
-				SFQ_FAIL(EA_OVERLIMIT, "execpath_size");
-			}
-			if (execpath_size >= PATH_MAX)
-			{
-				SFQ_FAIL(EA_OVERLIMIT, "execpath_size");
-			}
-
-			ioeb->execpath = val->execpath;
-			ioeb->eh.execpath_size = (ushort)execpath_size;
-		}
-	}
-#endif
-
 	VAL2IOEB_SET_NTSTR(execargs,   SFQ_MIN(UINT_MAX, sc_arg_max));
-#if 0
-	if (val->execargs)
-	{
-		size_t execargs_len = strlen(val->execargs);
-		if (execargs_len)
-		{
-			size_t execargs_size = execargs_len + 1;
-
-			if (execargs_size >= UINT_MAX)
-			{
-				SFQ_FAIL(EA_OVERLIMIT, "execargs_size");
-			}
-
-			if (execargs_size >= (size_t)sc_arg_max)
-			{
-				SFQ_FAIL(EA_OVERLIMIT, "execargs_size");
-			}
-
-			ioeb->execargs = val->execargs;
-			ioeb->eh.execargs_size = (uint)execargs_size;
-		}
-	}
-#endif
-
 	VAL2IOEB_SET_NTSTR(metatext,   USHRT_MAX);
-#if 0
-	if (val->metatext)
-	{
-		size_t metatext_len = strlen(val->metatext);
-		if (metatext_len)
-		{
-			size_t metatext_size = metatext_len + 1;
-
-			if (metatext_size >= USHRT_MAX)
-			{
-				SFQ_FAIL(EA_OVERLIMIT, "metatext_size");
-			}
-
-			ioeb->metatext = val->metatext;
-			ioeb->eh.metatext_size = (ushort)metatext_size;
-		}
-	}
-#endif
-
 	VAL2IOEB_SET_NTSTR(soutpath,   SFQ_MIN(USHRT_MAX, PATH_MAX));
-#if 0
-	if (val->soutpath)
-	{
-		size_t soutpath_len = strlen(val->soutpath);
-		if (soutpath_len)
-		{
-			size_t soutpath_size = soutpath_len + 1;
-
-			if (soutpath_size >= USHRT_MAX)
-			{
-				SFQ_FAIL(EA_OVERLIMIT, "soutpath_size");
-			}
-			if (soutpath_size >= PATH_MAX)
-			{
-				SFQ_FAIL(EA_OVERLIMIT, "soutpath_size");
-			}
-
-			ioeb->soutpath = val->soutpath;
-			ioeb->eh.soutpath_size = (ushort)soutpath_size;
-		}
-	}
-#endif
-
 	VAL2IOEB_SET_NTSTR(serrpath,   SFQ_MIN(USHRT_MAX, PATH_MAX));
-#if 0
-	if (val->serrpath)
-	{
-		size_t serrpath_len = strlen(val->serrpath);
-		if (serrpath_len)
-		{
-			size_t serrpath_size = serrpath_len + 1;
-
-			if (serrpath_size >= USHRT_MAX)
-			{
-				SFQ_FAIL(EA_OVERLIMIT, "serrpath_size");
-			}
-			if (serrpath_size >= PATH_MAX)
-			{
-				SFQ_FAIL(EA_OVERLIMIT, "serrpath_size");
-			}
-
-			ioeb->serrpath = val->serrpath;
-			ioeb->eh.serrpath_size = (ushort)serrpath_size;
-		}
-	}
-#endif
 
 /* for debug */
 	add_all =
@@ -537,37 +426,6 @@ sfq_bool sfq_copy_ioeb2val(const struct sfq_ioelm_buff* ioeb, struct sfq_value* 
 	IOEB2VAL_SET_NTSTR(metatext);
 	IOEB2VAL_SET_NTSTR(soutpath);
 	IOEB2VAL_SET_NTSTR(serrpath);
-#if 0
-	if (ioeb->eh.execpath_size)
-	{
-		assert(ioeb->execpath);
-		val->execpath = ioeb->execpath;
-	}
-
-	if (ioeb->eh.execargs_size)
-	{
-		assert(ioeb->execargs);
-		val->execargs = ioeb->execargs;
-	}
-
-	if (ioeb->eh.metatext_size)
-	{
-		assert(ioeb->metatext);
-		val->metatext = ioeb->metatext;
-	}
-
-	if (ioeb->eh.soutpath_size)
-	{
-		assert(ioeb->soutpath);
-		val->soutpath = ioeb->soutpath;
-	}
-
-	if (ioeb->eh.serrpath_size)
-	{
-		assert(ioeb->serrpath);
-		val->serrpath = ioeb->serrpath;
-	}
-#endif
 
 	return SFQ_true;
 }
