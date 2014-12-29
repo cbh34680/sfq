@@ -139,8 +139,6 @@ struct sfq_value
 	ulong id;				/* 8 */
 	time_t pushtime;			/* 8 */
 	uuid_t uuid;				/* 16 */
-	const char* execusrnam;			/* 8 */
-	const char* execgrpnam;			/* 8 */
 	const char* execpath;			/* 8 */
 	const char* execargs;			/* 8 */
 	const char* metatext;			/* 8 */
@@ -170,14 +168,12 @@ void sfq_free_value(struct sfq_value* p);
 
 /* short-cut */
 int sfq_push_text(const char* querootdir, const char* quename,
-	const char* execusrnam, const char* execgrpnam,
 	const char* execpath, const char* execargs, const char* metatext,
 	const char* soutpath, const char* serrpath,
 	uuid_t uuid,
 	const char* textdata);
 
 int sfq_push_binary(const char* querootdir, const char* quename,
-	const char* execusrnam, const char* execgrpnam,
 	const char* execpath, const char* execargs, const char* metatext,
 	const char* soutpath, const char* serrpath,
 	uuid_t uuid,

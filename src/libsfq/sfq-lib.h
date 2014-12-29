@@ -294,7 +294,7 @@ struct sfq_e_header
 /* value */
 	ushort eh_size;			/* 2 */
 	payload_type_t payload_type;	/* 1 */
-	sfq_byte filler1[1];		/* 1 */
+	sfq_uchar elmmargin_;		/* 1 ... for debug, set by sfq_copy_val2ioeb() */
 	ushort execpath_size;		/* 2 ... (x) USHRT_MAX PATH_MAX */
 	ushort metatext_size;		/* 2 ... (m) USHRT_MAX */
 
@@ -306,11 +306,6 @@ struct sfq_e_header
 	time_t pushtime;		/* 8 */
 	uuid_t uuid;			/* 16 */
 	size_t payload_size;		/* 8 */
-
-	ushort execusrnam_size;		/* 2 ... (U) USHRT_MAX LOGIN_NAME_MAX */
-	ushort execgrpnam_size;		/* 2 ... (G) USHRT_MAX LOGIN_NAME_MAX */
-	sfq_byte filler2[3];		/* 3 */
-	sfq_uchar elmmargin_;		/* 1 ... for debug, set by sfq_copy_val2ioeb() */
 
 	size_t elmsize_;		/* 8 ... for debug, set by sfq_copy_val2ioeb() */
 };

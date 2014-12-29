@@ -33,12 +33,10 @@ sfq_bool print_element(ulong order, off_t elm_pos, const struct sfq_value* val, 
 	if (irc == SFQ_RC_SUCCESS)
 	{
 		printf("%lu" _T_ "%zu" _T_ "%zu" _T_ "%s" _T_ "%s" _T_
-				"%s" _T_         "%s" _T_
 				"%s" _T_       "%s" _T_       "%s" _T_       "%s" _T_       "%s" _T_
 				"%u" _T_           "%zu" _T_          "%s"                LF,
 
 		       order,    elm_pos,  pval.id,  dt,      uuid_s,
-				pval.execusrnam, pval.execgrpnam,
 				pval.execpath, pval.execargs, pval.metatext, pval.soutpath, pval.serrpath,
 				val->payload_type, val->payload_size, (char*)pval.payload);
 
