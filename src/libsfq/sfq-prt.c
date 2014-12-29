@@ -173,8 +173,6 @@ void sfq_print_e_header(const struct sfq_e_header* p)
 	fprintf(stderr, "# element.pushtime            = %zu\n", p->pushtime);
 	fprintf(stderr, "# element.uuid                = %s\n",  uuid_s);
 	fprintf(stderr, "# element.payload_type        = %u\n",  p->payload_type);
-	fprintf(stderr, "# element.execusrnam_size     = %u\n",  p->execusrnam_size);
-	fprintf(stderr, "# element.execgrpnam_size     = %u\n",  p->execgrpnam_size);
 	fprintf(stderr, "# element.execpath_size       = %u\n",  p->execpath_size);
 	fprintf(stderr, "# element.execargs_size       = %u\n",  p->execargs_size);
 	fprintf(stderr, "# element.metatext_size       = %u\n",  p->metatext_size);

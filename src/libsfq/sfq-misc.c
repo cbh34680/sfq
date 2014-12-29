@@ -352,55 +352,6 @@ null-term 文字列の場合に payload_size が未設定の場合は自動算�
 	}
 
 /* */
-	VAL2IOEB_SET_NTSTR(execusrnam, SFQ_MIN(USHRT_MAX, LOGIN_NAME_MAX));
-
-#if 0
-	if (val->execusrnam)
-	{
-		size_t execusrnam_len = strlen(val->execusrnam);
-		if (execusrnam_len)
-		{
-			size_t execusrnam_size = execusrnam_len + 1;
-
-			if (execusrnam_size >= USHRT_MAX)
-			{
-				SFQ_FAIL(EA_OVERLIMIT, "execusrnam_size");
-			}
-			if (execusrnam_size >= LOGIN_NAME_MAX)
-			{
-				SFQ_FAIL(EA_OVERLIMIT, "execusrnam_size");
-			}
-
-			ioeb->execusrnam = val->execusrnam;
-			ioeb->eh.execusrnam_size = (ushort)execusrnam_size;
-		}
-	}
-#endif
-
-	VAL2IOEB_SET_NTSTR(execgrpnam, SFQ_MIN(USHRT_MAX, LOGIN_NAME_MAX));
-#if 0
-	if (val->execgrpnam)
-	{
-		size_t execgrpnam_len = strlen(val->execgrpnam);
-		if (execgrpnam_len)
-		{
-			size_t execgrpnam_size = execgrpnam_len + 1;
-
-			if (execgrpnam_size >= USHRT_MAX)
-			{
-				SFQ_FAIL(EA_OVERLIMIT, "execgrpnam_size");
-			}
-			if (execgrpnam_size >= LOGIN_NAME_MAX)
-			{
-				SFQ_FAIL(EA_OVERLIMIT, "execgrpnam_size");
-			}
-
-			ioeb->execgrpnam = val->execgrpnam;
-			ioeb->eh.execgrpnam_size = (ushort)execgrpnam_size;
-		}
-	}
-#endif
-
 	VAL2IOEB_SET_NTSTR(execpath,   SFQ_MIN(USHRT_MAX, PATH_MAX));
 #if 0
 	if (val->execpath)
@@ -523,8 +474,6 @@ null-term 文字列の場合に payload_size が未設定の場合は自動算�
 	(
 		sizeof(ioeb->eh) +
 		ioeb->eh.payload_size  +
-		ioeb->eh.execusrnam_size +
-		ioeb->eh.execgrpnam_size +
 		ioeb->eh.execpath_size +
 		ioeb->eh.execargs_size +
 		ioeb->eh.metatext_size +
@@ -583,26 +532,12 @@ sfq_bool sfq_copy_ioeb2val(const struct sfq_ioelm_buff* ioeb, struct sfq_value* 
 	}
 
 /* */
-	IOEB2VAL_SET_NTSTR(execusrnam);
-	IOEB2VAL_SET_NTSTR(execgrpnam);
 	IOEB2VAL_SET_NTSTR(execpath);
 	IOEB2VAL_SET_NTSTR(execargs);
 	IOEB2VAL_SET_NTSTR(metatext);
 	IOEB2VAL_SET_NTSTR(soutpath);
 	IOEB2VAL_SET_NTSTR(serrpath);
 #if 0
-	if (ioeb->eh.execusrnam_size)
-	{
-		assert(ioeb->execusrnam);
-		val->execusrnam = ioeb->execusrnam;
-	}
-
-	if (ioeb->eh.execgrpnam_size)
-	{
-		assert(ioeb->execgrpnam);
-		val->execgrpnam = ioeb->execgrpnam;
-	}
-
 	if (ioeb->eh.execpath_size)
 	{
 		assert(ioeb->execpath);
@@ -645,8 +580,6 @@ void sfq_free_value(struct sfq_value* val)
 	}
 
 	free((char*)val->payload);
-	free((char*)val->execusrnam);
-	free((char*)val->execgrpnam);
 	free((char*)val->execpath);
 	free((char*)val->execargs);
 	free((char*)val->metatext);
@@ -662,8 +595,6 @@ SFQ_LIB_ENTER
 
 	const char* NA = "N/A";
 
-	char* execusrnam = NULL;
-	char* execgrpnam = NULL;
 	char* execpath = NULL;
 	char* execargs = NULL;
 	char* metatext = NULL;
@@ -722,18 +653,6 @@ SFQ_LIB_ENTER
 	}
 
 /* */
-	execusrnam = strdup(val->execusrnam ? val->execusrnam : NA);
-	if (! execusrnam)
-	{
-		SFQ_FAIL(ES_STRDUP, "execusrnam");
-	}
-
-	execgrpnam = strdup(val->execgrpnam ? val->execgrpnam : NA);
-	if (! execgrpnam)
-	{
-		SFQ_FAIL(ES_STRDUP, "execgrpnam");
-	}
-
 	execpath = strdup(val->execpath ? val->execpath : NA);
 	if (! execpath)
 	{
@@ -773,8 +692,6 @@ SFQ_LIB_ENTER
 	dst->payload_size = val->payload_size;
 	dst->payload = (sfq_byte*)payload;
 
-	dst->execusrnam = execusrnam;
-	dst->execgrpnam = execgrpnam;
 	dst->execpath = execpath;
 	dst->execargs = execargs;
 	dst->metatext = metatext;
@@ -786,8 +703,6 @@ SFQ_LIB_CHECKPOINT
 	if (SFQ_LIB_IS_FAIL())
 	{
 		free(payload);
-		free(execusrnam);
-		free(execgrpnam);
 		free(execpath);
 		free(execargs);
 		free(metatext);

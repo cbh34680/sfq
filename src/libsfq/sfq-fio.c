@@ -735,8 +735,6 @@ SFQ_LIB_LEAVE
  * element
  *    - header
  *    - payload    (eh.payload_size  >= 0)
- *    - execusrnam (eh.execusrnam_size >= 0) ... nullterm string
- *    - execgrpnam (eh.execgrpnam_size >= 0) ... nullterm string
  *    - execpath   (eh.execpath_size >= 0)   ... nullterm string
  *    - execargs   (eh.execargs_size >= 0)   ... nullterm string
  *    - metatext   (eh.metatext_size >= 0)   ... nullterm string
@@ -789,38 +787,12 @@ SFQ_LIB_ENTER
 
 /* null term strings */
 
-	WRITEELM_NTSTR(execusrnam);
-	WRITEELM_NTSTR(execgrpnam);
 	WRITEELM_NTSTR(execpath);
 	WRITEELM_NTSTR(execargs);
 	WRITEELM_NTSTR(metatext);
 	WRITEELM_NTSTR(soutpath);
 	WRITEELM_NTSTR(serrpath);
 #if 0
-	if (ioeb->eh.execusrnam_size)
-	{
-		assert(ioeb->execusrnam);
-
-	/* w: execusrnam */
-		iosize = fwrite(ioeb->execusrnam, ioeb->eh.execusrnam_size, 1, qo->fp);
-		if (iosize != 1)
-		{
-			SFQ_FAIL(ES_FILEIO, "FILE-WRITE(execusrnam)");
-		}
-	}
-
-	if (ioeb->eh.execgrpnam_size)
-	{
-		assert(ioeb->execgrpnam);
-
-	/* w: execgrpnam */
-		iosize = fwrite(ioeb->execgrpnam, ioeb->eh.execgrpnam_size, 1, qo->fp);
-		if (iosize != 1)
-		{
-			SFQ_FAIL(ES_FILEIO, "FILE-WRITE(execgrpnam)");
-		}
-	}
-
 	if (ioeb->eh.execpath_size)
 	{
 		assert(ioeb->execpath);
@@ -914,8 +886,6 @@ SFQ_LIB_ENTER
 	size_t iosize = 0;
 	size_t eh_size = 0;
 
-	char* execusrnam = NULL;
-	char* execgrpnam = NULL;
 	char* execpath = NULL;
 	char* execargs = NULL;
 	char* metatext = NULL;
@@ -965,46 +935,13 @@ SFQ_LIB_ENTER
 	}
 
 /* */
-	READELM_NTSTR(execusrnam);
-	READELM_NTSTR(execgrpnam);
 	READELM_NTSTR(execpath);
 	READELM_NTSTR(execargs);
 	READELM_NTSTR(metatext);
 	READELM_NTSTR(soutpath);
 	READELM_NTSTR(serrpath);
+
 #if 0
-	if (ioeb->eh.execusrnam_size)
-	{
-	/* r: execusrnam */
-		execusrnam = malloc(ioeb->eh.execusrnam_size);
-		if (! execusrnam)
-		{
-			SFQ_FAIL(ES_MEMALLOC, "ALLOC(execusrnam)");
-		}
-
-		iosize = fread(execusrnam, ioeb->eh.execusrnam_size, 1, qo->fp);
-		if (iosize != 1)
-		{
-			SFQ_FAIL(ES_FILEIO, "FILE-READ(execusrnam)");
-		}
-	}
-
-	if (ioeb->eh.execgrpnam_size)
-	{
-	/* r: execgrpnam */
-		execgrpnam = malloc(ioeb->eh.execgrpnam_size);
-		if (! execgrpnam)
-		{
-			SFQ_FAIL(ES_MEMALLOC, "ALLOC(execgrpnam)");
-		}
-
-		iosize = fread(execgrpnam, ioeb->eh.execgrpnam_size, 1, qo->fp);
-		if (iosize != 1)
-		{
-			SFQ_FAIL(ES_FILEIO, "FILE-READ(execgrpnam)");
-		}
-	}
-
 	if (ioeb->eh.execpath_size)
 	{
 	/* r: execpath */
@@ -1087,8 +1024,6 @@ SFQ_LIB_ENTER
 #endif
 
 	ioeb->payload = payload;
-	ioeb->execusrnam = execusrnam;
-	ioeb->execgrpnam = execgrpnam;
 	ioeb->execpath = execpath;
 	ioeb->execargs = execargs;
 	ioeb->metatext = metatext;
@@ -1100,8 +1035,6 @@ SFQ_LIB_CHECKPOINT
 	if (SFQ_LIB_IS_FAIL())
 	{
 		free(payload);
-		free(execusrnam);
-		free(execgrpnam);
 		free(execpath);
 		free(execargs);
 		free(metatext);
@@ -1122,8 +1055,6 @@ void sfq_free_ioelm_buff(struct sfq_ioelm_buff* ioeb)
 	}
 
 	free((char*)ioeb->payload);
-	free((char*)ioeb->execusrnam);
-	free((char*)ioeb->execgrpnam);
 	free((char*)ioeb->execpath);
 	free((char*)ioeb->execargs);
 	free((char*)ioeb->metatext);

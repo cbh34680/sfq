@@ -151,21 +151,13 @@ fprintf(stderr, "\tsoutpath == serrpath [%s], redirect stderr to /dev/null\n", s
 static int child_write_dup_exec_exit(const struct sfq_eloop_params* elop, struct sfq_value* val)
 {
 SFQ_LIB_ENTER
-
-	char* execpath = "/bin/sh";
+	const char* execpath = "/bin/sh";
 	char* execargs = NULL;
+
 	int* pipefd = NULL;
 
 	char env_ulong[32] = "";
 	char uuid_s[36 + 1] = "";
-
-/* */
-fprintf(stderr, "\tprepare exec\n");
-
-//#ifdef SFQ_DEBUG_BUILD
-//	assert(elop->om_quename);
-//	assert(val);
-//#endif
 
 /*
 ヒープに入れたままだと exec() されたときにメモリリーク扱いになるので
@@ -173,6 +165,8 @@ payload 以外はスタックにコピー
 
 payload は pipe 経由で送信
 */
+fprintf(stderr, "\tprepare exec\n");
+
 	if (val->execpath)
 	{
 		execpath = sfq_stradup(val->execpath);
