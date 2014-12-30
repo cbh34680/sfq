@@ -344,7 +344,16 @@ static char* create_json_string(const struct sfq_value* val, sfq_bool pbin, sfq_
 
 	if (data)
 	{
+#if 0
+/* jansson 2.7 */
 		json_object_set_new(json, "payload", json_stringn((char*)data, data_len));
+#else
+		char* tmpValue = alloca(data_len + 1);
+		memcpy(tmpValue, data, data_len);
+		tmpValue[data_len] = '\0';
+
+		json_object_set_new(json, "payload", json_string(tmpValue));
+#endif
 	}
 
 	dumps = json_dumps(json, 0);
@@ -615,10 +624,13 @@ EXIT_LABEL:
 
 	if (printmethod & SFQC_PRM_HTTP_HEADER)
 	{
-		print_http_headers(SFQ_false, "text/plain; charset=UTF-8", strlen(message));
+		if (message)
+		{
+			print_http_headers(SFQ_false, "text/plain; charset=UTF-8", strlen(message));
 
-		printf(CRLF);
-		printf("%s" CRLF, message);
+			printf(CRLF);
+			printf("%s" CRLF, message);
+		}
 	}
 	else
 	{

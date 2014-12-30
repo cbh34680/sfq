@@ -4,8 +4,9 @@ sfq - Simple File-based Queue
 * OS) CentOS 7 64bit
 
 [Build]
-* 1) git clone (get source tree)
-* 2) make (use sfq/Makefile)
+* 1) yum -y install jansson-devel
+* 2) git clone (get source tree)
+* 3) make (use sfq/Makefile)
 
 [Binaries]
 * Library) sfq/lib/lib*.so
