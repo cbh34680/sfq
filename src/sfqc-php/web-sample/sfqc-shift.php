@@ -4,6 +4,7 @@
 ?>
 <html>
 <body>
+<?php include_once("analyticstracking.php") ?>
 <?php
 try
 {
