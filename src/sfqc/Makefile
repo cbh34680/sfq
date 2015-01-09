@@ -23,10 +23,10 @@
 
 CC       = gcc
 OBJSL    = sfqc-lib.o sfqc-takeout.o base64.o
-OBJSE    = sfqc-init.o sfqc-info.o sfqc-list.o sfqc-pusht.o sfqc-pushb.o sfqc-pop.o sfqc-shift.o sfqc-clear.o sfqc-sets.o
+OBJSE    = sfqc-init.o sfqc-info.o sfqc-list.o sfqc-pusht.o sfqc-pushb.o sfqc-pushx.o sfqc-pop.o sfqc-shift.o sfqc-clear.o sfqc-sets.o
 OBJS     = $(OBJSL) $(OBJSE)
 
-TARGETE  = sfqc-init sfqc-info sfqc-list sfqc-pusht sfqc-pushb sfqc-pop sfqc-shift sfqc-clear sfqc-sets
+TARGETE  = sfqc-init sfqc-info sfqc-list sfqc-pusht sfqc-pushb sfqc-pushx sfqc-pop sfqc-shift sfqc-clear sfqc-sets
 TARGETL  = libsfqc.so
 TARGET   = $(TARGETL) $(TARGETE)
 
@@ -69,6 +69,9 @@ sfqc-pusht: sfqc-pusht.o
 	$(CC) $(CFLAGS) $(LIBDIRS) -o $@ $< $(LIBS)
 
 sfqc-pushb: sfqc-pushb.o
+	$(CC) $(CFLAGS) $(LIBDIRS) -o $@ $< $(LIBS)
+
+sfqc-pushx: sfqc-pushx.o
 	$(CC) $(CFLAGS) $(LIBDIRS) -o $@ $< $(LIBS)
 
 sfqc-pop: sfqc-pop.o
