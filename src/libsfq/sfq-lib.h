@@ -52,11 +52,8 @@
 
 	#include <pwd.h>
 	#include <grp.h>
-<<<<<<< HEAD
-=======
 	#include <sys/capability.h>
 	#include <sys/syscall.h>     /* for SYS_gettid */
->>>>>>> v0.15.6
 #endif
 
 #include "sfq.h"
