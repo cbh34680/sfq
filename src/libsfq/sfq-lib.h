@@ -25,7 +25,6 @@
 #include <fcntl.h>           /* For O_* constants */
 #include <math.h>
 #include <stddef.h>
-#include <sys/syscall.h>     /* for SYS_gettid */
 
 #ifdef SFQ_SEMUNLOCK_AT_SIGCATCH
 	#include <signal.h>
@@ -47,6 +46,7 @@
 	#include <pwd.h>
 	#include <grp.h>
 	#include <sys/capability.h>
+	#include <sys/syscall.h>     /* for SYS_gettid */
 #endif
 
 #include "sfq.h"
