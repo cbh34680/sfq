@@ -99,7 +99,7 @@ static void print_http_headers(sfq_bool exist, const char* content_type, size_t 
 /*
 	printf("Date: %s" CRLF, dt);
 	printf("Expires: -1" CRLF);
-	printf("Cache-Control: no-cache" CRLF);
+	printf("Pragma: no-cache" CRLF);
 */
 	printf("Connection: close" CRLF);
 }
