@@ -40,31 +40,38 @@ struct push_attr
 	size_t payload_len;
 };
 
+#define IFEQ_DUP(name_, key_, val_) \
+	\
+	if (strcasecmp(#name_, key_) == 0) { \
+		if (! pgargs.name_) \
+		{ \
+			const char* sd_ = strdup(val_); \
+			if (! sd_) { \
+				goto EXIT_LABEL; \
+			} \
+			pgargs.name_ = sd_; \
+		} \
+	}
+
 static int set_pgargs(const char* key, const char* val, struct push_attr* pattr)
 {
 	int rc = 1;
 
-	if (strcasecmp(key, "execpath") == 0)
-	{
-		pgargs.execpath = strdup(val);
-	}
-	else if (strcasecmp(key, "execargs") == 0)
-	{
-		pgargs.execargs = strdup(val);
-	}
-	else if (strcasecmp(key, "metatext") == 0)
-	{
-		pgargs.metatext = strdup(val);
-	}
-	else if (strcasecmp(key, "soutpath") == 0)
-	{
-		pgargs.soutpath = strdup(val);
-	}
-	else if (strcasecmp(key, "serrpath") == 0)
-	{
-		pgargs.serrpath = strdup(val);
-	}
-	else if (strcasecmp(key, "payload-type") == 0)
+	IFEQ_DUP(querootdir, key, val)
+	else
+	IFEQ_DUP(quename, key, val)
+	else
+	IFEQ_DUP(execpath, key, val)
+	else
+	IFEQ_DUP(execargs, key, val)
+	else
+	IFEQ_DUP(metatext, key, val)
+	else
+	IFEQ_DUP(soutpath, key, val)
+	else
+	IFEQ_DUP(serrpath, key, val)
+	else
+	if (strcasecmp(key, "payload-type") == 0)
 	{
 		if (strcasecmp(val, "text") == 0)
 		{
@@ -79,7 +86,8 @@ static int set_pgargs(const char* key, const char* val, struct push_attr* pattr)
 			goto EXIT_LABEL;
 		}
 	}
-	else if (strcasecmp(key, "payload-length") == 0)
+	else
+	if (strcasecmp(key, "payload-length") == 0)
 	{
 		char* e = NULL;
 		unsigned long ul = strtoul(val, &e, 0);

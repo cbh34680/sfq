@@ -128,7 +128,8 @@ static void h_printf(sfq_bool http, const char* org_format, ...)
 	va_end(arg);
 }
 
-static void print_custom_headers(sfq_bool http, const struct sfq_value* val,
+static void print_custom_headers(sfq_bool http,
+	const char* querootdir, const char* quename, const struct sfq_value* val,
 	size_t data_len, sfq_bool pbin, size_t pb64text_len)
 {
 	char uuid_s[36 + 1] = "";
@@ -139,6 +140,16 @@ static void print_custom_headers(sfq_bool http, const struct sfq_value* val,
 	h_printf(http, "id: %zu\n", val->id);
 	h_printf(http, "pushtime: %zu\n", val->pushtime);
 	h_printf(http, "uuid: %s\n", uuid_s);
+
+	if (querootdir)
+	{
+		h_printf(http, "querootdir: %s\n", querootdir);
+	}
+
+	if (quename)
+	{
+		h_printf(http, "quename: %s\n", quename);
+	}
 
 	if (val->execpath)
 	{
@@ -181,7 +192,8 @@ static void print_custom_headers(sfq_bool http, const struct sfq_value* val,
 	}
 }
 
-static void print_raw(uint printmethod, const struct sfq_value* val)
+static void print_raw(uint printmethod, const char* querootdir, const char* quename,
+	const struct sfq_value* val)
 {
 	char* message = NULL;
 	int jumppos = 0;
@@ -241,7 +253,7 @@ static void print_raw(uint printmethod, const struct sfq_value* val)
 
 	if (adda)
 	{
-		print_custom_headers(http, val, data_len, pbin, pb64text_len);
+		print_custom_headers(http, querootdir, quename, val, data_len, pbin, pb64text_len);
 	}
 
 	if (http || adda)
@@ -274,7 +286,8 @@ EXIT_LABEL:
 /* ------------------------------------------------------------------------------- */
 // outputtype=json
 
-static char* create_json_string(const struct sfq_value* val, sfq_bool pbin, sfq_bool pb64, size_t pb64text_len,
+static char* create_json_string(const char* querootdir, const char* quename,
+	const struct sfq_value* val, sfq_bool pbin, sfq_bool pb64, size_t pb64text_len,
 	sfq_bool adda, const sfq_byte* data, size_t data_len)
 {
 	int irc = 1;
@@ -299,6 +312,16 @@ static char* create_json_string(const struct sfq_value* val, sfq_bool pbin, sfq_
 		json_object_set_new(json, "id", json_integer(val->id));
 		json_object_set_new(json, "uuid", json_string(uuid_s));
 		json_object_set_new(json, "pushtime", json_integer(val->pushtime));
+
+		if (querootdir)
+		{
+			json_object_set_new(json, "querootdir", json_string(querootdir));
+		}
+
+		if (quename)
+		{
+			json_object_set_new(json, "quename", json_string(quename));
+		}
 
 		if (val->execpath)
 		{
@@ -385,7 +408,8 @@ EXIT_LABEL:
 	return dumps;
 }
 
-static void print_by_json(uint printmethod, const struct sfq_value* val)
+static void print_by_json(uint printmethod, const char* querootdir, const char* quename,
+	const struct sfq_value* val)
 {
 	char* message = NULL;
 	int jumppos = 0;
@@ -423,7 +447,9 @@ static void print_by_json(uint printmethod, const struct sfq_value* val)
 		data_len = strlen(pb64text);
 	}
 
-	jsontext = create_json_string(val, pbin, pb64, pb64text_len, adda, data, data_len);
+	jsontext = create_json_string(querootdir, quename, val,
+		pbin, pb64, pb64text_len, adda, data, data_len);
+
 	if (! jsontext)
 	{
 		message = "create_json_string";
@@ -438,7 +464,7 @@ static void print_by_json(uint printmethod, const struct sfq_value* val)
 
 	if (adda)
 	{
-		print_custom_headers(http, val, data_len, pbin, pb64text_len);
+		print_custom_headers(http, querootdir, quename, val, data_len, pbin, pb64text_len);
 	}
 
 	if (http || adda)
@@ -608,11 +634,11 @@ SFQC_MAIN_ENTER
 
 	if (printmethod & SFQC_PRM_ASJSON)
 	{
-		print_by_json(printmethod, &val);
+		print_by_json(printmethod, pgargs.querootdir, pgargs.quename, &val);
 	}
 	else
 	{
-		print_raw(printmethod, &val);
+		print_raw(printmethod, pgargs.querootdir, pgargs.quename, &val);
 	}
 
 EXIT_LABEL:
