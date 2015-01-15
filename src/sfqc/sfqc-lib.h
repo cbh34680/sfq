@@ -19,6 +19,7 @@
 	#include <dirent.h>
 	#include <unistd.h>
 	#include <alloca.h>
+	#include <regex.h>
 #endif
 
 #include "sfq.h"

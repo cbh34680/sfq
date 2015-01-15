@@ -448,7 +448,7 @@ int sfq_push_binary(const char* querootdir, const char* quename,
 	{
 		val.payload_type = SFQ_PLT_BINARY;
 		val.payload_size = payload_size;
-		val.payload = (sfq_byte*)payload;
+		val.payload = payload;
 	}
 
 	irc = sfq_push(querootdir, quename, &val);
