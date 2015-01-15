@@ -1,6 +1,7 @@
 #include "sfq-lib.h"
 
 #define STR_SET_NULL_IFEMPTY(a) \
+	\
 	if ( (a) ) \
 	{ \
 		if ( (a)[0] == '\0' ) \
@@ -16,7 +17,7 @@ SFQ_ENTP_ENTER
 	struct sfq_queue_object* qo = NULL;
 	struct sfq_process_info* procs = NULL;
 
-	char* pushwkdir = NULL;
+	char* cwd = NULL;
 	char* full_soutpath = NULL;
 	char* full_serrpath = NULL;
 
@@ -39,8 +40,8 @@ SFQ_ENTP_ENTER
 	sfq_init_ioeb(&ioeb);
 
 /* get current directory */
-	pushwkdir = getcwd(NULL, 0);
-	if (! pushwkdir)
+	cwd = getcwd(NULL, 0);
+	if (! cwd)
 	{
 		SFQ_FAIL(ES_GETCWD, "getcwd");
 	}
@@ -69,10 +70,10 @@ str[0] == '\0' のときは str に NULL を設定
 	{
 		if ((val->soutpath[0] != '/') && (strcmp(val->soutpath, "-") != 0))
 		{
-			full_soutpath = sfq_alloc_concat_n(3, pushwkdir, "/", val->soutpath);
+			full_soutpath = sfq_alloc_concat_n(3, cwd, "/", val->soutpath);
 			if (! full_soutpath)
 			{
-				SFQ_FAIL(EA_CONCAT_N, "pushwkdir/soutpath");
+				SFQ_FAIL(EA_CONCAT_N, "cwd/soutpath");
 			}
 
 			val->soutpath = full_soutpath;
@@ -83,10 +84,10 @@ str[0] == '\0' のときは str に NULL を設定
 	{
 		if ((val->serrpath[0] != '/') && (strcmp(val->serrpath, "-") != 0))
 		{
-			full_serrpath = sfq_alloc_concat_n(3, pushwkdir, "/", val->serrpath);
+			full_serrpath = sfq_alloc_concat_n(3, cwd, "/", val->serrpath);
 			if (! full_serrpath)
 			{
-				SFQ_FAIL(EA_CONCAT_N, "pushwkdir/serrpath");
+				SFQ_FAIL(EA_CONCAT_N, "cwd/serrpath");
 			}
 
 			val->serrpath = full_serrpath;
@@ -366,8 +367,8 @@ id, pushtime, uuid はここで生成する
 
 SFQ_LIB_CHECKPOINT
 
-	free(pushwkdir);
-	pushwkdir = NULL;
+	free(cwd);
+	cwd = NULL;
 
 	free(full_soutpath);
 	full_soutpath = NULL;

@@ -42,10 +42,10 @@ struct push_attr
 
 #define IFEQ_DUP(name_, key_, val_) \
 	\
-	if (strcasecmp(#name_, key_) == 0) { \
+	if (strcasecmp(#name_, (key_) ) == 0) { \
 		if (! pgargs.name_) \
 		{ \
-			const char* sd_ = strdup(val_); \
+			const char* sd_ = strdup( (val_) ); \
 			if (! sd_) { \
 				goto EXIT_LABEL; \
 			} \
