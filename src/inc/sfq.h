@@ -136,17 +136,21 @@ struct sfq_queue_init_params
 /* */
 struct sfq_value
 {
-	ulong id;				/* 8 */
-	time_t pushtime;			/* 8 */
-	uuid_t uuid;				/* 16 */
-	const char* execpath;			/* 8 */
-	const char* execargs;			/* 8 */
-	const char* metatext;			/* 8 */
-	const char* soutpath;			/* 8 */
-	const char* serrpath;			/* 8 */
-	payload_type_t payload_type;		/* 1 */
-	size_t payload_size;			/* 8 */
-	const sfq_byte* payload;		/* 8 */
+	const char* querootdir;
+	const char* quename;
+
+	ulong id;
+	time_t pushtime;
+	uuid_t uuid;
+	const char* eworkdir;
+	const char* execpath;
+	const char* execargs;
+	const char* metatext;
+	const char* soutpath;
+	const char* serrpath;
+	payload_type_t payload_type;
+	size_t payload_size;
+	const sfq_byte* payload;
 };
 
 typedef sfq_bool (*sfq_map_callback)(ulong order, off_t elm_pos, const struct sfq_value* val, void* userdata);
@@ -168,14 +172,14 @@ void sfq_free_value(struct sfq_value* p);
 
 /* short-cut */
 int sfq_push_text(const char* querootdir, const char* quename,
-	const char* execpath, const char* execargs, const char* metatext,
-	const char* soutpath, const char* serrpath,
+	const char* eworkdir, const char* execpath, const char* execargs,
+	const char* metatext, const char* soutpath, const char* serrpath,
 	uuid_t uuid,
 	const char* textdata);
 
 int sfq_push_binary(const char* querootdir, const char* quename,
-	const char* execpath, const char* execargs, const char* metatext,
-	const char* soutpath, const char* serrpath,
+	const char* eworkdir, const char* execpath, const char* execargs,
+	const char* metatext, const char* soutpath, const char* serrpath,
 	uuid_t uuid,
 	const sfq_byte* payload, size_t payload_size);
 

@@ -37,6 +37,9 @@
 	// uuid
 		SFQWL_ZH_UPDATE_STRING(ioparam_hash, "uuid", uuid_s);
 
+	// eworkdir
+		SFQWL_ZH_UPDATE_STRING(ioparam_hash, "eworkdir", val.eworkdir);
+
 	// execpath
 		SFQWL_ZH_UPDATE_STRING(ioparam_hash, "execpath", val.execpath);
 

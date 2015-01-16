@@ -190,6 +190,7 @@ void sfqc_free_program_args(struct sfqc_program_args* pgargs)
 	free((char*)pgargs->quename);
 	free((char*)pgargs->usrnam);
 	free((char*)pgargs->grpnam);
+	free((char*)pgargs->eworkdir);
 	free((char*)pgargs->execpath);
 	free((char*)pgargs->execargs);
 	free((char*)pgargs->metatext);
@@ -352,6 +353,7 @@ int sfqc_parse_program_args(int argc, char** argv, const char* optstring,
 			case 'D': { RESET_STR(optarg, querootdir);	break; } // QUEUE ディレクトリ
 			case 'U': { RESET_STR(optarg, usrnam);		break; } // QUEUE ユーザ
 			case 'G': { RESET_STR(optarg, grpnam);		break; } // QUEUE グループ
+			case 'w': { RESET_STR(optarg, eworkdir);	break; } // 作業ディレクトリ
 			case 'x': { RESET_STR(optarg, execpath);	break; } // exec() パス
 			case 'v': { RESET_STR(optarg, textdata);	break; } // データ# テキスト
 			case 'f': { RESET_STR(optarg, inputfile);	break; } // データ# ファイル名

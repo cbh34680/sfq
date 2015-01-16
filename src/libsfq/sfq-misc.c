@@ -352,6 +352,7 @@ null-term 文字列の場合に payload_size が未設定の場合は自動算�
 	}
 
 /* */
+	VAL2IOEB_SET_NTSTR(eworkdir,   SFQ_MIN(USHRT_MAX, PATH_MAX));
 	VAL2IOEB_SET_NTSTR(execpath,   SFQ_MIN(USHRT_MAX, PATH_MAX));
 	VAL2IOEB_SET_NTSTR(execargs,   SFQ_MIN(UINT_MAX, sc_arg_max));
 	VAL2IOEB_SET_NTSTR(metatext,   USHRT_MAX);
@@ -363,6 +364,7 @@ null-term 文字列の場合に payload_size が未設定の場合は自動算�
 	(
 		sizeof(ioeb->eh) +
 		ioeb->eh.payload_size  +
+		ioeb->eh.eworkdir_size +
 		ioeb->eh.execpath_size +
 		ioeb->eh.execargs_size +
 		ioeb->eh.metatext_size +
@@ -421,6 +423,7 @@ sfq_bool sfq_copy_ioeb2val(const struct sfq_ioelm_buff* ioeb, struct sfq_value* 
 	}
 
 /* */
+	IOEB2VAL_SET_NTSTR(eworkdir);
 	IOEB2VAL_SET_NTSTR(execpath);
 	IOEB2VAL_SET_NTSTR(execargs);
 	IOEB2VAL_SET_NTSTR(metatext);
@@ -437,7 +440,10 @@ void sfq_free_value(struct sfq_value* val)
 		return;
 	}
 
+	free((char*)val->querootdir);
+	free((char*)val->quename);
 	free((char*)val->payload);
+	free((char*)val->eworkdir);
 	free((char*)val->execpath);
 	free((char*)val->execargs);
 	free((char*)val->metatext);
@@ -453,6 +459,9 @@ SFQ_LIB_ENTER
 
 	const char* NA = "N/A";
 
+	char* querootdir = NULL;
+	char* quename = NULL;
+	char* eworkdir = NULL;
 	char* execpath = NULL;
 	char* execargs = NULL;
 	char* metatext = NULL;
@@ -511,6 +520,24 @@ SFQ_LIB_ENTER
 	}
 
 /* */
+	querootdir = strdup(val->querootdir ? val->querootdir : NA);
+	if (! querootdir)
+	{
+		SFQ_FAIL(ES_STRDUP, "querootdir");
+	}
+
+	quename = strdup(val->quename ? val->quename : NA);
+	if (! quename)
+	{
+		SFQ_FAIL(ES_STRDUP, "quename");
+	}
+
+	eworkdir = strdup(val->eworkdir ? val->eworkdir : NA);
+	if (! eworkdir)
+	{
+		SFQ_FAIL(ES_STRDUP, "eworkdir");
+	}
+
 	execpath = strdup(val->execpath ? val->execpath : NA);
 	if (! execpath)
 	{
@@ -550,6 +577,9 @@ SFQ_LIB_ENTER
 	dst->payload_size = val->payload_size;
 	dst->payload = (sfq_byte*)payload;
 
+	dst->querootdir = querootdir;
+	dst->quename = quename;
+	dst->eworkdir = eworkdir;
 	dst->execpath = execpath;
 	dst->execargs = execargs;
 	dst->metatext = metatext;
@@ -561,6 +591,9 @@ SFQ_LIB_CHECKPOINT
 	if (SFQ_LIB_IS_FAIL())
 	{
 		free(payload);
+		free(querootdir);
+		free(quename);
+		free(eworkdir);
 		free(execpath);
 		free(execargs);
 		free(metatext);

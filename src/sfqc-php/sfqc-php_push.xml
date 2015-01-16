@@ -50,7 +50,11 @@
 			{
 				char* str_val = Z_STRVAL_PP(entry);
 
-				if (strcasecmp("execpath", str_key) == 0)
+				if (strcasecmp("eworkdir", str_key) == 0)
+				{
+					val.eworkdir = str_val;
+				}
+				else if (strcasecmp("execpath", str_key) == 0)
 				{
 					val.execpath = str_val;
 				}

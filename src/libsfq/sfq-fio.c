@@ -771,6 +771,7 @@ SFQ_LIB_LEAVE
  * element
  *    - header
  *    - payload    (eh.payload_size  >= 0)
+ *    - eworkdir   (eh.eworkdir_size >= 0)   ... nullterm string
  *    - execpath   (eh.execpath_size >= 0)   ... nullterm string
  *    - execargs   (eh.execargs_size >= 0)   ... nullterm string
  *    - metatext   (eh.metatext_size >= 0)   ... nullterm string
@@ -823,6 +824,7 @@ SFQ_LIB_ENTER
 
 /* null term strings */
 
+	WRITEELM_NTSTR(eworkdir);
 	WRITEELM_NTSTR(execpath);
 	WRITEELM_NTSTR(execargs);
 	WRITEELM_NTSTR(metatext);
@@ -863,6 +865,7 @@ SFQ_LIB_ENTER
 	size_t iosize = 0;
 	size_t eh_size = 0;
 
+	char* eworkdir = NULL;
 	char* execpath = NULL;
 	char* execargs = NULL;
 	char* metatext = NULL;
@@ -912,6 +915,7 @@ SFQ_LIB_ENTER
 	}
 
 /* */
+	READELM_NTSTR(eworkdir);
 	READELM_NTSTR(execpath);
 	READELM_NTSTR(execargs);
 	READELM_NTSTR(metatext);
@@ -919,6 +923,7 @@ SFQ_LIB_ENTER
 	READELM_NTSTR(serrpath);
 
 	ioeb->payload = payload;
+	ioeb->eworkdir = eworkdir;
 	ioeb->execpath = execpath;
 	ioeb->execargs = execargs;
 	ioeb->metatext = metatext;
@@ -930,6 +935,7 @@ SFQ_LIB_CHECKPOINT
 	if (SFQ_LIB_IS_FAIL())
 	{
 		free(payload);
+		free(eworkdir);
 		free(execpath);
 		free(execargs);
 		free(metatext);
@@ -950,6 +956,7 @@ void sfq_free_ioelm_buff(struct sfq_ioelm_buff* ioeb)
 	}
 
 	free((char*)ioeb->payload);
+	free((char*)ioeb->eworkdir);
 	free((char*)ioeb->execpath);
 	free((char*)ioeb->execargs);
 	free((char*)ioeb->metatext);

@@ -16,6 +16,7 @@
 /*.user
 /a.out
 /?.c
+/??.c
 /err.c
 /webque*
 /noname

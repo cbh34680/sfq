@@ -7,6 +7,7 @@ struct prtelm_data
 {
 	ulong count;
 	sfq_uchar loop_limit;
+	sfq_bool verbose;
 };
 
 sfq_bool print_element(ulong order, off_t elm_pos, const struct sfq_value* val, void* userdata)
@@ -32,16 +33,44 @@ sfq_bool print_element(ulong order, off_t elm_pos, const struct sfq_value* val, 
 	irc = sfq_alloc_print_value(val, &pval);
 	if (irc == SFQ_RC_SUCCESS)
 	{
-		printf("%lu" _T_ "%zu" _T_ "%zu" _T_ "%s" _T_ "%s" _T_
-				"%s" _T_       "%s" _T_       "%s" _T_       "%s" _T_       "%s" _T_
-				"%u" _T_           "%zu" _T_          "%s"                LF,
+		if (ped->verbose)
+		{
+			printf("************************ order %lu ************************\n", order);
 
-		       order,    elm_pos,  pval.id,  dt,      uuid_s,
-				pval.execpath, pval.execargs, pval.metatext, pval.soutpath, pval.serrpath,
-				val->payload_type, val->payload_size, (char*)pval.payload);
-
-		sfq_free_value(&pval);
+			printf("%-13s: %s\n",  "querootdir",	pval.querootdir);
+			printf("%-13s: %s\n",  "quename",	pval.quename);
+			printf("%-13s: %zu\n", "offset",	elm_pos);
+			printf("%-13s: %zu\n", "id",		pval.id);
+			printf("%-13s: %s\n",  "uuid",		uuid_s);
+			printf("%-13s: %s\n",  "eworkdir",	pval.eworkdir);
+			printf("%-13s: %s\n",  "execpath",	pval.execpath);
+			printf("%-13s: %s\n",  "execargs",	pval.execargs);
+			printf("%-13s: %s\n",  "metatext",	pval.metatext);
+			printf("%-13s: %s\n",  "soutpath",	pval.soutpath);
+			printf("%-13s: %s\n",  "serrpath",	pval.serrpath);
+			printf("%-13s: %u\n",  "payload_type",	val->payload_type);
+			printf("%-13s: %zu\n", "payload_size",	val->payload_size);
+			printf("%-13s: %s\n",  "payload",	(char*)pval.payload);
+		}
+		else
+		{
+			printf
+			(
+				"%s" _T_         "%s" _T_
+				"%lu" _T_ "%zu" _T_ "%zu" _T_ "%s" _T_ "%s" _T_
+				"%s" _T_       "%s" _T_       "%s" _T_
+				"%s" _T_       "%s" _T_       "%s" _T_
+				"%u" _T_           "%zu" _T_          "%s"
+				LF,
+				pval.querootdir, pval.quename,
+				order,    elm_pos,  pval.id,  dt,      uuid_s,
+				pval.eworkdir, pval.execpath, pval.execargs,
+				pval.metatext, pval.soutpath, pval.serrpath,
+				val->payload_type, val->payload_size, (char*)pval.payload
+			);
+		}
 	}
+	sfq_free_value(&pval);
 
 	ped->count++;
 
@@ -70,12 +99,20 @@ SFQC_MAIN_ENTER
 	bzero(&ped, sizeof(ped));
 
 /* */
-	irc = sfqc_parse_program_args(argc, argv, "D:N:r123456789", SFQ_false, &pgargs);
+	irc = sfqc_parse_program_args(argc, argv, "D:N:v:r123456789", SFQ_false, &pgargs);
 	if (irc != 0)
 	{
 		message = "parse_program_args: parse error";
 		jumppos = __LINE__;
 		goto EXIT_LABEL;
+	}
+
+	if (pgargs.textdata)
+	{
+		if (strcasecmp(pgargs.textdata, "v") == 0)
+		{
+			ped.verbose = SFQ_true;
+		}
 	}
 
 	ped.loop_limit = pgargs.num1char;
