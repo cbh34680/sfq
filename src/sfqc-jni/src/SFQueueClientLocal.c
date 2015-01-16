@@ -442,6 +442,7 @@ JNIEXPORT jint JNICALL Java_jp_co_iret_sfq_SFQueueClientLocal_wrap_1sfq_1push
 	querootdir = STR_J2C(jquerootdir);
 	quename = STR_J2C(jquename);
 
+	val.eworkdir = hashGetCString(jenv, jhashmap, jt, "eworkdir");
 	val.execpath = hashGetCString(jenv, jhashmap, jt, "execpath");
 	val.execargs = hashGetCString(jenv, jhashmap, jt, "execargs");
 	val.metatext = hashGetCString(jenv, jhashmap, jt, "metatext");
@@ -585,6 +586,9 @@ JNIEXPORT jint JNICALL Java_jp_co_iret_sfq_SFQueueClientLocal_warp_1sfq_1takeout
 
 	// uuid
 		hashPutCString(jenv, jhashmap, jt, "uuid", uuid_s);
+
+	// eworkdir
+		hashPutCString(jenv, jhashmap, jt, "eworkdir", val.eworkdir);
 
 	// execpath
 		hashPutCString(jenv, jhashmap, jt, "execpath", val.execpath);

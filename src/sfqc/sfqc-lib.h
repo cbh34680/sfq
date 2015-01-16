@@ -56,6 +56,8 @@ struct sfqc_program_args
 	ushort boota_proc_num;		/* B */
 	const char* usrnam;		/* U */
 	const char* grpnam;		/* G */
+
+	const char* eworkdir;		/* w */
 	const char* execpath;		/* x */
 	const char* execargs;		/* a */
 	const char* textdata;		/* v */

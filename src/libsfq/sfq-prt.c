@@ -75,8 +75,9 @@ void sfq_print_sizes(void)
 	long sc_child_max = sysconf(_SC_CHILD_MAX);
 	long sc_arg_max = sysconf(_SC_ARG_MAX);
 
-	fprintf(stderr, "! [print_sizes]\n");
-	fprintf(stderr, "! sizeof(sfq_bool)                = %zu\n", sizeof(sfq_bool));
+	fprintf(stderr, "! [type]\n");
+	fprintf(stderr, "! sizeof(sfq_bool)            = %zu\n", sizeof(sfq_bool));
+	fprintf(stderr, "! sizeof(sfq_byte)            = %zu\n", sizeof(sfq_byte));
 	fprintf(stderr, "! sizeof(int)                 = %zu\n", sizeof(int));
 	fprintf(stderr, "! sizeof(long)                = %zu\n", sizeof(long));
 	fprintf(stderr, "! sizeof(void*)               = %zu\n", sizeof(void*));
@@ -95,14 +96,14 @@ void sfq_print_sizes(void)
 	fprintf(stderr, "! sc_arg_max                  = %ld\n", sc_arg_max);
 	fprintf(stderr, "!\n");
 
-	fprintf(stderr, "! sizeof(sfq_byte)            = %zu\n", sizeof(sfq_byte));
-	fprintf(stderr, "! sizeof(sfq_process_info)    = %zu\n", sizeof(struct sfq_process_info));
-	fprintf(stderr, "! sizeof(qf_header)           = %zu\n", sizeof(struct sfq_file_header));
-	fprintf(stderr, "! sizeof(q_header)            = %zu\n", sizeof(struct sfq_q_header));
+	fprintf(stderr, "! [struct]\n");
+	fprintf(stderr, "! sizeof(process_info)        = %zu\n", sizeof(struct sfq_process_info));
 	fprintf(stderr, "! sizeof(qh_sval)             = %zu\n", sizeof(struct sfq_qh_sval));
 	fprintf(stderr, "! sizeof(qh_dval)             = %zu\n", sizeof(struct sfq_qh_dval));
+	fprintf(stderr, "! sizeof(q_header)            = %zu\n", sizeof(struct sfq_q_header));
+	fprintf(stderr, "! sizeof(file_stamp)          = %zu\n", sizeof(struct sfq_file_stamp));
+	fprintf(stderr, "! sizeof(file_header)         = %zu\n", sizeof(struct sfq_file_header));
 	fprintf(stderr, "! sizeof(e_header)            = %zu\n", sizeof(struct sfq_e_header));
-	fprintf(stderr, "! sizeof(sfq_value)           = %zu\n", sizeof(struct sfq_value));
 	fprintf(stderr, "\n");
 }
 

@@ -393,8 +393,8 @@ SFQ_ENTP_LEAVE
 }
 
 int sfq_push_text(const char* querootdir, const char* quename,
-	const char* execpath, const char* execargs, const char* metatext,
-	const char* soutpath, const char* serrpath,
+	const char* eworkdir, const char* execpath, const char* execargs,
+	const char* metatext, const char* soutpath, const char* serrpath,
 	uuid_t uuid,
 	const char* textdata)
 {
@@ -403,6 +403,7 @@ int sfq_push_text(const char* querootdir, const char* quename,
 
 	bzero(&val, sizeof(val));
 
+	val.eworkdir = eworkdir;
 	val.execpath = execpath;
 	val.execargs = execargs;
 	val.metatext = metatext;
@@ -429,8 +430,8 @@ int sfq_push_text(const char* querootdir, const char* quename,
 }
 
 int sfq_push_binary(const char* querootdir, const char* quename,
-	const char* execpath, const char* execargs, const char* metatext,
-	const char* soutpath, const char* serrpath,
+	const char* eworkdir, const char* execpath, const char* execargs,
+	const char* metatext, const char* soutpath, const char* serrpath,
 	uuid_t uuid,
 	const sfq_byte* payload, size_t payload_size)
 {
@@ -439,6 +440,7 @@ int sfq_push_binary(const char* querootdir, const char* quename,
 
 	bzero(&val, sizeof(val));
 
+	val.eworkdir = eworkdir;
 	val.execpath = execpath;
 	val.execargs = execargs;
 	val.metatext = metatext;

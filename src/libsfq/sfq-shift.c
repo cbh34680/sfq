@@ -1,10 +1,12 @@
 #include "sfq-lib.h"
 
-int sfq_shift(const char* querootdir, const char* quename, struct sfq_value* val)
+int sfq_shift(const char* in_querootdir, const char* in_quename, struct sfq_value* val)
 {
 SFQ_ENTP_ENTER
 
 	struct sfq_queue_object* qo = NULL;
+	const char* out_querootdir = NULL;
+	const char* out_quename = NULL;
 
 	sfq_bool b = SFQ_false;
 	off_t elmpos = 0;
@@ -24,12 +26,23 @@ SFQ_ENTP_ENTER
 	}
 
 /* open queue-file */
-	qo = sfq_open_queue_rw(querootdir, quename);
+	qo = sfq_open_queue_rw(in_querootdir, in_quename);
 	if (! qo)
 	{
 		SFQ_FAIL(EA_OPENQUEUE, "sfq_open_queue_rw");
 	}
 
+	out_querootdir = strdup(qo->om->querootdir);
+	if (! out_querootdir)
+	{
+		SFQ_FAIL(ES_STRDUP, "out_querootdir");
+	}
+
+	out_quename = strdup(qo->om->quename);
+	if (! out_quename)
+	{
+		SFQ_FAIL(ES_STRDUP, "out_quename");
+	}
 
 /* read file-header */
 	b = sfq_readqfh(qo, &qfh, NULL);
@@ -118,12 +131,20 @@ SFQ_ENTP_ENTER
 		unlink_pos = NULL;
 	}
 
+	val->querootdir = out_querootdir;
+	val->quename = out_quename;
 
 SFQ_LIB_CHECKPOINT
 
 	if (SFQ_LIB_IS_FAIL())
 	{
 		sfq_free_ioelm_buff(&ioeb);
+
+		free((char*)out_querootdir);
+		out_querootdir = NULL;
+
+		free((char*)out_quename);
+		out_quename = NULL;
 	}
 
 	sfq_close_queue(qo);

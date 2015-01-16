@@ -61,6 +61,8 @@ static int set_pgargs(const char* key, const char* val, struct push_attr* pattr)
 	else
 	IFEQ_DUP(quename, key, val)
 	else
+	IFEQ_DUP(eworkdir, key, val)
+	else
 	IFEQ_DUP(execpath, key, val)
 	else
 	IFEQ_DUP(execargs, key, val)
@@ -250,6 +252,7 @@ int main(int argc, char** argv)
 	char* message = NULL;
 	int jumppos = 0;
 	struct push_attr pattr;
+	uuid_t uuid;
 
 /* */
 
@@ -257,11 +260,12 @@ SFQC_MAIN_ENTER
 
 	bzero(&pgargs, sizeof(pgargs));
 	bzero(&pattr, sizeof(pattr));
+	uuid_clear(uuid);
 
 	atexit(release_heap);
 
 /* */
-	irc = sfqc_parse_program_args(argc, argv, "D:N:q", SFQ_false, &pgargs);
+	irc = sfqc_parse_program_args(argc, argv, "D:N:w:o:e:f:x:a:m:q", SFQ_false, &pgargs);
 	if (irc != 0)
 	{
 		message = "parse_program_args: parse error";
@@ -281,17 +285,17 @@ SFQC_MAIN_ENTER
 	if (pattr.payload_type & SFQ_PLT_CHARARRAY)
 	{
 		irc = sfq_push_text(pgargs.querootdir, pgargs.quename,
-			pgargs.execpath, pgargs.execargs, pgargs.metatext,
-			pgargs.soutpath, pgargs.serrpath,
-			NULL,
+			pgargs.eworkdir, pgargs.execpath, pgargs.execargs,
+			pgargs.metatext, pgargs.soutpath, pgargs.serrpath,
+			uuid,
 			(char*)mem);
 	}
 	else
 	{
 		irc = sfq_push_binary(pgargs.querootdir, pgargs.quename,
-			pgargs.execpath, pgargs.execargs, pgargs.metatext,
-			pgargs.soutpath, pgargs.serrpath,
-			NULL,
+			pgargs.eworkdir, pgargs.execpath, pgargs.execargs,
+			pgargs.metatext, pgargs.soutpath, pgargs.serrpath,
+			uuid,
 			mem, memsize);
 	}
 
@@ -318,6 +322,14 @@ SFQC_MAIN_ENTER
 
 		jumppos = __LINE__;
 		goto EXIT_LABEL;
+	}
+
+	if (! pgargs.quiet)
+	{
+		char uuid_s[36 + 1] = "";
+
+		uuid_unparse(uuid, uuid_s);
+		printf("uuid: %s\n", uuid_s);
 	}
 
 EXIT_LABEL:

@@ -218,6 +218,8 @@ enum
  * ファイルに保存される構造体 (8 byte alignment)
  *
  */
+
+/* A) 72 プロセス情報 */
 struct sfq_process_info
 {
 	pid_t ppid;			/* 4 */
@@ -236,7 +238,7 @@ struct sfq_process_info
 	ulong tos_fault;		/* 8 */
 };
 
-/* 属性ヘッダ */
+/* B) 56 静的属性 */
 struct sfq_qh_sval
 {
 	off_t procseg_start_pos;	/* 8 */
@@ -251,6 +253,7 @@ struct sfq_qh_sval
 	sfq_byte filler[6];		/* 6 */
 };
 
+/* C) 64 動的属性 */
 struct sfq_qh_dval
 {
 	off_t elm_next_pop_pos;		/* 8 */
@@ -268,12 +271,14 @@ struct sfq_qh_dval
 	sfq_byte filler[2];		/* 2 */
 };
 
+/* D) 120 静的 + 動的属性 (56 + 64) */
 struct sfq_q_header
 {
 	struct sfq_qh_sval sval;
 	struct sfq_qh_dval dval;
 };
 
+/* E) 8 ファイル先頭マーク */
 struct sfq_file_stamp
 {
 	char magicstr[4];		/* 4 = "sfq\0" */
@@ -281,7 +286,7 @@ struct sfq_file_stamp
 	ushort qfh_size;		/* 2 */
 };
 
-/* ファイルヘッダ */
+/* F) 256 ファイルヘッダ (8 + 120 + 64 + 64) */
 struct sfq_file_header
 {
 	struct sfq_file_stamp qfs;	/* qfs の位置は変更 NG */
@@ -291,7 +296,7 @@ struct sfq_file_header
 	struct sfq_qh_dval last_qhd2;
 };
 
-/* 要素ヘッダ */
+/* G) 88 要素ヘッダ */
 struct sfq_e_header
 {
 /* file offset */
@@ -302,8 +307,12 @@ struct sfq_e_header
 	ushort eh_size;			/* 2 */
 	payload_type_t payload_type;	/* 1 */
 	sfq_uchar elmmargin_;		/* 1 ... for debug, set by sfq_copy_val2ioeb() */
+	sfq_byte filler1[4];		/* 4 */
+
+	ushort eworkdir_size;		/* 2 ... (x) USHRT_MAX PATH_MAX */
 	ushort execpath_size;		/* 2 ... (x) USHRT_MAX PATH_MAX */
 	ushort metatext_size;		/* 2 ... (m) USHRT_MAX */
+	sfq_byte filler2[2];		/* 2 */
 
 	uint execargs_size;		/* 4 ... (a) UINT_MAX _SC_ARG_MAX */
 	ushort soutpath_size;		/* 2 ... (o) USHRT_MAX PATH_MAX */
@@ -325,8 +334,8 @@ struct sfq_e_header
 
 struct sfq_open_names
 {
-	const char* quename;
 	const char* querootdir;
+	const char* quename;
 
 	const char* quedir;
 	const char* quefile;
@@ -355,12 +364,16 @@ struct sfq_queue_object
 struct sfq_ioelm_buff
 {
 	struct sfq_e_header eh;
+/*
 	const char* execusrnam;
 	const char* execgrpnam;
+*/
+
+	const sfq_byte* payload;
+	const char* eworkdir;
 	const char* execpath;
 	const char* execargs;
 	const char* metatext;
-	const sfq_byte* payload;
 	const char* soutpath;
 	const char* serrpath;
 };

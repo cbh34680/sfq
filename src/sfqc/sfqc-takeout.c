@@ -39,32 +39,6 @@ static void to_camelcase(char* p)
 	}
 }
 
-/*
-static void chomp(char* p)
-{
-	char* pos = NULL;
-
-	if (! p)
-	{
-		return;
-	}
-
-	pos = &p[strlen(p) - 1];
-
-	while (pos != p)
-	{
-		if ((*pos) != '\n')
-		{
-			break;
-		}
-
-		(*pos) = '\0';
-
-		pos--;
-	}
-}
-*/
-
 static void print_date(const char* key, time_t t)
 {
 	struct tm tmp;
@@ -96,11 +70,7 @@ static void print_http_headers(sfq_bool exist, const char* content_type, size_t 
 
 	print_date("Date", now);
 	print_date("Expires", now + 10);
-/*
-	printf("Date: %s" CRLF, dt);
-	printf("Expires: -1" CRLF);
-	printf("Pragma: no-cache" CRLF);
-*/
+
 	printf("Connection: close" CRLF);
 }
 
@@ -128,8 +98,7 @@ static void h_printf(sfq_bool http, const char* org_format, ...)
 	va_end(arg);
 }
 
-static void print_custom_headers(sfq_bool http,
-	const char* querootdir, const char* quename, const struct sfq_value* val,
+static void print_custom_headers(sfq_bool http, const struct sfq_value* val,
 	size_t data_len, sfq_bool pbin, size_t pb64text_len)
 {
 	char uuid_s[36 + 1] = "";
@@ -137,18 +106,23 @@ static void print_custom_headers(sfq_bool http,
 /* */
 	uuid_unparse(val->uuid, uuid_s);
 
+	if (val->querootdir)
+	{
+		h_printf(http, "querootdir: %s\n", val->querootdir);
+	}
+
+	if (val->quename)
+	{
+		h_printf(http, "quename: %s\n", val->quename);
+	}
+
 	h_printf(http, "id: %zu\n", val->id);
 	h_printf(http, "pushtime: %zu\n", val->pushtime);
 	h_printf(http, "uuid: %s\n", uuid_s);
 
-	if (querootdir)
+	if (val->eworkdir)
 	{
-		h_printf(http, "querootdir: %s\n", querootdir);
-	}
-
-	if (quename)
-	{
-		h_printf(http, "quename: %s\n", quename);
+		h_printf(http, "eworkdir: %s\n", val->eworkdir);
 	}
 
 	if (val->execpath)
@@ -192,8 +166,7 @@ static void print_custom_headers(sfq_bool http,
 	}
 }
 
-static void print_raw(uint printmethod, const char* querootdir, const char* quename,
-	const struct sfq_value* val)
+static void print_raw(uint printmethod, const struct sfq_value* val)
 {
 	char* message = NULL;
 	int jumppos = 0;
@@ -253,7 +226,7 @@ static void print_raw(uint printmethod, const char* querootdir, const char* quen
 
 	if (adda)
 	{
-		print_custom_headers(http, querootdir, quename, val, data_len, pbin, pb64text_len);
+		print_custom_headers(http, val, data_len, pbin, pb64text_len);
 	}
 
 	if (http || adda)
@@ -286,8 +259,8 @@ EXIT_LABEL:
 /* ------------------------------------------------------------------------------- */
 // outputtype=json
 
-static char* create_json_string(const char* querootdir, const char* quename,
-	const struct sfq_value* val, sfq_bool pbin, sfq_bool pb64, size_t pb64text_len,
+static char* create_json_string(const struct sfq_value* val,
+	sfq_bool pbin, sfq_bool pb64, size_t pb64text_len,
 	sfq_bool adda, const sfq_byte* data, size_t data_len)
 {
 	int irc = 1;
@@ -309,18 +282,23 @@ static char* create_json_string(const char* querootdir, const char* quename,
 
 	if (adda)
 	{
+		if (val->querootdir)
+		{
+			json_object_set_new(json, "querootdir", json_string(val->querootdir));
+		}
+
+		if (val->quename)
+		{
+			json_object_set_new(json, "quename", json_string(val->quename));
+		}
+
 		json_object_set_new(json, "id", json_integer(val->id));
 		json_object_set_new(json, "uuid", json_string(uuid_s));
 		json_object_set_new(json, "pushtime", json_integer(val->pushtime));
 
-		if (querootdir)
+		if (val->eworkdir)
 		{
-			json_object_set_new(json, "querootdir", json_string(querootdir));
-		}
-
-		if (quename)
-		{
-			json_object_set_new(json, "quename", json_string(quename));
+			json_object_set_new(json, "eworkdir", json_string(val->eworkdir));
 		}
 
 		if (val->execpath)
@@ -408,8 +386,7 @@ EXIT_LABEL:
 	return dumps;
 }
 
-static void print_by_json(uint printmethod, const char* querootdir, const char* quename,
-	const struct sfq_value* val)
+static void print_by_json(uint printmethod, const struct sfq_value* val)
 {
 	char* message = NULL;
 	int jumppos = 0;
@@ -441,14 +418,11 @@ static void print_by_json(uint printmethod, const char* querootdir, const char* 
 			goto EXIT_LABEL;
 		}
 
-		//chomp(pb64text);
-
 		data = (sfq_byte*)pb64text;
 		data_len = strlen(pb64text);
 	}
 
-	jsontext = create_json_string(querootdir, quename, val,
-		pbin, pb64, pb64text_len, adda, data, data_len);
+	jsontext = create_json_string(val, pbin, pb64, pb64text_len, adda, data, data_len);
 
 	if (! jsontext)
 	{
@@ -464,7 +438,7 @@ static void print_by_json(uint printmethod, const char* querootdir, const char* 
 
 	if (adda)
 	{
-		print_custom_headers(http, querootdir, quename, val, data_len, pbin, pb64text_len);
+		print_custom_headers(http, val, data_len, pbin, pb64text_len);
 	}
 
 	if (http || adda)
@@ -558,17 +532,11 @@ int sfqc_takeout(int argc, char** argv, sfq_takeoutfunc_t takeoutfunc)
 /* */
 	struct sfqc_program_args pgargs;
 	struct sfq_value val;
-#if 0
-	struct sfq_value pval;
-#endif
 
 SFQC_MAIN_ENTER
 
 	bzero(&pgargs, sizeof(pgargs));
 	bzero(&val, sizeof(val));
-#if 0
-	bzero(&pval, sizeof(pval));
-#endif
 
 /* */
 	irc = sfqc_parse_program_args(argc, argv, "D:N:p:q", SFQ_false, &pgargs);
@@ -612,41 +580,18 @@ SFQC_MAIN_ENTER
 		goto EXIT_LABEL;
 	}
 
-#if 0
-	irc = sfq_alloc_print_value(&val, &pval);
-	if (irc != SFQ_RC_SUCCESS)
-	{
-		message = "sfq_alloc_print_value";
-		jumppos = __LINE__;
-		goto EXIT_LABEL;
-	}
-
-	char uuid_s[36 + 1] = "";
-	uuid_unparse(val.uuid, uuid_s);
-
-	puts("=");
-	printf("%zu\n%zu\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n",
-		pval.id, pval.pushtime, uuid_s, pval.execpath, pval.execargs, pval.metatext,
-		pval.soutpath, pval.serrpath,
-		pval.payload);
-	puts("=");
-#endif
-
 	if (printmethod & SFQC_PRM_ASJSON)
 	{
-		print_by_json(printmethod, pgargs.querootdir, pgargs.quename, &val);
+		print_by_json(printmethod, &val);
 	}
 	else
 	{
-		print_raw(printmethod, pgargs.querootdir, pgargs.quename, &val);
+		print_raw(printmethod, &val);
 	}
 
 EXIT_LABEL:
 
 	sfq_free_value(&val);
-#if 0
-	sfq_free_value(&pval);
-#endif
 
 	if (printmethod & SFQC_PRM_HTTP_HEADER)
 	{

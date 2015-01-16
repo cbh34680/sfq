@@ -85,6 +85,9 @@ SFQ_ENTP_ENTER
 			SFQ_FAIL(EA_COPYVALUE, "sfq_copy_ioeb2val");
 		}
 
+		val.querootdir = qo->om->querootdir;
+		val.quename = qo->om->quename;
+
 		loop_next = callback(num, currpos, &val, userdata);
 
 /* copy next element-offset to pos */

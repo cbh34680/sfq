@@ -14,17 +14,18 @@ int main(int argc, char** argv)
 	int jumppos = 0;
 
 	sfq_byte* mem = NULL;
-
-	atexit(release_heap);
+	uuid_t uuid;
 
 /* */
+	atexit(release_heap);
 
 SFQC_MAIN_ENTER
 
 	bzero(&pgargs, sizeof(pgargs));
+	uuid_clear(uuid);
 
 /* */
-	irc = sfqc_parse_program_args(argc, argv, "D:N:o:e:f:x:a:m:qv:", SFQ_false, &pgargs);
+	irc = sfqc_parse_program_args(argc, argv, "D:N:w:o:e:f:x:a:m:qv:", SFQ_false, &pgargs);
 	if (irc != 0)
 	{
 		message = "parse_program_args: parse error";
@@ -63,9 +64,9 @@ SFQC_MAIN_ENTER
 	}
 
 	irc = sfq_push_text(pgargs.querootdir, pgargs.quename,
-		pgargs.execpath, pgargs.execargs, pgargs.metatext,
-		pgargs.soutpath, pgargs.serrpath,
-		NULL,
+		pgargs.eworkdir, pgargs.execpath, pgargs.execargs,
+		pgargs.metatext, pgargs.soutpath, pgargs.serrpath,
+		uuid,
 		pgargs.textdata);
 
 	if (irc != SFQ_RC_SUCCESS)
@@ -91,6 +92,14 @@ SFQC_MAIN_ENTER
 
 		jumppos = __LINE__;
 		goto EXIT_LABEL;
+	}
+
+	if (! pgargs.quiet)
+	{
+		char uuid_s[36 + 1] = "";
+
+		uuid_unparse(uuid, uuid_s);
+		printf("uuid: %s\n", uuid_s);
 	}
 
 EXIT_LABEL:

@@ -37,9 +37,12 @@ sfq_bool print_element(ulong order, off_t elm_pos, const struct sfq_value* val, 
 		{
 			printf("************************ order %lu ************************\n", order);
 
+			printf("%-13s: %s\n",  "querootdir",	pval.querootdir);
+			printf("%-13s: %s\n",  "quename",	pval.quename);
 			printf("%-13s: %zu\n", "offset",	elm_pos);
 			printf("%-13s: %zu\n", "id",		pval.id);
 			printf("%-13s: %s\n",  "uuid",		uuid_s);
+			printf("%-13s: %s\n",  "eworkdir",	pval.eworkdir);
 			printf("%-13s: %s\n",  "execpath",	pval.execpath);
 			printf("%-13s: %s\n",  "execargs",	pval.execargs);
 			printf("%-13s: %s\n",  "metatext",	pval.metatext);
@@ -53,14 +56,16 @@ sfq_bool print_element(ulong order, off_t elm_pos, const struct sfq_value* val, 
 		{
 			printf
 			(
+				"%s" _T_         "%s" _T_
 				"%lu" _T_ "%zu" _T_ "%zu" _T_ "%s" _T_ "%s" _T_
 				"%s" _T_       "%s" _T_       "%s" _T_
-				"%s" _T_       "%s" _T_
+				"%s" _T_       "%s" _T_       "%s" _T_
 				"%u" _T_           "%zu" _T_          "%s"
 				LF,
+				pval.querootdir, pval.quename,
 				order,    elm_pos,  pval.id,  dt,      uuid_s,
-				pval.execpath, pval.execargs, pval.metatext,
-				pval.soutpath, pval.serrpath,
+				pval.eworkdir, pval.execpath, pval.execargs,
+				pval.metatext, pval.soutpath, pval.serrpath,
 				val->payload_type, val->payload_size, (char*)pval.payload
 			);
 		}
