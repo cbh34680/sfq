@@ -12,6 +12,18 @@ char* sfq_safe_strcpy(char* dst, const char* org)
 }
 #endif
 
+static sfq_bool g_printOnOff = SFQ_true;
+
+void sfq_set_print(sfq_bool printOnOff)
+{
+	g_printOnOff = printOnOff;
+}
+
+sfq_bool sfq_get_print()
+{
+	return g_printOnOff;
+}
+
 pid_t sfq_gettid(void)
 {
 	return syscall(SYS_gettid);

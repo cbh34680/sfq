@@ -480,3 +480,60 @@ EXIT_LABEL:
 	return irc;
 }
 
+int sfqc_parse_printmethod(const char* arg, uint* printmethod_ptr)
+{
+	uint printmethod = SFQC_PRM_DEFAULT;
+
+	if (! printmethod_ptr)
+	{
+		return 1;
+	}
+
+	if (arg)
+	{
+		char** params = NULL;
+		char** pos = NULL;
+
+		params = sfqc_split(sfq_stradup(arg), ',');
+		if (params)
+		{
+			pos = params;
+			while (*pos)
+			{
+				if (strcmp(*pos, "json") == 0)
+				{
+					printmethod |= SFQC_PRM_ASJSON;
+				}
+				else if (strcmp(*pos, "adda") == 0)
+				{
+					printmethod |= SFQC_PRM_ADD_ATTRIBUTE;
+				}
+				else if (strcmp(*pos, "http") == 0)
+				{
+					printmethod |= SFQC_PRM_HTTP_HEADER;
+				}
+				else if (strcmp(*pos, "pb64") == 0)
+				{
+					printmethod |= SFQC_PRM_PAYLOAD_BASE64;
+				}
+				else
+				{
+					/* ignore */
+					fprintf(stderr, "%s(%d): unknown-option [%s] ignore\n",
+						__FILE__, __LINE__, *pos);
+				}
+
+				pos++;
+			}
+
+			free(params);
+			params = NULL;
+
+		}
+	}
+
+	(*printmethod_ptr) = printmethod;
+
+	return 0;
+}
+

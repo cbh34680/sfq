@@ -89,8 +89,14 @@
 				}
 				else if (strcasecmp("payload_type", str_key) == 0)
 				{
-					char* e = NULL;
-					val.payload_type = (size_t)strtoul(str_val, &e, 0);
+					if (strcasecmp("text", str_val) == 0)
+					{
+						val.payload_type = SFQ_PLT_CHARARRAY;
+					}
+					else if (strcasecmp("binary", str_val) == 0)
+					{
+						val.payload_type = SFQ_PLT_BINARY;
+					}
 				}
 
 				break;
@@ -103,10 +109,6 @@
 				if (strcasecmp("payload_size", str_key) == 0)
 				{
 					val.payload_size = (size_t)long_val;
-				}
-				else if (strcasecmp("payload_type", str_key) == 0)
-				{
-					val.payload_type = (payload_type_t)long_val;
 				}
 
 				break;

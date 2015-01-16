@@ -155,6 +155,9 @@ struct sfq_value
 
 typedef sfq_bool (*sfq_map_callback)(ulong order, off_t elm_pos, const struct sfq_value* val, void* userdata);
 
+void sfq_set_print(sfq_bool printOnOff);
+sfq_bool sfq_get_print();
+
 int sfq_map(const char* querootdir, const char* quename,
 	sfq_map_callback callback, sfq_bool reverse, void* userdata);
 

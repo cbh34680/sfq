@@ -252,7 +252,9 @@ int main(int argc, char** argv)
 	char* message = NULL;
 	int jumppos = 0;
 	struct push_attr pattr;
+
 	uuid_t uuid;
+	char uuid_s[36 + 1] = "";
 
 /* */
 
@@ -265,13 +267,15 @@ SFQC_MAIN_ENTER
 	atexit(release_heap);
 
 /* */
-	irc = sfqc_parse_program_args(argc, argv, "D:N:w:o:e:f:x:a:m:q", SFQ_false, &pgargs);
+	irc = sfqc_parse_program_args(argc, argv, "D:N:w:o:e:f:x:a:m:p:q", SFQ_false, &pgargs);
 	if (irc != 0)
 	{
 		message = "parse_program_args: parse error";
 		jumppos = __LINE__;
 		goto EXIT_LABEL;
 	}
+
+	sfq_set_print(pgargs.quiet ? SFQ_false : SFQ_true);
 
 /* read from stdin */
 	irc = readstdin_(&pattr);
@@ -324,13 +328,8 @@ SFQC_MAIN_ENTER
 		goto EXIT_LABEL;
 	}
 
-	if (! pgargs.quiet)
-	{
-		char uuid_s[36 + 1] = "";
-
-		uuid_unparse(uuid, uuid_s);
-		printf("uuid: %s\n", uuid_s);
-	}
+	uuid_unparse(uuid, uuid_s);
+	puts(uuid_s);
 
 EXIT_LABEL:
 

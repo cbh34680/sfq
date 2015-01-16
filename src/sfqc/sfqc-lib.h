@@ -97,6 +97,8 @@ int sfqc_takeout(int argc, char** argv, sfq_takeoutfunc_t takeoutfunc);
 int sfqc_parse_program_args(int argc, char** argv, const char* optstring,
 	sfq_bool use_rest, struct sfqc_program_args* pgargs);
 
+int sfqc_parse_printmethod(const char* arg, uint* printmethod_ptr);
+
 void sfqc_free_program_args(struct sfqc_program_args* pgargs);
 
 char** sfqc_split(char* params_str, char c_delim);

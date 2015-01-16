@@ -106,6 +106,12 @@ static void print_custom_headers(sfq_bool http, const struct sfq_value* val,
 /* */
 	uuid_unparse(val->uuid, uuid_s);
 
+/* */
+	h_printf(http, "ope-status: ok\n");
+	h_printf(http, "id: %zu\n", val->id);
+	h_printf(http, "pushtime: %zu\n", val->pushtime);
+	h_printf(http, "uuid: %s\n", uuid_s);
+
 	if (val->querootdir)
 	{
 		h_printf(http, "querootdir: %s\n", val->querootdir);
@@ -115,10 +121,6 @@ static void print_custom_headers(sfq_bool http, const struct sfq_value* val,
 	{
 		h_printf(http, "quename: %s\n", val->quename);
 	}
-
-	h_printf(http, "id: %zu\n", val->id);
-	h_printf(http, "pushtime: %zu\n", val->pushtime);
-	h_printf(http, "uuid: %s\n", uuid_s);
 
 	if (val->eworkdir)
 	{
@@ -168,7 +170,8 @@ static void print_custom_headers(sfq_bool http, const struct sfq_value* val,
 
 static void print_raw(uint printmethod, const struct sfq_value* val)
 {
-	char* message = NULL;
+	const char* message = NULL;
+
 	int jumppos = 0;
 
 	const sfq_byte* data = NULL;
@@ -282,6 +285,11 @@ static char* create_json_string(const struct sfq_value* val,
 
 	if (adda)
 	{
+		json_object_set_new(json, "ope-status", json_string("ok"));
+		json_object_set_new(json, "id", json_integer(val->id));
+		json_object_set_new(json, "uuid", json_string(uuid_s));
+		json_object_set_new(json, "pushtime", json_integer(val->pushtime));
+
 		if (val->querootdir)
 		{
 			json_object_set_new(json, "querootdir", json_string(val->querootdir));
@@ -291,10 +299,6 @@ static char* create_json_string(const struct sfq_value* val,
 		{
 			json_object_set_new(json, "quename", json_string(val->quename));
 		}
-
-		json_object_set_new(json, "id", json_integer(val->id));
-		json_object_set_new(json, "uuid", json_string(uuid_s));
-		json_object_set_new(json, "pushtime", json_integer(val->pushtime));
 
 		if (val->eworkdir)
 		{
@@ -388,7 +392,7 @@ EXIT_LABEL:
 
 static void print_by_json(uint printmethod, const struct sfq_value* val)
 {
-	char* message = NULL;
+	const char* message = NULL;
 	int jumppos = 0;
 
 	const sfq_byte* data = NULL;
@@ -464,67 +468,11 @@ EXIT_LABEL:
 
 /* ------------------------------------------------------------------------------- */
 
-static int parse_printmethod(const char* arg, uint* printmethod_ptr)
-{
-	uint printmethod = SFQC_PRM_DEFAULT;
-
-	if (! printmethod_ptr)
-	{
-		return 1;
-	}
-
-	if (arg)
-	{
-		char** params = NULL;
-		char** pos = NULL;
-
-		params = sfqc_split(sfq_stradup(arg), ',');
-		if (params)
-		{
-			pos = params;
-			while (*pos)
-			{
-				if (strcmp(*pos, "json") == 0)
-				{
-					printmethod |= SFQC_PRM_ASJSON;
-				}
-				else if (strcmp(*pos, "adda") == 0)
-				{
-					printmethod |= SFQC_PRM_ADD_ATTRIBUTE;
-				}
-				else if (strcmp(*pos, "http") == 0)
-				{
-					printmethod |= SFQC_PRM_HTTP_HEADER;
-				}
-				else if (strcmp(*pos, "pb64") == 0)
-				{
-					printmethod |= SFQC_PRM_PAYLOAD_BASE64;
-				}
-				else
-				{
-					/* ignore */
-					fprintf(stderr, "%s(%d): unknown-option [%s] ignore\n",
-						__FILE__, __LINE__, *pos);
-				}
-
-				pos++;
-			}
-
-			free(params);
-			params = NULL;
-
-		}
-	}
-
-	(*printmethod_ptr) = printmethod;
-
-	return 0;
-}
-
 int sfqc_takeout(int argc, char** argv, sfq_takeoutfunc_t takeoutfunc)
 {
 	int irc = 0;
-	char* message = NULL;
+	const char* message = NULL;
+	const char* ope_status = NULL;
 	int jumppos = 0;
 
 	uint printmethod = 0;
@@ -547,10 +495,12 @@ SFQC_MAIN_ENTER
 		goto EXIT_LABEL;
 	}
 
-	irc = parse_printmethod(pgargs.printmethod, &printmethod);
+	sfq_set_print(pgargs.quiet ? SFQ_false : SFQ_true);
+
+	irc = sfqc_parse_printmethod(pgargs.printmethod, &printmethod);
 	if (irc != 0)
 	{
-		message = "parse_printmethod";
+		message = "sfqc_parse_printmethod";
 		jumppos = __LINE__;
 		goto EXIT_LABEL;
 	}
@@ -559,18 +509,21 @@ SFQC_MAIN_ENTER
 	if (irc != 0)
 	{
 		message = "takeout";
+		ope_status = "error";
 
 		switch (irc)
 		{
 			case SFQ_RC_W_NOELEMENT:
 			{
 				message = "element does not exist in the queue";
+				ope_status = "no-data";
 				break;
 			}
 
 			case SFQ_RC_W_TAKEOUT_STOPPED:
 			{
 				message = "queue is stopped retrieval";
+				ope_status = "reject";
 				break;
 			}
 
@@ -599,8 +552,20 @@ EXIT_LABEL:
 		{
 			print_http_headers(SFQ_false, "text/plain; charset=UTF-8", strlen(message));
 
+			if (ope_status)
+			{
+				h_printf(SFQ_true, "ope-status: %s\n", ope_status);
+			}
+
 			printf(CRLF);
 			printf("%s" CRLF, message);
+		}
+	}
+	else if (printmethod & SFQC_PRM_ADD_ATTRIBUTE)
+	{
+		if (ope_status)
+		{
+			h_printf(SFQ_false, "ope-status: %s\n", ope_status);
 		}
 	}
 	else

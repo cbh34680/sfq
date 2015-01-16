@@ -1,6 +1,6 @@
 <?php
 
-// 
+//
 interface SFQueueClientInterface
 {
 	public function push_text($params);
@@ -15,10 +15,10 @@ class SFQueueClientException extends Exception
 	static $mesgmap =
 	[
 		0	=> 'it has not yet been set',
-		1010	=> 'extension(sfqc_php) is not loaded', 
+		1010	=> 'extension(sfqc_php) is not loaded',
 		1020	=> 'it has not yet been initialized',
-		1030	=> 'it does not yet implemented', 
-		1040	=> 'illegal argument type exception', 
+		1030	=> 'it does not yet implemented',
+		1040	=> 'illegal argument type exception',
 	];
 
 	function __construct($code, $mesg=null)
@@ -186,10 +186,7 @@ class SFQueueClientLocal extends SFQueueClient
 	{
 		if (isset($params['payload']))
 		{
-			if (! isset($params['payload_type']))
-			{
-				$params['payload_type'] = (SFQ_PLT_CHARARRAY);
-			}
+			$params['payload_type'] = 'text';
 		}
 
 		return $this->native_push_($params);
@@ -199,10 +196,7 @@ class SFQueueClientLocal extends SFQueueClient
 	{
 		if (isset($params['payload']))
 		{
-			if (! isset($params['payload_type']))
-			{
-				$params['payload_type'] = (SFQ_PLT_BINARY);
-			}
+			$params['payload_type'] = 'binary';
 		}
 
 		return $this->native_push_($params);
@@ -226,14 +220,43 @@ class SFQueueClientRemote extends SFQueueClient
 		parent::__construct($quename, $throwException);
 	}
 
+	function remote_push_($params)
+	{
+		$headers = [];
+
+		foreach ($params as $k=>$v)
+		{
+			if ($k === 'payload')
+			{
+				continue;
+			}
+
+			$headers[] = sprintf("%s: %s", $k, $v);
+		}
+
+		$payload = @$params['payload'];
+
+
+	}
+
 	function push_text($params)
 	{
-		$this->throwException(1030);
+		if (isset($params['payload']))
+		{
+			$params['payload_type'] = 'text';
+		}
+
+		$this->remote_push_($params);
 	}
 
 	function push_binary($params)
 	{
-		$this->throwException(1030);
+		if (isset($params['payload']))
+		{
+			$params['payload_type'] = 'binary';
+		}
+
+		$this->remote_push_($params);
 	}
 
 	function pop()
@@ -376,10 +399,11 @@ EOS;
 
 	// remote (throw exception)
 		$copt = [
-			'host' => 'localhost',
+			'host' => 'sfq.nodanet',
 			'port' => [
 				'push'		=> 12701,
-				'takeout'	=> 12702,
+				'pop'		=> 12711,
+				'shift'		=> 12721,
 			],
 		];
 

@@ -15,6 +15,7 @@ int main(int argc, char** argv)
 
 	sfq_byte* mem = NULL;
 	uuid_t uuid;
+	char uuid_s[36 + 1] = "";
 
 /* */
 	atexit(release_heap);
@@ -25,7 +26,7 @@ SFQC_MAIN_ENTER
 	uuid_clear(uuid);
 
 /* */
-	irc = sfqc_parse_program_args(argc, argv, "D:N:w:o:e:f:x:a:m:qv:", SFQ_false, &pgargs);
+	irc = sfqc_parse_program_args(argc, argv, "D:N:w:o:e:f:x:a:m:p:qv:", SFQ_false, &pgargs);
 	if (irc != 0)
 	{
 		message = "parse_program_args: parse error";
@@ -33,6 +34,7 @@ SFQC_MAIN_ENTER
 		goto EXIT_LABEL;
 	}
 
+	sfq_set_print(pgargs.quiet ? SFQ_false : SFQ_true);
 
 	if (pgargs.inputfile)
 	{
@@ -94,13 +96,8 @@ SFQC_MAIN_ENTER
 		goto EXIT_LABEL;
 	}
 
-	if (! pgargs.quiet)
-	{
-		char uuid_s[36 + 1] = "";
-
-		uuid_unparse(uuid, uuid_s);
-		printf("uuid: %s\n", uuid_s);
-	}
+	uuid_unparse(uuid, uuid_s);
+	puts(uuid_s);
 
 EXIT_LABEL:
 

@@ -27,7 +27,7 @@ sfq_bool print_element(ulong order, off_t elm_pos, const struct sfq_value* val, 
 	localtime_r(&val->pushtime, &tmp);
 	strftime(dt, sizeof(dt), "%Y-%m-%d %H:%M:%S", &tmp);
 
-	uuid_unparse_upper(val->uuid, uuid_s);
+	uuid_unparse(val->uuid, uuid_s);
 
 /* */
 	irc = sfq_alloc_print_value(val, &pval);
