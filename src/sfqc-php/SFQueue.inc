@@ -14,11 +14,12 @@ class SFQueueClientException extends Exception
 {
 	static $mesgmap =
 	[
-		0	=> 'it has not yet been set',
+		0		=> 'it has not yet been set',
 		1010	=> 'extension(sfqc_php) is not loaded',
 		1020	=> 'it has not yet been initialized',
 		1030	=> 'it does not yet implemented',
 		1040	=> 'illegal argument type exception',
+		1050	=> 'unknown error',
 	];
 
 	function __construct($code, $mesg=null)
@@ -227,7 +228,8 @@ class SFQueueClientRemote extends SFQueueClient
 		$this->conn_params = $params;
 	}
 
-	static function hostname2addr_($arg)
+// private:
+	private static function hostname2addr_($arg)
 	{
 		$ret = false;
 
@@ -257,7 +259,7 @@ class SFQueueClientRemote extends SFQueueClient
 		return $ret;
 	}
 
-	static function parse_response($arg)
+	private static function parse_response($arg)
 	{
 		//
 		$header = [];
@@ -299,7 +301,37 @@ class SFQueueClientRemote extends SFQueueClient
 		return [ 'header' => $header, 'body' => $body ];
 	}
 
-	function remote_push_($params)
+	private function isRemoteSuccess_($arg)
+	{
+		$ret = false;
+
+		if ($this->notInitialized_)
+		{
+			$this->throwException(1020);
+		}
+		else
+		{
+			if (! isset($arg['result_code']))
+			{
+				$this->throwException(1050);
+			}
+
+			$rc = intval($arg['result_code']);
+
+			if ($rc == 0 /* SFQ_RC_SUCCESS */)
+			{
+				$ret = true;
+			}
+			else if ($rc > 20 /* SFQ_RC_FATAL_MIN */)
+			{
+				$this->throwException(2000 + $rc, "native error rc={$rc}");
+			}
+		}
+
+		return $ret;
+	}
+
+	private function remote_push_($params)
 	{
 		$addr = self::hostname2addr_($this->conn_params['host']);
 		$port = $this->conn_params['port']['push'];
@@ -362,24 +394,31 @@ class SFQueueClientRemote extends SFQueueClient
 		socket_close($sock);
 
 		//
-		$ret = false;
-
-		$resp = self::parse_response($resp_text);
-		if ($resp !== false)
-		{
-			if (isset($resp['header']['result_code']))
-			{
-				if ($resp['header']['result_code'] == 0)
-				{
-					$ret = $resp['header']['uuid'];
-				}
-			}
-		}
-
-		return $ret;
+		return self::parse_response($resp_text);
 	}
 
-	function remote_takeout_($port)
+	private function remote_push($params)
+	{
+		$this->clearLastError();
+
+		if (is_array($params))
+		{
+			$resp = $this->remote_push_($params);
+
+			if ($this->isRemoteSuccess_($resp['header']))
+			{
+				return $resp['header']['uuid'];
+			}
+		}
+		else
+		{
+			$this->throwException(1040);
+		}
+
+		return false;
+	}
+
+	private function remote_takeout_($port)
 	{
 		$addr = self::hostname2addr_($this->conn_params['host']);
 
@@ -387,6 +426,9 @@ class SFQueueClientRemote extends SFQueueClient
 		$sock = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
 
 		socket_connect($sock, $addr, $port);
+
+		socket_set_option($sock, SOL_SOCKET, SO_RCVTIMEO, $this->conn_params['timeout']['read']);
+		socket_set_option($sock, SOL_SOCKET, SO_SNDTIMEO, $this->conn_params['timeout']['write']);
 
 		$resp_text = '';
 
@@ -401,24 +443,27 @@ class SFQueueClientRemote extends SFQueueClient
 		socket_close($sock);
 
 		//
-		$ret = false;
-
-		$resp = self::parse_response($resp_text);
-		if ($resp !== false)
-		{
-			if (isset($resp['header']['result_code']))
-			{
-				if ($resp['header']['result_code'] == 0)
-				{
-					$ret = $resp['header'];
-					$ret['payload'] = $resp['body'];
-				}
-			}
-		}
-
-		return $ret;
+		return self::parse_response($resp_text);
 	}
 
+	private function remote_takeout($port)
+	{
+		$this->clearLastError();
+
+		$resp = $this->remote_takeout_($port);
+
+		if ($this->isRemoteSuccess_($resp['header']))
+		{
+			$ret = $resp['header'];
+			$ret['payload'] = $resp['body'];
+
+			return $ret;
+		}
+
+		return false;
+	}
+
+// public:
 	function push_text($params)
 	{
 		if (isset($params['payload']))
@@ -426,7 +471,7 @@ class SFQueueClientRemote extends SFQueueClient
 			$params['payload-type'] = 'text';
 		}
 
-		return $this->remote_push_($params);
+		return $this->remote_push($params);
 	}
 
 	function push_binary($params)
@@ -436,21 +481,21 @@ class SFQueueClientRemote extends SFQueueClient
 			$params['payload-type'] = 'binary';
 		}
 
-		return $this->remote_push_($params);
+		return $this->remote_push($params);
 	}
 
 	function pop()
 	{
 		$port = $this->conn_params['port']['pop'];
 
-		return $this->remote_takeout_($port);
+		return $this->remote_takeout($port);
 	}
 
 	function shift()
 	{
 		$port = $this->conn_params['port']['shift'];
 
-		return $this->remote_takeout_($port);
+		return $this->remote_takeout($port);
 	}
 }
 
