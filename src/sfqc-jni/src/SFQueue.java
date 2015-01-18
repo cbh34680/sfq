@@ -3,6 +3,7 @@ package jp.co.iret.sfq;
 import java.util.HashMap;
 import java.util.Map;
 
+@SuppressWarnings("serial")
 public class SFQueue
 {
 	public static SFQueueClientInterface newClient()
@@ -75,4 +76,3 @@ o.println("push end");
 		}
 	}
 }
-

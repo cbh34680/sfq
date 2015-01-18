@@ -3,6 +3,7 @@ package jp.co.iret.sfq;
 import java.util.HashMap;
 import java.util.Map;
 
+@SuppressWarnings("serial")
 public class SFQueueClientException extends Exception
 {
 	static Map<Integer, String> mesgmap;
@@ -52,4 +53,3 @@ public class SFQueueClientException extends Exception
 		return code_;
 	}
 }
-

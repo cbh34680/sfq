@@ -54,4 +54,3 @@ public abstract class SFQueueClient implements SFQueueClientInterface
 		lastMessage_ = "";
 	}
 }
-
