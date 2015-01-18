@@ -215,9 +215,208 @@ class SFQueueClientLocal extends SFQueueClient
 
 class SFQueueClientRemote extends SFQueueClient
 {
+	const CRLF = "\r\n";
+	const LF = "\n";
+
+	private $conn_params;
+
 	function __construct($quename, $params, $throwException)
 	{
 		parent::__construct($quename, $throwException);
+
+		$this->conn_params = $params;
+	}
+
+	static function hostname2addr_($arg)
+	{
+		$ret = false;
+
+		if ($arg)
+		{
+			//
+			// 必要なら IP アドレスに書き換え
+			//
+			if ($arg === 'localhost')
+			{
+				return '127.0.0.1';
+			}
+
+			if (! preg_match('/\A[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\Z/', $arg))
+			{
+				$addr = gethostbyname($arg);
+				if ($addr != $arg)
+				{
+					//
+					// アドレスが解決できない
+					//
+					$ret = $addr;
+				}
+			}
+		}
+
+		return $ret;
+	}
+
+	static function parse_response($arg)
+	{
+		//
+		$header = [];
+		$body = null;
+
+		$sep_offset = strpos($arg, self::CRLF . self::CRLF);
+		if ($sep_offset === false)
+		{
+			$sep_offset = strpos($arg, self::LF . self::LF);
+		}
+
+		if ($sep_offset === false)
+		{
+			$ret['body'] = $arg;
+		}
+		else
+		{
+			if ($sep_offset)
+			{
+				$header_text = substr($arg, 0, $sep_offset);
+
+				foreach (explode(self::LF, $header_text) as $line)
+				{
+					if (! preg_match('/^\\s*([^:[:blank:]]+)\\s*:\\s*(\\S+)\\s*$/', trim($line), $matches))
+					{
+						continue;
+					}
+
+					list($all, $key, $val) = $matches;
+
+					$key = str_replace('-', '_', $key);
+					$header[$key] = $val;
+				}
+			}
+
+			$body = substr($arg, $sep_offset + 4);
+		}
+
+		return [ 'header' => $header, 'body' => $body ];
+	}
+
+	function remote_push_($params)
+	{
+		$addr = self::hostname2addr_($this->conn_params['host']);
+		$port = $this->conn_params['port']['push'];
+
+		//
+		$body = @$params['payload'];
+
+		if (isset($body))
+		{
+			$params['payload-length'] = strlen($body);
+		}
+
+		//
+		$header_arr = [];
+
+		foreach ($params as $k=>$v)
+		{
+			if ($k === 'payload')
+			{
+				continue;
+			}
+
+			$header_arr[] = sprintf("%s: %s", str_replace('_', '-', $k), $v);
+		}
+
+		$header = implode(self::CRLF, $header_arr);
+
+		$sep = self::CRLF . self::CRLF;
+
+		//
+		$sock = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
+
+
+		socket_connect($sock, $addr, $port);
+
+		socket_set_option($sock, SOL_SOCKET, SO_RCVTIMEO, $this->conn_params['timeout']['read']);
+		socket_set_option($sock, SOL_SOCKET, SO_SNDTIMEO, $this->conn_params['timeout']['write']);
+
+		socket_write($sock, $header, strlen($header));
+		socket_write($sock, $sep, strlen($sep));
+
+		if (isset($body))
+		{
+			socket_write($sock, $body, strlen($body));
+		}
+
+		$resp_text = '';
+
+		do
+		{
+			$buff = socket_read($sock, 8192);
+			if ($buff !== false)
+			{
+				$resp_text .= $buff;
+			}
+		}
+		while (! empty($buff));
+
+		socket_shutdown($sock, 2);
+		socket_close($sock);
+
+		//
+		$ret = false;
+
+		$resp = self::parse_response($resp_text);
+		if ($resp !== false)
+		{
+			if (isset($resp['header']['result_code']))
+			{
+				if ($resp['header']['result_code'] == 0)
+				{
+					$ret = $resp['header']['uuid'];
+				}
+			}
+		}
+
+		return $ret;
+	}
+
+	function remote_takeout_($port)
+	{
+		$addr = self::hostname2addr_($this->conn_params['host']);
+
+		//
+		$sock = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
+
+		socket_connect($sock, $addr, $port);
+
+		$resp_text = '';
+
+		do
+		{
+			$buff = socket_read($sock, 8192);
+			$resp_text .= $buff;
+		}
+		while (! empty($buff));
+
+		socket_shutdown($sock, 2);
+		socket_close($sock);
+
+		//
+		$ret = false;
+
+		$resp = self::parse_response($resp_text);
+		if ($resp !== false)
+		{
+			if (isset($resp['header']['result_code']))
+			{
+				if ($resp['header']['result_code'] == 0)
+				{
+					$ret = $resp['header'];
+					$ret['payload'] = $resp['body'];
+				}
+			}
+		}
+
+		return $ret;
 	}
 
 	function remote_push_($params)
@@ -243,30 +442,34 @@ class SFQueueClientRemote extends SFQueueClient
 	{
 		if (isset($params['payload']))
 		{
-			$params['payload_type'] = 'text';
+			$params['payload-type'] = 'text';
 		}
 
-		$this->remote_push_($params);
+		return $this->remote_push_($params);
 	}
 
 	function push_binary($params)
 	{
 		if (isset($params['payload']))
 		{
-			$params['payload_type'] = 'binary';
+			$params['payload-type'] = 'binary';
 		}
 
-		$this->remote_push_($params);
+		return $this->remote_push_($params);
 	}
 
 	function pop()
 	{
-		$this->throwException(1030);
+		$port = $this->conn_params['port']['pop'];
+
+		return $this->remote_takeout_($port);
 	}
 
 	function shift()
 	{
-		$this->throwException(1030);
+		$port = $this->conn_params['port']['shift'];
+
+		return $this->remote_takeout_($port);
 	}
 }
 
@@ -404,6 +607,11 @@ EOS;
 				'push'		=> 12701,
 				'pop'		=> 12711,
 				'shift'		=> 12721,
+			],
+			'timeout' =>
+			[
+				'read'		=> [ 'sec'=>2, 'usec'=>0 ],
+				'write'		=> [ 'sec'=>2, 'usec'=>0 ],
 			],
 		];
 
