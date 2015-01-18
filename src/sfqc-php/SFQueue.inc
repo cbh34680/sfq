@@ -419,25 +419,6 @@ class SFQueueClientRemote extends SFQueueClient
 		return $ret;
 	}
 
-	function remote_push_($params)
-	{
-		$headers = [];
-
-		foreach ($params as $k=>$v)
-		{
-			if ($k === 'payload')
-			{
-				continue;
-			}
-
-			$headers[] = sprintf("%s: %s", $k, $v);
-		}
-
-		$payload = @$params['payload'];
-
-
-	}
-
 	function push_text($params)
 	{
 		if (isset($params['payload']))
@@ -602,7 +583,7 @@ EOS;
 
 	// remote (throw exception)
 		$copt = [
-			'host' => 'sfq.nodanet',
+			'host' => 'localhost',
 			'port' => [
 				'push'		=> 12701,
 				'pop'		=> 12711,
