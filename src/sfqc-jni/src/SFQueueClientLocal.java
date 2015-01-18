@@ -33,15 +33,17 @@ System.out.println(javaLibPath);
 	static Throwable ta_;
 
 	String querootdir_;
+	String quename_;
 
-	SFQueueClientLocal(String quename, Map<String, Object> params, boolean throwException)
+	SFQueueClientLocal(Map<String, Object> params, boolean throwException)
 		throws SFQueueClientException
 	{
-		super(quename, throwException);
+		super(throwException);
 
 		if (dll_loaded)
 		{
 			querootdir_ = (String)params.get("querootdir");
+			quename_ = (String)params.get("quename");
 		}
 		else
 		{
