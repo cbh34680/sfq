@@ -108,6 +108,8 @@ class SFQueueClientLocal extends SFQueueClient
 		}
 		else
 		{
+			$this->notInitialized_ = true;
+
 			$this->throwException(1010);
 		}
 	}
@@ -315,7 +317,7 @@ class SFQueueClientRemote extends SFQueueClient
 			{
 				$ret = true;
 			}
-			else if ($rc > 20 /* SFQ_RC_FATAL_MIN */)
+			else if ($rc > 21 /* SFQ_RC_FATAL_MIN */)
 			{
 				$this->throwException(2000 + $rc, "native error rc={$rc}");
 			}
