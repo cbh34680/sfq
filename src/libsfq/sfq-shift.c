@@ -86,8 +86,14 @@ SFQ_ENTP_ENTER
 //#endif
 
 /* update queue file header */
+
+	/* 要素数を減算 */
 	qfh.qh.dval.elm_num--;
 
+	/* 要素サイズを減算 */
+	qfh.qh.dval.elmsize_total_ -= ioeb.eh.elmsize_;
+
+/* */
 	if (qfh.qh.dval.elm_num == 0)
 	{
 	/* 要素がなくなったらヘッダのポジションを初期化する */

@@ -19,7 +19,7 @@ int main(int argc, char** argv)
 	size_t memsize = 0;
 
 	uuid_t uuid;
-	char uuid_s[36 + 1] = "";
+	uint printmethod = 0;
 
 /* */
 
@@ -40,6 +40,14 @@ SFQC_MAIN_ENTER
 	}
 
 	sfq_set_print(pgargs.quiet ? SFQ_false : SFQ_true);
+
+	irc = sfqc_parse_printmethod(pgargs.printmethod, &printmethod);
+	if (irc != 0)
+	{
+		message = "sfqc_parse_printmethod";
+		jumppos = __LINE__;
+		goto EXIT_LABEL;
+	}
 
 	if (pgargs.inputfile)
 	{
@@ -98,21 +106,14 @@ SFQC_MAIN_ENTER
 		goto EXIT_LABEL;
 	}
 
-	uuid_unparse(uuid, uuid_s);
-	puts(uuid_s);
+	sfqc_push_success(printmethod, uuid);
 
 EXIT_LABEL:
 
 	free(mem);
 	mem = NULL;
 
-	if (! pgargs.quiet)
-	{
-		if (message)
-		{
-			fprintf(stderr, "%s(%d): %s\n", __FILE__, jumppos, message);
-		}
-	}
+	sfqc_push_fault(printmethod, irc, message, pgargs.quiet, __FILE__, jumppos);
 
 	sfqc_free_program_args(&pgargs);
 

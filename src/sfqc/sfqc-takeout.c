@@ -3,8 +3,7 @@
 
 #include <jansson.h>
 
-#define CRLF	"\r\n"
-
+#if 0
 static void to_camelcase(char* p)
 {
 	char* pos = p;
@@ -39,44 +38,6 @@ static void to_camelcase(char* p)
 	}
 }
 
-static void print_date(const char* key, time_t t)
-{
-	struct tm tmp;
-	char dt[64];
-
-	gmtime_r(&t, &tmp);
-	strftime(dt, sizeof dt, "%a, %d %b %Y %H:%M:%S %Z", &tmp);
-
-	printf("%s: %s" CRLF, key, dt);
-}
-
-static void print_http_headers(sfq_bool exist, const char* content_type, size_t content_length)
-{
-	time_t now = time(NULL);
-
-	printf("HTTP/1.0 ");
-
-	if (exist)
-	{
-		printf("200 OK" CRLF);
-	}
-	else
-	{
-		printf("204 No Content" CRLF);
-	}
-
-	printf("Content-Type: %s" CRLF, content_type);
-	printf("Content-Length: %zu" CRLF, content_length);
-
-	print_date("Date", now);
-	print_date("Expires", now + 10);
-
-	printf("Connection: close" CRLF);
-}
-
-/* ------------------------------------------------------------------------------- */
-// outputtype=plain/text
-
 static void h_printf(sfq_bool http, const char* org_format, ...)
 {
 	va_list arg;
@@ -98,6 +59,47 @@ static void h_printf(sfq_bool http, const char* org_format, ...)
 	va_end(arg);
 }
 
+static void print_date(const char* key, time_t t)
+{
+	struct tm tmp;
+	char dt[64];
+
+	gmtime_r(&t, &tmp);
+	strftime(dt, sizeof dt, "%a, %d %b %Y %H:%M:%S %Z", &tmp);
+
+	printf("%s: %s" SFQC_CRLF, key, dt);
+}
+
+static void print_http_headers(sfq_bool exist, const char* content_type, size_t content_length)
+{
+	time_t now = time(NULL);
+
+	printf("HTTP/1.0 ");
+
+	if (exist)
+	{
+		printf("200 OK" SFQC_CRLF);
+	}
+	else
+	{
+		printf("204 No Content" SFQC_CRLF);
+	}
+
+	printf("Content-Type: %s" SFQC_CRLF, content_type);
+	printf("Content-Length: %zu" SFQC_CRLF, content_length);
+
+	print_date("Date", now);
+	print_date("Expires", now + 10);
+
+	printf("Connection: close" SFQC_CRLF);
+}
+
+#endif
+
+/* ------------------------------------------------------------------------------- */
+// outputtype=plain/text
+
+
 static void print_custom_headers(sfq_bool http, const struct sfq_value* val,
 	size_t data_len, sfq_bool pbin, size_t pb64text_len)
 {
@@ -107,64 +109,64 @@ static void print_custom_headers(sfq_bool http, const struct sfq_value* val,
 	uuid_unparse(val->uuid, uuid_s);
 
 /* */
-	h_printf(http, "ope-status: ok\n");
-	h_printf(http, "id: %zu\n", val->id);
-	h_printf(http, "pushtime: %zu\n", val->pushtime);
-	h_printf(http, "uuid: %s\n", uuid_s);
+	sfqc_h_printf(http, "result-code: 0" SFQC_CRLF);
+	sfqc_h_printf(http, "id: %zu" SFQC_CRLF, val->id);
+	sfqc_h_printf(http, "pushtime: %zu" SFQC_CRLF, val->pushtime);
+	sfqc_h_printf(http, "uuid: %s" SFQC_CRLF, uuid_s);
 
 	if (val->querootdir)
 	{
-		h_printf(http, "querootdir: %s\n", val->querootdir);
+		sfqc_h_printf(http, "querootdir: %s" SFQC_CRLF, val->querootdir);
 	}
 
 	if (val->quename)
 	{
-		h_printf(http, "quename: %s\n", val->quename);
+		sfqc_h_printf(http, "quename: %s" SFQC_CRLF, val->quename);
 	}
 
 	if (val->eworkdir)
 	{
-		h_printf(http, "eworkdir: %s\n", val->eworkdir);
+		sfqc_h_printf(http, "eworkdir: %s" SFQC_CRLF, val->eworkdir);
 	}
 
 	if (val->execpath)
 	{
-		h_printf(http, "execpath: %s\n", val->execpath);
+		sfqc_h_printf(http, "execpath: %s" SFQC_CRLF, val->execpath);
 	}
 
 	if (val->execargs)
 	{
-		h_printf(http, "execargs: %s\n", val->execargs);
+		sfqc_h_printf(http, "execargs: %s" SFQC_CRLF, val->execargs);
 	}
 
 	if (val->metatext)
 	{
-		h_printf(http, "metatext: %s\n", val->metatext);
+		sfqc_h_printf(http, "metatext: %s" SFQC_CRLF, val->metatext);
 	}
 
 	if (val->soutpath)
 	{
-		h_printf(http, "soutpath: %s\n", val->soutpath);
+		sfqc_h_printf(http, "soutpath: %s" SFQC_CRLF, val->soutpath);
 	}
 
 	if (val->serrpath)
 	{
-		h_printf(http, "serrpath: %s\n", val->serrpath);
+		sfqc_h_printf(http, "serrpath: %s" SFQC_CRLF, val->serrpath);
 	}
 
-	h_printf(http, "payload-length: %zu\n", data_len);
-	h_printf(http, "payload-size-in-element: %zu\n", val->payload_size);
+	sfqc_h_printf(http, "payload-length: %zu" SFQC_CRLF, data_len);
+	sfqc_h_printf(http, "payload-size-in-element: %zu" SFQC_CRLF, val->payload_size);
 
 	if (val->payload)
 	{
-		h_printf(http, "payload-type: %s\n", pbin ? "binary" : "text");
+		sfqc_h_printf(http, "payload-type: %s" SFQC_CRLF, pbin ? "binary" : "text");
 	}
 
-	h_printf(http, "payload-encoding: %s\n", pb64text_len ? "base64" : "none");
+	sfqc_h_printf(http, "payload-encoding: %s" SFQC_CRLF, pb64text_len ? "base64" : "none");
 
 	if (pb64text_len)
 	{
-		h_printf(http, "payload-base64-length: %zu\n", pb64text_len);
+		sfqc_h_printf(http, "payload-base64-length: %zu" SFQC_CRLF, pb64text_len);
 	}
 }
 
@@ -219,11 +221,11 @@ static void print_raw(uint printmethod, const struct sfq_value* val)
 		const char* content_type = text_output
 			? "text/plain; charset=UTF-8" : "application/octed-stream";
 
-		print_http_headers(SFQ_true, content_type, data_len);
+		sfqc_print_http_headers(SFQ_true, content_type, data_len);
 
 		if (! text_output)
 		{
-			printf("Content-Disposition: attachment; filename=\"%s.dat\"" CRLF, uuid_s);
+			printf("Content-Disposition: attachment; filename=\"%s.dat\"" SFQC_CRLF, uuid_s);
 		}
 	}
 
@@ -234,7 +236,7 @@ static void print_raw(uint printmethod, const struct sfq_value* val)
 
 	if (http || adda)
 	{
-		printf(CRLF);
+		printf(SFQC_CRLF);
 	}
 
 	if (data_len)
@@ -285,7 +287,7 @@ static char* create_json_string(const struct sfq_value* val,
 
 	if (adda)
 	{
-		json_object_set_new(json, "ope-status", json_string("ok"));
+		json_object_set_new(json, "result-code", json_string("ok"));
 		json_object_set_new(json, "id", json_integer(val->id));
 		json_object_set_new(json, "uuid", json_string(uuid_s));
 		json_object_set_new(json, "pushtime", json_integer(val->pushtime));
@@ -437,7 +439,7 @@ static void print_by_json(uint printmethod, const struct sfq_value* val)
 
 	if (http)
 	{
-		print_http_headers(SFQ_true, "application/json", strlen(jsontext));
+		sfqc_print_http_headers(SFQ_true, "application/json", strlen(jsontext));
 	}
 
 	if (adda)
@@ -447,10 +449,10 @@ static void print_by_json(uint printmethod, const struct sfq_value* val)
 
 	if (http || adda)
 	{
-		printf(CRLF);
+		printf(SFQC_CRLF);
 	}
 
-	printf("%s" CRLF, jsontext);
+	printf("%s" SFQC_CRLF, jsontext);
 
 EXIT_LABEL:
 
@@ -472,7 +474,6 @@ int sfqc_takeout(int argc, char** argv, sfq_takeoutfunc_t takeoutfunc)
 {
 	int irc = 0;
 	const char* message = NULL;
-	const char* ope_status = NULL;
 	int jumppos = 0;
 
 	uint printmethod = 0;
@@ -509,21 +510,18 @@ SFQC_MAIN_ENTER
 	if (irc != 0)
 	{
 		message = "takeout";
-		ope_status = "error";
 
 		switch (irc)
 		{
 			case SFQ_RC_W_NOELEMENT:
 			{
 				message = "element does not exist in the queue";
-				ope_status = "no-data";
 				break;
 			}
 
 			case SFQ_RC_W_TAKEOUT_STOPPED:
 			{
 				message = "queue is stopped retrieval";
-				ope_status = "reject";
 				break;
 			}
 
@@ -546,33 +544,29 @@ EXIT_LABEL:
 
 	sfq_free_value(&val);
 
-	if (printmethod & SFQC_PRM_HTTP_HEADER)
+	if (message)
 	{
-		if (message)
+		if (printmethod & SFQC_PRM_HTTP_HEADER)
 		{
-			print_http_headers(SFQ_false, "text/plain; charset=UTF-8", strlen(message));
+			sfqc_print_http_headers(SFQ_false, "text/plain; charset=UTF-8", strlen(message));
 
-			if (ope_status)
-			{
-				h_printf(SFQ_true, "ope-status: %s\n", ope_status);
-			}
+			sfqc_h_printf(SFQ_true, "result-code: %d" SFQC_CRLF, irc);
+			sfqc_h_printf(SFQ_true, "error-message: %s" SFQC_CRLF, message);
 
-			printf(CRLF);
-			printf("%s" CRLF, message);
+			printf(SFQC_CRLF);
+			printf("%s" SFQC_CRLF, message);
 		}
-	}
-	else if (printmethod & SFQC_PRM_ADD_ATTRIBUTE)
-	{
-		if (ope_status)
+		else if (printmethod & SFQC_PRM_ADD_ATTRIBUTE)
 		{
-			h_printf(SFQ_false, "ope-status: %s\n", ope_status);
+			sfqc_h_printf(SFQ_false, "result-code: %d" SFQC_CRLF, irc);
+			sfqc_h_printf(SFQ_false, "error-message: %s" SFQC_CRLF, message);
+
+			printf(SFQC_CRLF);
+			printf("%s" SFQC_CRLF, message);
 		}
-	}
-	else
-	{
-		if (! pgargs.quiet)
+		else
 		{
-			if (message)
+			if (! pgargs.quiet)
 			{
 				fprintf(stderr, "%s(%d): %s\n", __FILE__, jumppos, message);
 			}

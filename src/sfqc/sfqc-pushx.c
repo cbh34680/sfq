@@ -53,9 +53,29 @@ struct push_attr
 		} \
 	}
 
-static int set_pgargs(const char* key, const char* val, struct push_attr* pattr)
+static int set_pgargs(const char* arg_key, const char* val, struct push_attr* pattr)
 {
 	int rc = 1;
+
+	char* key = NULL;
+	char* pos = NULL;
+
+	key = sfq_stradup(arg_key);
+	if (! key)
+	{
+		goto EXIT_LABEL;
+	}
+
+	pos = key;
+	while (*pos)
+	{
+		if ( (*pos) == '_' )
+		{
+			(*pos) = '-';
+		}
+
+		pos++;
+	}
 
 	IFEQ_DUP(querootdir, key, val)
 	else
@@ -151,31 +171,29 @@ static int readstdin_(struct push_attr* pattr)
 		else
 		{
 			irc = regexec(&reg, buff, nmatch, matches, 0);
-			if (irc != 0)
+			if (irc == 0)
 			{
-				goto EXIT_LABEL;
-			}
+				int so1 = matches[1].rm_so;
+				int eo1 = matches[1].rm_eo;
 
-			int so1 = matches[1].rm_so;
-			int eo1 = matches[1].rm_eo;
+				int so2 = matches[2].rm_so;
+				int eo2 = matches[2].rm_eo;
 
-			int so2 = matches[2].rm_so;
-			int eo2 = matches[2].rm_eo;
-
-			if ((so1 >= 0) && (eo1 >= 0) && (so2 >= 0) && (eo2 >= 0))
-			{
-				const char* key = sfq_strandup(&buff[so1], (eo1 - so1));
-				const char* val = sfq_strandup(&buff[so2], (eo2 - so2));
-
-				if ((! key) || (! val))
+				if ((so1 >= 0) && (eo1 >= 0) && (so2 >= 0) && (eo2 >= 0))
 				{
-					goto EXIT_LABEL;
-				}
+					const char* key = sfq_strandup(&buff[so1], (eo1 - so1));
+					const char* val = sfq_strandup(&buff[so2], (eo2 - so2));
 
-				irc = set_pgargs(key, val, pattr);
-				if (irc != 0)
-				{
-					goto EXIT_LABEL;
+					if ((! key) || (! val))
+					{
+						goto EXIT_LABEL;
+					}
+
+					irc = set_pgargs(key, val, pattr);
+					if (irc != 0)
+					{
+						goto EXIT_LABEL;
+					}
 				}
 			}
 		}
@@ -235,6 +253,7 @@ body 部全部を mem, memsize に設定
 
 EXIT_LABEL:
 
+
 	regfree(&reg);
 
 	if (rc != 0)
@@ -254,7 +273,7 @@ int main(int argc, char** argv)
 	struct push_attr pattr;
 
 	uuid_t uuid;
-	char uuid_s[36 + 1] = "";
+	uint printmethod = 0;
 
 /* */
 
@@ -277,8 +296,18 @@ SFQC_MAIN_ENTER
 
 	sfq_set_print(pgargs.quiet ? SFQ_false : SFQ_true);
 
+	irc = sfqc_parse_printmethod(pgargs.printmethod, &printmethod);
+	if (irc != 0)
+	{
+		message = "sfqc_parse_printmethod";
+		jumppos = __LINE__;
+		goto EXIT_LABEL;
+	}
+
 /* read from stdin */
+
 	irc = readstdin_(&pattr);
+
 	if (irc != 0)
 	{
 		message = "can't read stdin";
@@ -328,21 +357,14 @@ SFQC_MAIN_ENTER
 		goto EXIT_LABEL;
 	}
 
-	uuid_unparse(uuid, uuid_s);
-	puts(uuid_s);
+	sfqc_push_success(printmethod, uuid);
 
 EXIT_LABEL:
 
 	free(mem);
 	mem = NULL;
 
-	if (! pgargs.quiet)
-	{
-		if (message)
-		{
-			fprintf(stderr, "%s(%d): %s\n", __FILE__, jumppos, message);
-		}
-	}
+	sfqc_push_fault(printmethod, irc, message, pgargs.quiet, __FILE__, jumppos);
 
 	sfqc_free_program_args(&pgargs);
 

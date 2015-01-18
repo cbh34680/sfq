@@ -156,7 +156,8 @@ root の場合、"-U" か "-G" の指定があるときのみ通過させる
 	{
 	/* 最小ファイルサイズは sfq_file_header + pid_table + sfq_e_header + payload(1 byte) */
 
-		SFQ_FAIL(EA_FSIZESMALL, "specified filesize-limit too small");
+		SFQ_FAIL(EA_FSIZESMALL, "specified filesize-limit too small (limit=%zu)",
+			qip->filesize_limit);
 	}
 
 /* open queue-file */

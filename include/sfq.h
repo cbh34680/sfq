@@ -151,6 +151,8 @@ struct sfq_value
 	payload_type_t payload_type;
 	size_t payload_size;
 	const sfq_byte* payload;
+
+	size_t elmsize_;
 };
 
 typedef sfq_bool (*sfq_map_callback)(ulong order, off_t elm_pos, const struct sfq_value* val, void* userdata);

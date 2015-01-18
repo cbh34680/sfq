@@ -107,18 +107,26 @@ void sfq_print_sizes(void)
 	fprintf(stderr, "\n");
 }
 
-static void sfq_print_qh_dval_(const struct sfq_qh_dval* p, char c)
+static void sfq_print_qh_dval_(const struct sfq_qh_dval* p, char c, size_t filesize_limit)
 {
 	fprintf(stderr, "%c [print_q_header:dynv]\n", c);
-	fprintf(stderr, "%c q_header.elm_next_pop_pos   = %zu\n", c, p->elm_next_pop_pos);
-	fprintf(stderr, "%c q_header.elm_next_push_pos  = %zu\n", c, p->elm_next_push_pos);
-	fprintf(stderr, "%c q_header.elm_next_shift_pos = %zu\n", c, p->elm_next_shift_pos);
-	fprintf(stderr, "%c q_header.elm_num            = %zu\n", c, p->elm_num);
-	fprintf(stderr, "%c q_header.elm_lastid         = %zu\n", c, p->elm_lastid);
-	fprintf(stderr, "%c q_header.questate           = %u\n",  c, p->questate);
-	fprintf(stderr, "%c q_header.update_cnt         = %zu\n", c, p->update_cnt);
-	fprintf(stderr, "%c q_header.updatetime         = %zu\n", c, p->updatetime);
-	fprintf(stderr, "%c q_header.lastoper           = %s\n",  c, p->lastoper);
+	fprintf(stderr, "%c q_header.elm_next_pop_pos   = %zu\n",  c, p->elm_next_pop_pos);
+	fprintf(stderr, "%c q_header.elm_next_push_pos  = %zu\n",  c, p->elm_next_push_pos);
+	fprintf(stderr, "%c q_header.elm_next_shift_pos = %zu\n",  c, p->elm_next_shift_pos);
+	fprintf(stderr, "%c q_header.elm_num            = %zu\n",  c, p->elm_num);
+	fprintf(stderr, "%c q_header.elm_lastid         = %zu\n",  c, p->elm_lastid);
+	fprintf(stderr, "%c q_header.questate           = %u\n",   c, p->questate);
+	fprintf(stderr, "%c q_header.update_cnt         = %zu\n",  c, p->update_cnt);
+	fprintf(stderr, "%c q_header.updatetime         = %zu\n",  c, p->updatetime);
+	fprintf(stderr, "%c q_header.lastoper           = %s\n",   c, p->lastoper);
+	fprintf(stderr, "%c q_header.elmsize_total_     = %zu\n",  c, p->elmsize_total_);
+
+	if (filesize_limit)
+	{
+		double rate = (double)p->elmsize_total_ / (double)filesize_limit * 100.0D;
+		fprintf(stderr, "%c * RATE *                    = %.1f%%\n", c, rate);
+	}
+
 	fprintf(stderr, "\n");
 }
 
@@ -128,16 +136,17 @@ void sfq_print_qf_header(const struct sfq_file_header* p)
 	fprintf(stderr, "# qf_header.qfs.magicstr      = %s\n", p->qfs.magicstr);
 	fprintf(stderr, "# qf_header.qfs.qfh_size      = %u\n", p->qfs.qfh_size);
 	fprintf(stderr, "#\n");
+
 	sfq_print_q_header(&p->qh);
 
 #if PRINT_OPERATE_HIST1
 	fprintf(stderr, "/ *** last1 ***\n");
-	sfq_print_qh_dval_(&p->last_qhd1, '/');
+	sfq_print_qh_dval_(&p->last_qhd1, '/', 0);
 #endif
 
 #if PRINT_OPERATE_HIST2
 	fprintf(stderr, "/ *** last2 ***\n");
-	sfq_print_qh_dval_(&p->last_qhd2, '/');
+	sfq_print_qh_dval_(&p->last_qhd2, '/', 0);
 #endif
 }
 
@@ -152,12 +161,15 @@ void sfq_print_q_header(const struct sfq_q_header* p)
 	fprintf(stderr, "# q_header.procs_num          = %u\n",  p->sval.procs_num);
 	fprintf(stderr, "#\n");
 
+/*
 	sfq_print_qh_dval(&p->dval);
+*/
+	sfq_print_qh_dval_(&p->dval, '#', p->sval.filesize_limit);
 }
 
 void sfq_print_qh_dval(const struct sfq_qh_dval* p)
 {
-	sfq_print_qh_dval_(p, '#');
+	sfq_print_qh_dval_(p, '#', 0);
 }
 
 void sfq_print_e_header(const struct sfq_e_header* p)

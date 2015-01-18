@@ -254,7 +254,7 @@ struct sfq_qh_sval
 	sfq_byte filler[6];		/* 6 */
 };
 
-/* C) 64 動的属性 */
+/* C) 72 動的属性 */
 struct sfq_qh_dval
 {
 	off_t elm_next_pop_pos;		/* 8 */
@@ -270,9 +270,11 @@ struct sfq_qh_dval
 	char lastoper[4];		/* 4 */
 	questate_t questate;		/* 2 */
 	sfq_byte filler[2];		/* 2 */
+
+	size_t elmsize_total_;		/* 8 ... for debug */
 };
 
-/* D) 120 静的 + 動的属性 (56 + 64) */
+/* D) 128 静的 + 動的属性 (56 + 72) */
 struct sfq_q_header
 {
 	struct sfq_qh_sval sval;
@@ -287,7 +289,7 @@ struct sfq_file_stamp
 	ushort qfh_size;		/* 2 */
 };
 
-/* F) 256 ファイルヘッダ (8 + 120 + 64 + 64) */
+/* F) 280 ファイルヘッダ (8 + 128 + 72 + 72) */
 struct sfq_file_header
 {
 	struct sfq_file_stamp qfs;	/* qfs の位置は変更 NG */
