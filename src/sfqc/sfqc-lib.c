@@ -1,5 +1,95 @@
 #include "sfqc-lib.h"
 
+static void to_camelcase(char* p)
+{
+	char* pos = p;
+	sfq_bool next_upper = SFQ_true;
+
+	if (! p)
+	{
+		return;
+	}
+
+	while (*pos)
+	{
+		if (((*pos) == ' ') || ((*pos) == ':'))
+		{
+			break;
+		}
+
+		if ((*pos) == '-')
+		{
+			next_upper = SFQ_true;
+		}
+		else
+		{
+			if (next_upper)
+			{
+				(*pos) = toupper(*pos);
+				next_upper = SFQ_false;
+			}
+		}
+
+		pos++;
+	}
+}
+
+void sfqc_h_printf(sfq_bool http, const char* org_format, ...)
+{
+	va_list arg;
+	char* format = NULL;
+
+	format = sfq_stradup(org_format);
+
+	if (http)
+	{
+		printf("X-Sfq-");
+		to_camelcase(format);
+	}
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wvarargs"
+	va_start(arg, format);
+#pragma GCC diagnostic pop
+	vprintf(format, arg);
+	va_end(arg);
+}
+
+static void print_date(const char* key, time_t t)
+{
+	struct tm tmp;
+	char dt[64];
+
+	gmtime_r(&t, &tmp);
+	strftime(dt, sizeof dt, "%a, %d %b %Y %H:%M:%S %Z", &tmp);
+
+	printf("%s: %s" SFQC_CRLF, key, dt);
+}
+
+void sfqc_print_http_headers(sfq_bool exist, const char* content_type, size_t content_length)
+{
+	time_t now = time(NULL);
+
+	printf("HTTP/1.0 ");
+
+	if (exist)
+	{
+		printf("200 OK" SFQC_CRLF);
+	}
+	else
+	{
+		printf("204 No Content" SFQC_CRLF);
+	}
+
+	printf("Content-Type: %s" SFQC_CRLF, content_type);
+	printf("Content-Length: %zu" SFQC_CRLF, content_length);
+
+	print_date("Date", now);
+	print_date("Expires", now + 10);
+
+	printf("Connection: close" SFQC_CRLF);
+}
+
 char** sfqc_split(char* params_str, char c_delim)
 {
 	int i = 0;
@@ -478,5 +568,62 @@ EXIT_LABEL:
 	}
 
 	return irc;
+}
+
+int sfqc_parse_printmethod(const char* arg, uint* printmethod_ptr)
+{
+	uint printmethod = SFQC_PRM_DEFAULT;
+
+	if (! printmethod_ptr)
+	{
+		return 1;
+	}
+
+	if (arg)
+	{
+		char** params = NULL;
+		char** pos = NULL;
+
+		params = sfqc_split(sfq_stradup(arg), ',');
+		if (params)
+		{
+			pos = params;
+			while (*pos)
+			{
+				if (strcmp(*pos, "json") == 0)
+				{
+					printmethod |= SFQC_PRM_ASJSON;
+				}
+				else if (strcmp(*pos, "adda") == 0)
+				{
+					printmethod |= SFQC_PRM_ADD_ATTRIBUTE;
+				}
+				else if (strcmp(*pos, "http") == 0)
+				{
+					printmethod |= SFQC_PRM_HTTP_HEADER;
+				}
+				else if (strcmp(*pos, "pb64") == 0)
+				{
+					printmethod |= SFQC_PRM_PAYLOAD_BASE64;
+				}
+				else
+				{
+					/* ignore */
+					fprintf(stderr, "%s(%d): unknown-option [%s] ignore\n",
+						__FILE__, __LINE__, *pos);
+				}
+
+				pos++;
+			}
+
+			free(params);
+			params = NULL;
+
+		}
+	}
+
+	(*printmethod_ptr) = printmethod;
+
+	return 0;
 }
 

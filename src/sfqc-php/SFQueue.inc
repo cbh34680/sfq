@@ -1,6 +1,6 @@
 <?php
 
-// 
+//
 interface SFQueueClientInterface
 {
 	public function push_text($params);
@@ -15,10 +15,10 @@ class SFQueueClientException extends Exception
 	static $mesgmap =
 	[
 		0	=> 'it has not yet been set',
-		1010	=> 'extension(sfqc_php) is not loaded', 
+		1010	=> 'extension(sfqc_php) is not loaded',
 		1020	=> 'it has not yet been initialized',
-		1030	=> 'it does not yet implemented', 
-		1040	=> 'illegal argument type exception', 
+		1030	=> 'it does not yet implemented',
+		1040	=> 'illegal argument type exception',
 	];
 
 	function __construct($code, $mesg=null)
@@ -186,10 +186,7 @@ class SFQueueClientLocal extends SFQueueClient
 	{
 		if (isset($params['payload']))
 		{
-			if (! isset($params['payload_type']))
-			{
-				$params['payload_type'] = (SFQ_PLT_CHARARRAY);
-			}
+			$params['payload_type'] = 'text';
 		}
 
 		return $this->native_push_($params);
@@ -199,10 +196,7 @@ class SFQueueClientLocal extends SFQueueClient
 	{
 		if (isset($params['payload']))
 		{
-			if (! isset($params['payload_type']))
-			{
-				$params['payload_type'] = (SFQ_PLT_BINARY);
-			}
+			$params['payload_type'] = 'binary';
 		}
 
 		return $this->native_push_($params);
@@ -221,29 +215,261 @@ class SFQueueClientLocal extends SFQueueClient
 
 class SFQueueClientRemote extends SFQueueClient
 {
+	const CRLF = "\r\n";
+	const LF = "\n";
+
+	private $conn_params;
+
 	function __construct($quename, $params, $throwException)
 	{
 		parent::__construct($quename, $throwException);
+
+		$this->conn_params = $params;
+	}
+
+	static function hostname2addr_($arg)
+	{
+		$ret = false;
+
+		if ($arg)
+		{
+			//
+			// 必要なら IP アドレスに書き換え
+			//
+			if ($arg === 'localhost')
+			{
+				return '127.0.0.1';
+			}
+
+			if (! preg_match('/\A[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\Z/', $arg))
+			{
+				$addr = gethostbyname($arg);
+				if ($addr != $arg)
+				{
+					//
+					// アドレスが解決できない
+					//
+					$ret = $addr;
+				}
+			}
+		}
+
+		return $ret;
+	}
+
+	static function parse_response($arg)
+	{
+		//
+		$header = [];
+		$body = null;
+
+		$sep_offset = strpos($arg, self::CRLF . self::CRLF);
+		if ($sep_offset === false)
+		{
+			$sep_offset = strpos($arg, self::LF . self::LF);
+		}
+
+		if ($sep_offset === false)
+		{
+			$ret['body'] = $arg;
+		}
+		else
+		{
+			if ($sep_offset)
+			{
+				$header_text = substr($arg, 0, $sep_offset);
+
+				foreach (explode(self::LF, $header_text) as $line)
+				{
+					if (! preg_match('/^\\s*([^:[:blank:]]+)\\s*:\\s*(\\S+)\\s*$/', trim($line), $matches))
+					{
+						continue;
+					}
+
+					list($all, $key, $val) = $matches;
+
+					$key = str_replace('-', '_', $key);
+					$header[$key] = $val;
+				}
+			}
+
+			$body = substr($arg, $sep_offset + 4);
+		}
+
+		return [ 'header' => $header, 'body' => $body ];
+	}
+
+	function remote_push_($params)
+	{
+		$addr = self::hostname2addr_($this->conn_params['host']);
+		$port = $this->conn_params['port']['push'];
+
+		//
+		$body = @$params['payload'];
+
+		if (isset($body))
+		{
+			$params['payload-length'] = strlen($body);
+		}
+
+		//
+		$header_arr = [];
+
+		foreach ($params as $k=>$v)
+		{
+			if ($k === 'payload')
+			{
+				continue;
+			}
+
+			$header_arr[] = sprintf("%s: %s", str_replace('_', '-', $k), $v);
+		}
+
+		$header = implode(self::CRLF, $header_arr);
+
+		$sep = self::CRLF . self::CRLF;
+
+		//
+		$sock = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
+
+
+		socket_connect($sock, $addr, $port);
+
+		socket_set_option($sock, SOL_SOCKET, SO_RCVTIMEO, $this->conn_params['timeout']['read']);
+		socket_set_option($sock, SOL_SOCKET, SO_SNDTIMEO, $this->conn_params['timeout']['write']);
+
+		socket_write($sock, $header, strlen($header));
+		socket_write($sock, $sep, strlen($sep));
+
+		if (isset($body))
+		{
+			socket_write($sock, $body, strlen($body));
+		}
+
+		$resp_text = '';
+
+		do
+		{
+			$buff = socket_read($sock, 8192);
+			if ($buff !== false)
+			{
+				$resp_text .= $buff;
+			}
+		}
+		while (! empty($buff));
+
+		socket_shutdown($sock, 2);
+		socket_close($sock);
+
+		//
+		$ret = false;
+
+		$resp = self::parse_response($resp_text);
+		if ($resp !== false)
+		{
+			if (isset($resp['header']['result_code']))
+			{
+				if ($resp['header']['result_code'] == 0)
+				{
+					$ret = $resp['header']['uuid'];
+				}
+			}
+		}
+
+		return $ret;
+	}
+
+	function remote_takeout_($port)
+	{
+		$addr = self::hostname2addr_($this->conn_params['host']);
+
+		//
+		$sock = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
+
+		socket_connect($sock, $addr, $port);
+
+		$resp_text = '';
+
+		do
+		{
+			$buff = socket_read($sock, 8192);
+			$resp_text .= $buff;
+		}
+		while (! empty($buff));
+
+		socket_shutdown($sock, 2);
+		socket_close($sock);
+
+		//
+		$ret = false;
+
+		$resp = self::parse_response($resp_text);
+		if ($resp !== false)
+		{
+			if (isset($resp['header']['result_code']))
+			{
+				if ($resp['header']['result_code'] == 0)
+				{
+					$ret = $resp['header'];
+					$ret['payload'] = $resp['body'];
+				}
+			}
+		}
+
+		return $ret;
+	}
+
+	function remote_push_($params)
+	{
+		$headers = [];
+
+		foreach ($params as $k=>$v)
+		{
+			if ($k === 'payload')
+			{
+				continue;
+			}
+
+			$headers[] = sprintf("%s: %s", $k, $v);
+		}
+
+		$payload = @$params['payload'];
+
+
 	}
 
 	function push_text($params)
 	{
-		$this->throwException(1030);
+		if (isset($params['payload']))
+		{
+			$params['payload-type'] = 'text';
+		}
+
+		return $this->remote_push_($params);
 	}
 
 	function push_binary($params)
 	{
-		$this->throwException(1030);
+		if (isset($params['payload']))
+		{
+			$params['payload-type'] = 'binary';
+		}
+
+		return $this->remote_push_($params);
 	}
 
 	function pop()
 	{
-		$this->throwException(1030);
+		$port = $this->conn_params['port']['pop'];
+
+		return $this->remote_takeout_($port);
 	}
 
 	function shift()
 	{
-		$this->throwException(1030);
+		$port = $this->conn_params['port']['shift'];
+
+		return $this->remote_takeout_($port);
 	}
 }
 
@@ -376,10 +602,16 @@ EOS;
 
 	// remote (throw exception)
 		$copt = [
-			'host' => 'localhost',
+			'host' => 'sfq.nodanet',
 			'port' => [
 				'push'		=> 12701,
-				'takeout'	=> 12702,
+				'pop'		=> 12711,
+				'shift'		=> 12721,
+			],
+			'timeout' =>
+			[
+				'read'		=> [ 'sec'=>2, 'usec'=>0 ],
+				'write'		=> [ 'sec'=>2, 'usec'=>0 ],
 			],
 		];
 

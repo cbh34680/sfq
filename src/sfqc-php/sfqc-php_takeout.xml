@@ -56,7 +56,14 @@
 		SFQWL_ZH_UPDATE_STRING(ioparam_hash, "serrpath", val.serrpath);
 
 	// payload_type
-		SFQWL_ZH_UPDATE_LONG(ioparam_hash, "payload_type", val.payload_type);
+		if (val.payload_type & SFQ_PLT_CHARARRAY)
+		{
+			SFQWL_ZH_UPDATE_STRING(ioparam_hash, "payload_type", "text");
+		}
+		else if (val.payload_type & SFQ_PLT_BINARY)
+		{
+			SFQWL_ZH_UPDATE_STRING(ioparam_hash, "payload_type", "binary");
+		}
 
 	// payload_size
 		SFQWL_ZH_UPDATE_LONG(ioparam_hash, "payload_size", val.payload_size);

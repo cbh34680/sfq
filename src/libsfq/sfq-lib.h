@@ -121,26 +121,27 @@ SFQ_FAIL_CATCH_LABEL__:
 
 
 #define SFQ_LIB_LEAVE \
-	if (fire_reason__[0]) \
-	{ \
-		struct tm tm_tmp__; \
-		time_t now__; \
-		char nowstr__[32] = ""; \
-		char fire_errstr__[128] = "-----"; \
-		now__ = time(NULL); \
-		localtime_r(&now__, &tm_tmp__); \
-		strftime(nowstr__, sizeof(nowstr__), "%Y-%m-%d %H:%M:%S", &tm_tmp__); \
-		if (fire_errno__) { \
-			strerror_r(fire_errno__, fire_errstr__, sizeof(fire_errstr__)); \
+	if (fire_reason__[0]) { \
+		if (sfq_get_print()) { \
+			struct tm tm_tmp__; \
+			time_t now__; \
+			char nowstr__[32] = ""; \
+			char fire_errstr__[128] = "-----"; \
+			now__ = time(NULL); \
+			localtime_r(&now__, &tm_tmp__); \
+			strftime(nowstr__, sizeof(nowstr__), "%Y-%m-%d %H:%M:%S", &tm_tmp__); \
+			if (fire_errno__) { \
+				strerror_r(fire_errno__, fire_errstr__, sizeof(fire_errstr__)); \
+			} \
+			fprintf(stderr, "= %s =\n\t%s(%d)# %s\n\t" \
+				"ppid=%d pid=%d tid=%d\n\t" \
+				"reason=%d [%s]\n\t" \
+				"errno=%d [%s]\n\n", \
+				nowstr__, __FILE__, fire_line__, __func__, \
+				getppid(), getpid(), sfq_gettid(), \
+				fire_rc__, fire_reason__, \
+				fire_errno__, fire_errstr__); \
 		} \
-		fprintf(stderr, "= %s =\n\t%s(%d)# %s\n\t" \
-			"ppid=%d pid=%d tid=%d\n\t" \
-			"reason=%d [%s]\n\t" \
-			"errno=%d [%s]\n\n", \
-			nowstr__, __FILE__, fire_line__, __func__, \
-			getppid(), getpid(), sfq_gettid(), \
-			fire_rc__, fire_reason__, \
-			fire_errno__, fire_errstr__); \
 	}
 
 
@@ -253,7 +254,7 @@ struct sfq_qh_sval
 	sfq_byte filler[6];		/* 6 */
 };
 
-/* C) 64 動的属性 */
+/* C) 72 動的属性 */
 struct sfq_qh_dval
 {
 	off_t elm_next_pop_pos;		/* 8 */
@@ -269,9 +270,11 @@ struct sfq_qh_dval
 	char lastoper[4];		/* 4 */
 	questate_t questate;		/* 2 */
 	sfq_byte filler[2];		/* 2 */
+
+	size_t elmsize_total_;		/* 8 ... for debug */
 };
 
-/* D) 120 静的 + 動的属性 (56 + 64) */
+/* D) 128 静的 + 動的属性 (56 + 72) */
 struct sfq_q_header
 {
 	struct sfq_qh_sval sval;
@@ -286,7 +289,7 @@ struct sfq_file_stamp
 	ushort qfh_size;		/* 2 */
 };
 
-/* F) 256 ファイルヘッダ (8 + 120 + 64 + 64) */
+/* F) 280 ファイルヘッダ (8 + 128 + 72 + 72) */
 struct sfq_file_header
 {
 	struct sfq_file_stamp qfs;	/* qfs の位置は変更 NG */

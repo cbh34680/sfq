@@ -11,7 +11,7 @@ $ioparam =
 	'metatext'	=> $file,
 	'payload'	=> $data,
 	//'payload_size'	=> $dlen,
-	'payload_type'	=> SFQ_PLT_BINARY,
+	'payload_type'	=> 'text',
 ];
 
 for ($i=0; $i<2; $i++)

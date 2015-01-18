@@ -39,10 +39,6 @@ This is wrap_libsfq PHP extension module.
     <constant type="int" name="SFQ_RC_W_ACCEPT_STOPPED"		value="SFQ_RC_W_ACCEPT_STOPPED" />
     <constant type="int" name="SFQ_RC_W_TAKEOUT_STOPPED"	value="SFQ_RC_W_TAKEOUT_STOPPED" />
     <constant type="int" name="SFQ_RC_FATAL_MIN"		value="SFQ_RC_FATAL_MIN" />
-
-    <constant type="int" name="SFQ_PLT_NULLTERM"		value="SFQ_PLT_NULLTERM" />
-    <constant type="int" name="SFQ_PLT_BINARY"			value="SFQ_PLT_BINARY" />
-    <constant type="int" name="SFQ_PLT_CHARARRAY"		value="SFQ_PLT_CHARARRAY" />
   </constants>
 
   <code position="top"><?data

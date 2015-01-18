@@ -9,19 +9,6 @@ static size_t GLOBAL_snos_enable_num = 0;
 
 static pthread_mutex_t GLOBAL_snos_arr_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-#if 0
-	#define LOG_(a) \
-		fprintf(stderr, "%s(%d):%s:%d:%d: [%s]\n", \
-			__FILE__, __LINE__, __func__, getpid(), sfq_gettid(), (a));
-
-	#define LOGLF_() \
-		fprintf(stderr, "\n");
-
-#else
-	#define LOG_(a)
-	#define LOGLF_()
-#endif
-
 /*
 void __attribute__((constructor)) localvars_create_(void);
 
@@ -56,9 +43,7 @@ static sfq_bool register_(const char* semname, sem_t* semobj)
 	pid_t pid = getpid();
 	pid_t tid = sfq_gettid();
 
-LOG_("a-1");
 	pthread_mutex_lock(&GLOBAL_snos_arr_mutex);
-LOG_("a-2");
 
 SFQ_LIB_ENTER
 	for (i=0; i<loop_num; i++)
@@ -111,14 +96,12 @@ SFQ_LIB_ENTER
 	snos->semobj = semobj;
 	snos->pid = pid;
 	snos->tid = tid;
-LOG_("a-3");
 
 SFQ_LIB_CHECKPOINT
 
 SFQ_LIB_LEAVE
 
 	pthread_mutex_unlock(&GLOBAL_snos_arr_mutex);
-LOG_("a-4");
 
 	return SFQ_LIB_IS_SUCCESS();
 }
@@ -130,9 +113,7 @@ static void unregister_all_()
 	int i = 0;
 	int loop_num = 0;
 
-LOG_("e-1");
 	pthread_mutex_lock(&GLOBAL_snos_arr_mutex);
-LOG_("e-2");
 
 	if (GLOBAL_snos_arr_num)
 	{
@@ -159,14 +140,11 @@ LOG_("e-2");
 			}
 		}
 
-LOG_("e-4");
 		free(GLOBAL_snos_arr);
 		GLOBAL_snos_arr = NULL;
 
 		GLOBAL_snos_arr_num = 0;
-LOG_("e-5");
 	}
-LOG_("e-6");
 }
 
 static sem_t* unregister_(const char* semname)
@@ -176,9 +154,7 @@ static sem_t* unregister_(const char* semname)
 	int i = 0;
 	int loop_num = 0;
 
-LOG_("b-1");
 	pthread_mutex_lock(&GLOBAL_snos_arr_mutex);
-LOG_("b-2");
 
 	loop_num = GLOBAL_snos_arr_num;
 
@@ -209,7 +185,6 @@ LOG_("b-2");
 						snos->semobj = SEM_FAILED;
 
 						GLOBAL_snos_enable_num--;
-LOG_("b-3");
 
 						break;
 					}
@@ -218,7 +193,6 @@ LOG_("b-3");
 		}
 	}
 
-LOG_("b-4");
 	if (GLOBAL_snos_enable_num == 0)
 	{
 /*
@@ -228,12 +202,9 @@ LOG_("b-4");
 		GLOBAL_snos_arr = NULL;
 
 		GLOBAL_snos_arr_num = 0;
-LOG_("b-5");
 	}
 
-LOG_("b-6");
 	pthread_mutex_unlock(&GLOBAL_snos_arr_mutex);
-LOG_("b-7");
 
 	return semobj;
 }
@@ -265,7 +236,6 @@ static sfq_bool lock_semaphore_(const char* semname, int semlock_wait_sec)
 SFQ_LIB_ENTER
 	assert(semname);
 	assert(semname[0]);
-LOG_("c-1");
 
 /*
 登録がなければオブジェクトを作成する
@@ -282,7 +252,6 @@ LOG_("c-1");
 /*
 セマフォのロック
 */
-LOG_("c-2");
 	if (semlock_wait_sec > 0)
 	{
 		irc = clock_gettime(CLOCK_REALTIME, &tspec);
@@ -298,7 +267,6 @@ LOG_("c-2");
 	{
 		irc = sem_wait(semobj);
 	}
-LOG_("c-3");
 
 	if (irc == -1)
 	{
@@ -312,14 +280,12 @@ LOG_("c-3");
 sem_wait() が成功したら登録する
 */
 	registered = register_(semname, semobj);
-LOG_("c-4");
 
 
 SFQ_LIB_CHECKPOINT
 
 	if (SFQ_LIB_IS_FAIL())
 	{
-LOG_("c-5");
 		free(semname_dup);
 		semname_dup = NULL;
 
@@ -345,7 +311,6 @@ LOG_("c-5");
 			semobj = SEM_FAILED;
 		}
 	}
-LOG_("c-6");
 
 SFQ_LIB_LEAVE
 
@@ -356,30 +321,22 @@ static void unlock_semaphore_(const char* semname)
 {
 	sem_t* semobj = SEM_FAILED;
 
-LOG_("d-1");
 	if (semname)
 	{
-LOG_("d-2");
 		semobj = unregister_(semname);
-LOG_("d-3");
 
 		if (semobj != SEM_FAILED)
 		{
-LOG_("d-4");
 			sem_post(semobj);
 			sem_close(semobj);
 
 			semobj = SEM_FAILED;
 		}
-LOG_("d-5");
 	}
 	else
 	{
-LOG_("d-6");
 		unregister_all_();
-LOG_("d-7");
 	}
-LOG_("d-8");
 }
 
 
@@ -388,10 +345,7 @@ LOG_("d-8");
  */
 void sfq_unlock_semaphore(const char* semname)
 {
-LOG_("B-1");
 	unlock_semaphore_(semname);
-LOG_("B-2");
-LOGLF_();
 }
 
 /*
@@ -400,10 +354,8 @@ LOGLF_();
 sfq_bool sfq_lock_semaphore(const char* semname, int semlock_wait_sec)
 {
 	sfq_bool b = SFQ_false;
-LOG_("A-1");
+
 	b = lock_semaphore_(semname, semlock_wait_sec);
-LOG_("A-2");
-LOGLF_();
 
 	return b;
 }

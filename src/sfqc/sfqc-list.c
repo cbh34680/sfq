@@ -27,7 +27,7 @@ sfq_bool print_element(ulong order, off_t elm_pos, const struct sfq_value* val, 
 	localtime_r(&val->pushtime, &tmp);
 	strftime(dt, sizeof(dt), "%Y-%m-%d %H:%M:%S", &tmp);
 
-	uuid_unparse_upper(val->uuid, uuid_s);
+	uuid_unparse(val->uuid, uuid_s);
 
 /* */
 	irc = sfq_alloc_print_value(val, &pval);
@@ -48,9 +48,10 @@ sfq_bool print_element(ulong order, off_t elm_pos, const struct sfq_value* val, 
 			printf("%-13s: %s\n",  "metatext",	pval.metatext);
 			printf("%-13s: %s\n",  "soutpath",	pval.soutpath);
 			printf("%-13s: %s\n",  "serrpath",	pval.serrpath);
-			printf("%-13s: %u\n",  "payload_type",	val->payload_type);
-			printf("%-13s: %zu\n", "payload_size",	val->payload_size);
+			printf("%-13s: %u\n",  "payload-type",	val->payload_type);
+			printf("%-13s: %zu\n", "payload-size",	val->payload_size);
 			printf("%-13s: %s\n",  "payload",	(char*)pval.payload);
+			printf("%-13s: %zu\n", "elmsize_",	val->elmsize_);
 		}
 		else
 		{
@@ -60,13 +61,15 @@ sfq_bool print_element(ulong order, off_t elm_pos, const struct sfq_value* val, 
 				"%lu" _T_ "%zu" _T_ "%zu" _T_ "%s" _T_ "%s" _T_
 				"%s" _T_       "%s" _T_       "%s" _T_
 				"%s" _T_       "%s" _T_       "%s" _T_
-				"%u" _T_           "%zu" _T_          "%s"
+				"%u" _T_           "%zu" _T_          "%s" _T_
+				"%zu"
 				LF,
 				pval.querootdir, pval.quename,
 				order,    elm_pos,  pval.id,  dt,      uuid_s,
 				pval.eworkdir, pval.execpath, pval.execargs,
 				pval.metatext, pval.soutpath, pval.serrpath,
-				val->payload_type, val->payload_size, (char*)pval.payload
+				val->payload_type, val->payload_size, (char*)pval.payload,
+				val->elmsize_
 			);
 		}
 	}

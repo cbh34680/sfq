@@ -12,6 +12,18 @@ char* sfq_safe_strcpy(char* dst, const char* org)
 }
 #endif
 
+static sfq_bool g_printOnOff = SFQ_true;
+
+void sfq_set_print(sfq_bool printOnOff)
+{
+	g_printOnOff = printOnOff;
+}
+
+sfq_bool sfq_get_print()
+{
+	return g_printOnOff;
+}
+
 pid_t sfq_gettid(void)
 {
 	return syscall(SYS_gettid);
@@ -408,6 +420,7 @@ sfq_bool sfq_copy_ioeb2val(const struct sfq_ioelm_buff* ioeb, struct sfq_value* 
 
 	val->id = ioeb->eh.id;
 	val->pushtime = ioeb->eh.pushtime;
+	val->elmsize_ = ioeb->eh.elmsize_;
 
 	uuid_copy(val->uuid, ioeb->eh.uuid);
 
@@ -572,6 +585,7 @@ SFQ_LIB_ENTER
 	dst->id = val->id;
 	dst->pushtime = val->pushtime;
 	uuid_copy(dst->uuid, val->uuid);
+	dst->elmsize_ = val->elmsize_;
 
 	dst->payload_type = val->payload_type;
 	dst->payload_size = val->payload_size;

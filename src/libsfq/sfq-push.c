@@ -358,6 +358,9 @@ id, pushtime, uuid はここで生成する
 	/* 要素数を加算 */
 	qfh.qh.dval.elm_num++;
 
+	/* 要素サイズを加算 */
+	qfh.qh.dval.elmsize_total_ += ioeb.eh.elmsize_;
+
 /* update header */
 	b = sfq_writeqfh(qo, &qfh, procs, "PSH");
 	if (! b)

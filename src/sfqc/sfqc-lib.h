@@ -26,7 +26,7 @@
 
 #ifdef SFQ_DEBUG_BUILD
 
-#define DEBUG_PRINT_BAR		"========================="
+	#define DEBUG_PRINT_BAR		"========================="
 
 	#define SFQC_MAIN_ENTER \
 		{ \
@@ -44,6 +44,8 @@
 #endif
 
 #define SFQC_RESERVE_SLOT_MIN		(4)
+
+#define SFQC_CRLF			"\r\n"
 
 
 /* プログラム引数 */
@@ -97,11 +99,20 @@ int sfqc_takeout(int argc, char** argv, sfq_takeoutfunc_t takeoutfunc);
 int sfqc_parse_program_args(int argc, char** argv, const char* optstring,
 	sfq_bool use_rest, struct sfqc_program_args* pgargs);
 
+int sfqc_parse_printmethod(const char* arg, uint* printmethod_ptr);
+
 void sfqc_free_program_args(struct sfqc_program_args* pgargs);
 
 char** sfqc_split(char* params_str, char c_delim);
 int sfqc_readstdin(sfq_byte** mem_ptr, size_t* memsize_ptr);
 int sfqc_readfile(const char* path, sfq_byte** mem_ptr, size_t* memsize_ptr);
+
+void sfqc_h_printf(sfq_bool http, const char* org_format, ...);
+void sfqc_print_http_headers(sfq_bool exist, const char* content_type, size_t content_length);
+
+void sfqc_push_success(uint printmethod, uuid_t uuid);
+void sfqc_push_fault(uint printmethod, int result_code, const char* message,
+        sfq_bool quiet, const char* e_fn, int e_pos);
 
 #endif
 
