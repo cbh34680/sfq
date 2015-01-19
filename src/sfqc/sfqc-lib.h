@@ -77,6 +77,16 @@ struct sfqc_program_args
 	int command_num;
 };
 
+struct sfqc_xinetd_data
+{
+	struct sfqc_program_args pgargs;
+
+	sfq_byte* payload;
+	size_t payload_size;
+	payload_type_t payload_type;
+	size_t payload_len;
+};
+
 /* pop, shift の表示オプション */
 enum
 {
@@ -111,8 +121,13 @@ void sfqc_h_printf(sfq_bool http, const char* org_format, ...);
 void sfqc_print_http_headers(sfq_bool exist, const char* content_type, size_t content_length);
 
 void sfqc_push_success(uint printmethod, uuid_t uuid);
-void sfqc_push_fault(uint printmethod, int result_code, const char* message,
+void sfqc_xinetd_fault(uint printmethod, int result_code, const char* message,
         sfq_bool quiet, const char* e_fn, int e_pos);
+
+void sfqc_rtrim(char* p);
+int sfqc_xinetd_readdata(struct sfqc_xinetd_data* xd);
+
+void sfqc_takeout_success(uint printmethod, const struct sfq_value* val);
 
 #endif
 
