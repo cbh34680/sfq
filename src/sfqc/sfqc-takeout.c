@@ -3,103 +3,6 @@
 
 #include <jansson.h>
 
-#if 0
-static void to_camelcase(char* p)
-{
-	char* pos = p;
-	sfq_bool next_upper = SFQ_true;
-
-	if (! p)
-	{
-		return;
-	}
-
-	while (*pos)
-	{
-		if (((*pos) == ' ') || ((*pos) == ':'))
-		{
-			break;
-		}
-
-		if ((*pos) == '-')
-		{
-			next_upper = SFQ_true;
-		}
-		else
-		{
-			if (next_upper)
-			{
-				(*pos) = toupper(*pos);
-				next_upper = SFQ_false;
-			}
-		}
-
-		pos++;
-	}
-}
-
-static void h_printf(sfq_bool http, const char* org_format, ...)
-{
-	va_list arg;
-	char* format = NULL;
-
-	format = sfq_stradup(org_format);
-
-	if (http)
-	{
-		printf("X-Sfq-");
-		to_camelcase(format);
-	}
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wvarargs"
-	va_start(arg, format);
-#pragma GCC diagnostic pop
-	vprintf(format, arg);
-	va_end(arg);
-}
-
-static void print_date(const char* key, time_t t)
-{
-	struct tm tmp;
-	char dt[64];
-
-	gmtime_r(&t, &tmp);
-	strftime(dt, sizeof dt, "%a, %d %b %Y %H:%M:%S %Z", &tmp);
-
-	printf("%s: %s" SFQC_CRLF, key, dt);
-}
-
-static void print_http_headers(sfq_bool exist, const char* content_type, size_t content_length)
-{
-	time_t now = time(NULL);
-
-	printf("HTTP/1.0 ");
-
-	if (exist)
-	{
-		printf("200 OK" SFQC_CRLF);
-	}
-	else
-	{
-		printf("204 No Content" SFQC_CRLF);
-	}
-
-	printf("Content-Type: %s" SFQC_CRLF, content_type);
-	printf("Content-Length: %zu" SFQC_CRLF, content_length);
-
-	print_date("Date", now);
-	print_date("Expires", now + 10);
-
-	printf("Connection: close" SFQC_CRLF);
-}
-
-#endif
-
-/* ------------------------------------------------------------------------------- */
-// outputtype=plain/text
-
-
 static void print_custom_headers(sfq_bool http, const struct sfq_value* val,
 	size_t data_len, sfq_bool pbin, size_t pb64text_len)
 {
@@ -261,9 +164,6 @@ EXIT_LABEL:
 	}
 }
 
-/* ------------------------------------------------------------------------------- */
-// outputtype=json
-
 static char* create_json_string(const struct sfq_value* val,
 	sfq_bool pbin, sfq_bool pb64, size_t pb64text_len,
 	sfq_bool adda, const sfq_byte* data, size_t data_len)
@@ -392,7 +292,7 @@ EXIT_LABEL:
 	return dumps;
 }
 
-static void print_by_json(uint printmethod, const struct sfq_value* val)
+static void print_json(uint printmethod, const struct sfq_value* val)
 {
 	const char* message = NULL;
 	int jumppos = 0;
@@ -468,115 +368,15 @@ EXIT_LABEL:
 	}
 }
 
-/* ------------------------------------------------------------------------------- */
-
-int sfqc_takeout(int argc, char** argv, sfq_takeoutfunc_t takeoutfunc)
+void sfqc_takeout_success(uint printmethod, const struct sfq_value* val)
 {
-	int irc = 0;
-	const char* message = NULL;
-	int jumppos = 0;
-
-	uint printmethod = 0;
-
-/* */
-	struct sfqc_program_args pgargs;
-	struct sfq_value val;
-
-SFQC_MAIN_ENTER
-
-	bzero(&pgargs, sizeof(pgargs));
-	bzero(&val, sizeof(val));
-
-/* */
-	irc = sfqc_parse_program_args(argc, argv, "D:N:p:q", SFQ_false, &pgargs);
-	if (irc != 0)
-	{
-		message = "parse_program_args: parse error";
-		jumppos = __LINE__;
-		goto EXIT_LABEL;
-	}
-
-	sfq_set_print(pgargs.quiet ? SFQ_false : SFQ_true);
-
-	irc = sfqc_parse_printmethod(pgargs.printmethod, &printmethod);
-	if (irc != 0)
-	{
-		message = "sfqc_parse_printmethod";
-		jumppos = __LINE__;
-		goto EXIT_LABEL;
-	}
-
-	irc = takeoutfunc(pgargs.querootdir, pgargs.quename, &val);
-	if (irc != 0)
-	{
-		message = "takeout";
-
-		switch (irc)
-		{
-			case SFQ_RC_W_NOELEMENT:
-			{
-				message = "element does not exist in the queue";
-				break;
-			}
-
-			case SFQ_RC_W_TAKEOUT_STOPPED:
-			{
-				message = "queue is stopped retrieval";
-				break;
-			}
-
-		}
-
-		jumppos = __LINE__;
-		goto EXIT_LABEL;
-	}
-
 	if (printmethod & SFQC_PRM_ASJSON)
 	{
-		print_by_json(printmethod, &val);
+		print_json(printmethod, val);
 	}
 	else
 	{
-		print_raw(printmethod, &val);
+		print_raw(printmethod, val);
 	}
-
-EXIT_LABEL:
-
-	sfq_free_value(&val);
-
-	if (message)
-	{
-		if (printmethod & SFQC_PRM_HTTP_HEADER)
-		{
-			sfqc_print_http_headers(SFQ_false, "text/plain; charset=UTF-8", strlen(message));
-
-			sfqc_h_printf(SFQ_true, "result-code: %d" SFQC_CRLF, irc);
-			sfqc_h_printf(SFQ_true, "error-message: %s" SFQC_CRLF, message);
-
-			printf(SFQC_CRLF);
-			printf("%s" SFQC_CRLF, message);
-		}
-		else if (printmethod & SFQC_PRM_ADD_ATTRIBUTE)
-		{
-			sfqc_h_printf(SFQ_false, "result-code: %d" SFQC_CRLF, irc);
-			sfqc_h_printf(SFQ_false, "error-message: %s" SFQC_CRLF, message);
-
-			printf(SFQC_CRLF);
-			printf("%s" SFQC_CRLF, message);
-		}
-		else
-		{
-			if (! pgargs.quiet)
-			{
-				fprintf(stderr, "%s(%d): %s\n", __FILE__, jumppos, message);
-			}
-		}
-	}
-
-	sfqc_free_program_args(&pgargs);
-
-SFQC_MAIN_LEAVE
-
-	return irc;
 }
 

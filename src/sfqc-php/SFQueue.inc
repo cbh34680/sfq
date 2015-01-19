@@ -45,28 +45,16 @@ class SFQueueClientException extends Exception
 
 abstract class SFQueueClient implements SFQueueClientInterface
 {
-	function __construct($quename, $throwException)
+	function __construct($throwException)
 	{
 		$this->throwException_ = $throwException;
 
-		if (is_null($quename) || is_string($quename))
-		{
-			$this->quename_ = $quename;
-
-			$this->initialized_ = true;
-			$this->notInitialized_ = false;
-		}
-		else
-		{
-			$this->throwException(1040);
-		}
+		$this->notInitialized_ = false;
 	}
 
 // protected:
-	protected $initialized_ = false;
 	protected $notInitialized_ = true;
 
-	protected $quename_;
 	protected $throwException_;
 
 	private $lastError_ = 0;
@@ -103,21 +91,25 @@ abstract class SFQueueClient implements SFQueueClientInterface
 
 class SFQueueClientLocal extends SFQueueClient
 {
+	protected $quename_;
 	private $querootdir_;
 
-	function __construct($quename, $params, $throwException)
+	function __construct($params, $throwException)
 	{
 		if (extension_loaded('sfqc_php'))
 		{
-			parent::__construct($quename, $throwException);
+			parent::__construct($throwException);
 
-			if (isset($params['querootdir']))
+			if (is_array($params))
 			{
-				$querootdir_ = $params['querootdir'];
+				$this->querootdir_ = @$params['querootdir'];
+				$this->quename_ = @$params['quename'];
 			}
 		}
 		else
 		{
+			$this->notInitialized_ = true;
+
 			$this->throwException(1010);
 		}
 	}
@@ -219,13 +211,16 @@ class SFQueueClientRemote extends SFQueueClient
 	const CRLF = "\r\n";
 	const LF = "\n";
 
-	private $conn_params;
+	private $conn_params = [];
 
-	function __construct($quename, $params, $throwException)
+	function __construct($params, $throwException)
 	{
-		parent::__construct($quename, $throwException);
+		parent::__construct($throwException);
 
-		$this->conn_params = $params;
+		if (is_array($params))
+		{
+			$this->conn_params = $params;
+		}
 	}
 
 // private:
@@ -322,7 +317,7 @@ class SFQueueClientRemote extends SFQueueClient
 			{
 				$ret = true;
 			}
-			else if ($rc > 20 /* SFQ_RC_FATAL_MIN */)
+			else if ($rc > 21 /* SFQ_RC_FATAL_MIN */)
 			{
 				$this->throwException(2000 + $rc, "native error rc={$rc}");
 			}
@@ -363,7 +358,6 @@ class SFQueueClientRemote extends SFQueueClient
 
 		//
 		$sock = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
-
 
 		socket_connect($sock, $addr, $port);
 
@@ -501,35 +495,35 @@ class SFQueueClientRemote extends SFQueueClient
 
 class SFQueue
 {
-	static function newClient($quename=null, $params=[])
+	static function newClient($params=[])
 	{
 		if (isset($params['host']))
 		{
 			// connect remote host
 
-			return new SFQueueClientRemote($quename, $params, true);
+			return new SFQueueClientRemote($params, true);
 		}
 		else
 		{
 			// connect localhost
 
-			return new SFQueueClientLocal($quename, $params, true);
+			return new SFQueueClientLocal($params, true);
 		}
 	}
 
-	static function newClientNotThrow($quename=null, $params=[])
+	static function newClientNotThrow($params=[])
 	{
 		if (isset($params['host']))
 		{
 			// connect remote host
 
-			return new SFQueueClientRemote($quename, $params, false);
+			return new SFQueueClientRemote($params, false);
 		}
 		else
 		{
 			// connect localhost
 
-			return new SFQueueClientLocal($quename, $params, false);
+			return new SFQueueClientLocal($params, false);
 		}
 	}
 
@@ -641,12 +635,12 @@ EOS;
 			],
 		];
 
-		$etest(SFQueue::newClient(null, $copt));
+		$etest(SFQueue::newClient($copt));
 		echo PHP_EOL;
 
 	// remote (not throw exception)
 
-		$test(SFQueue::newClientNotThrow(null, $copt));
+		$test(SFQueue::newClientNotThrow($copt));
 		echo PHP_EOL;
 	}
 }

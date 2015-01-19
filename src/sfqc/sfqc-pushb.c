@@ -113,7 +113,7 @@ EXIT_LABEL:
 	free(mem);
 	mem = NULL;
 
-	sfqc_push_fault(printmethod, irc, message, pgargs.quiet, __FILE__, jumppos);
+	sfqc_xinetd_fault(printmethod, irc, message, pgargs.quiet, __FILE__, jumppos);
 
 	sfqc_free_program_args(&pgargs);
 

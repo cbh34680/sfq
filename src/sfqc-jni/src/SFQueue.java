@@ -3,27 +3,16 @@ package jp.co.iret.sfq;
 import java.util.HashMap;
 import java.util.Map;
 
+@SuppressWarnings("serial")
 public class SFQueue
 {
 	public static SFQueueClientInterface newClient()
 		throws SFQueueClientException
 	{
-		return newClient(null, new HashMap<String, Object>());
+		return newClient(new HashMap<String, Object>());
 	}
 
 	public static SFQueueClientInterface newClient(Map<String, Object> params)
-		throws SFQueueClientException
-	{
-		return newClient(null, params);
-	}
-
-	public static SFQueueClientInterface newClient(String quename)
-		throws SFQueueClientException
-	{
-		return newClient(quename, new HashMap<String, Object>());
-	}
-
-	public static SFQueueClientInterface newClient(String quename, Map<String, Object> params)
 		throws SFQueueClientException
 	{
 		if (params.containsKey("host"))
@@ -32,7 +21,7 @@ public class SFQueue
 		}
 		else
 		{
-			return new SFQueueClientLocal(quename, params, true);
+			return new SFQueueClientLocal(params, true);
 		}
 	}
 
@@ -87,4 +76,3 @@ o.println("push end");
 		}
 	}
 }
-

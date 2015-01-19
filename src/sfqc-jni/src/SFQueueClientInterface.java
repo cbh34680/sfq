@@ -6,4 +6,3 @@ public interface SFQueueClientInterface
 	public java.util.Map<String, Object> pop() throws SFQueueClientException;
 	public java.util.Map<String, Object> shift() throws SFQueueClientException;
 }
-
