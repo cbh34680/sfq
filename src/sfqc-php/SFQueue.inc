@@ -359,7 +359,6 @@ class SFQueueClientRemote extends SFQueueClient
 		//
 		$sock = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
 
-
 		socket_connect($sock, $addr, $port);
 
 		socket_set_option($sock, SOL_SOCKET, SO_RCVTIMEO, $this->conn_params['timeout']['read']);
@@ -398,8 +397,6 @@ class SFQueueClientRemote extends SFQueueClient
 
 		if (is_array($params))
 		{
-
-
 			$resp = $this->remote_push_($params);
 
 			if ($this->isRemoteSuccess_($resp['header']))
