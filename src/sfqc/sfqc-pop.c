@@ -39,8 +39,6 @@ SFQC_MAIN_ENTER
 	irc = sfq_pop(pgargs.querootdir, pgargs.quename, &val);
 	if (irc != 0)
 	{
-		message = "sfq_pop";
-
 		switch (irc)
 		{
 			case SFQ_RC_W_NOELEMENT:
@@ -48,24 +46,30 @@ SFQC_MAIN_ENTER
 				message = "element does not exist in the queue";
 				break;
 			}
-
 			case SFQ_RC_W_TAKEOUT_STOPPED:
 			{
 				message = "queue is stopped retrieval";
 				break;
 			}
-
+			default:
+			{
+				message = "sfq_pop";
+				break;
+			}
 		}
 
 		jumppos = __LINE__;
 		goto EXIT_LABEL;
 	}
 
-	sfqc_takeout_success(printmethod, &val);
+	sfqc_take_success(printmethod, &val);
 
 EXIT_LABEL:
 
-	sfqc_xinetd_fault(printmethod, irc, message, pgargs.quiet, __FILE__, jumppos);
+	if (message)
+	{
+		sfqc_xinetd_fault(printmethod, irc, message, pgargs.quiet, __FILE__, jumppos);
+	}
 
 	sfq_free_value(&val);
 	sfqc_free_program_args(&pgargs);

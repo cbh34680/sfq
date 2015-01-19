@@ -368,7 +368,7 @@ EXIT_LABEL:
 	}
 }
 
-void sfqc_takeout_success(uint printmethod, const struct sfq_value* val)
+void sfqc_take_success(uint printmethod, const struct sfq_value* val)
 {
 	if (printmethod & SFQC_PRM_ASJSON)
 	{

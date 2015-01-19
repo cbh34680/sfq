@@ -22,7 +22,7 @@
 #
 
 CC       = gcc
-OBJSL    = sfqc-xinetd.o sfqc-push.o sfqc-lib.o sfqc-takeout.o base64.o
+OBJSL    = sfqc-xinetd.o sfqc-push.o sfqc-lib.o sfqc-take.o base64.o
 OBJSE    = sfqc-init.o sfqc-info.o sfqc-list.o sfqc-pusht.o sfqc-pushb.o sfqc-pushx.o sfqc-pop.o sfqc-shift.o sfqc-clear.o sfqc-sets.o
 OBJS     = $(OBJSL) $(OBJSE)
 
@@ -55,7 +55,7 @@ sfqc-push.o: sfqc-push.c
 sfqc-lib.o: sfqc-lib.c
 	$(CC) $(CFLAGSL) $(INCDIRS) -c $<
 
-sfqc-takeout.o: sfqc-takeout.c
+sfqc-take.o: sfqc-take.c
 	$(CC) $(CFLAGSL) $(INCDIRS) -c $<
 
 base64.o: base64.c
