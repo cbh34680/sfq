@@ -106,20 +106,25 @@ int sfqc_xinetd_readdata(struct sfqc_xinetd_data* xd_ptr)
 	size_t nmatch = 0;
 
 /* */
-	bzero(&xd, sizeof(xd));
-
 	bzero(&reg, sizeof(reg));
 	bzero(&matches, sizeof(matches));
 
 	nmatch = sizeof(matches) / sizeof(matches[0]);
 
+#if 0
+xd_ptr には値が設定されているので、xd の初期値としてコピー
+
+	bzero(&xd, sizeof(xd));
+#endif
+	xd = (*xd_ptr);
+
+/* */
 	irc = regcomp(&reg, pattern, REG_EXTENDED | REG_NEWLINE);
 	if (irc != 0)
 	{
 		goto EXIT_LABEL;
 	}
 
-/* */
 	while (cont && fgets(buff, sizeof(buff), stdin))
 	{
 		sfqc_rtrim(buff);
@@ -161,51 +166,49 @@ int sfqc_xinetd_readdata(struct sfqc_xinetd_data* xd_ptr)
 		}
 	}
 
-	if (feof(stdin))
+	if (! feof(stdin))
 	{
-		goto EXIT_LABEL;
-	}
-
-	if (xd.payload_type)
-	{
-		if (xd.payload_len)
+		if (xd.payload_type)
 		{
-			size_t iosize = 0;
-
-			xd.payload = malloc(xd.payload_len + 1);
-			if (! xd.payload)
+			if (xd.payload_len)
 			{
-				goto EXIT_LABEL;
-			}
-			xd.payload[xd.payload_len] = '\0';
+				size_t iosize = 0;
 
-			iosize = fread(xd.payload, xd.payload_len, 1, stdin);
-			if (iosize != 1)
-			{
-				goto EXIT_LABEL;
-			}
+				xd.payload = malloc(xd.payload_len + 1);
+				if (! xd.payload)
+				{
+					goto EXIT_LABEL;
+				}
+				xd.payload[xd.payload_len] = '\0';
 
-			if (xd.payload_type & SFQ_PLT_CHARARRAY)
-			{
-				xd.payload_size = strlen((char*)xd.payload) + 1;
+				iosize = fread(xd.payload, xd.payload_len, 1, stdin);
+				if (iosize != 1)
+				{
+					goto EXIT_LABEL;
+				}
+
+				if (xd.payload_type & SFQ_PLT_CHARARRAY)
+				{
+					xd.payload_size = strlen((char*)xd.payload) + 1;
+				}
+				else
+				{
+					xd.payload_size = xd.payload_len;
+				}
 			}
 			else
 			{
-				xd.payload_size = xd.payload_len;
+/*
+body 部全部を mem, memsize に設定
+*/
 			}
 		}
 		else
 		{
-/*
-body 部全部を mem, memsize に設定
-*/
-		}
-	}
-	else
-	{
-		if (xd.payload_len)
-		{
-			goto EXIT_LABEL;
+			if (xd.payload_len)
+			{
+				goto EXIT_LABEL;
+			}
 		}
 	}
 
@@ -219,6 +222,8 @@ EXIT_LABEL:
 
 	if (rc != 0)
 	{
+		sfqc_free_program_args(&xd.pgargs);
+
 		free(xd.payload);
 		xd.payload = NULL;
 	}

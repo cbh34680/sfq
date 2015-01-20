@@ -96,7 +96,7 @@ SFQC_MAIN_ENTER
 			}
 			default:
 			{
-				message = "sfq_push_text";
+				message = "sfq_push_text() fault";
 				break;
 			}
 		}
@@ -109,12 +109,10 @@ SFQC_MAIN_ENTER
 
 EXIT_LABEL:
 
-	free(mem);
-	mem = NULL;
-
-	sfqc_xinetd_fault(printmethod, irc, message, pgargs.quiet, __FILE__, jumppos);
-
-	sfqc_free_program_args(&pgargs);
+	if (message)
+	{
+		sfqc_xinetd_fault(printmethod, irc, message, pgargs.quiet, __FILE__, jumppos);
+	}
 
 SFQC_MAIN_LEAVE
 

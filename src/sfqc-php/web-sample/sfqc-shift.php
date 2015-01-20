@@ -8,7 +8,7 @@
 <?php
 try
 {
-	$sfqc = SFQueue::newClient('webque-0');
+	$sfqc = SFQueue::newClient([ 'quename' => 'webque-0' ]);
 	$resp = $sfqc->shift();
 }
 catch (Exception $ex)

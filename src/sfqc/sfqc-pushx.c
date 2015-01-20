@@ -1,13 +1,11 @@
 #include "sfqc-lib.h"
 
-static struct sfqc_xinetd_data xd;
+struct sfqc_xinetd_data xd;
 
 static void release_heap()
 {
 	free(xd.payload);
 	xd.payload = NULL;
-
-	xd.payload_size = 0;
 
 	sfqc_free_program_args(&xd.pgargs);
 }
@@ -99,7 +97,7 @@ SFQC_MAIN_ENTER
 			}
 			default:
 			{
-				message = "sfq_push_binary";
+				message = "sfq_push_NN() fault";
 				break;
 			}
 		}
@@ -112,12 +110,10 @@ SFQC_MAIN_ENTER
 
 EXIT_LABEL:
 
-	free(xd.payload);
-	xd.payload = NULL;
-
-	sfqc_xinetd_fault(printmethod, irc, message, xd.pgargs.quiet, __FILE__, jumppos);
-
-	sfqc_free_program_args(&xd.pgargs);
+	if (message)
+	{
+		sfqc_xinetd_fault(printmethod, irc, message, xd.pgargs.quiet, __FILE__, jumppos);
+	}
 
 SFQC_MAIN_LEAVE
 

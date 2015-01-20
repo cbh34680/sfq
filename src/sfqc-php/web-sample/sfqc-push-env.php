@@ -15,7 +15,7 @@ try
 		'serrpath' => '-',
 	];
 
-	$sfqc = SFQueue::newClient('webque-1');
+	$sfqc = SFQueue::newClient([ 'quename' => 'webque-1' ]);
 	$uuid = $sfqc->push_binary($reqv);
 
 	if ($uuid)

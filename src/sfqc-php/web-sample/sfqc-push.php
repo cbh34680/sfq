@@ -13,7 +13,7 @@ try
 		'metatext' => @$_SERVER['REMOTE_ADDR'],
 	];
 
-	$sfqc = SFQueue::newClient('webque-0');
+	$sfqc = SFQueue::newClient([ 'quename' => 'webque-0' ]);
 	$resp = $sfqc->push_text($reqv);
 }
 catch (Exception $ex)

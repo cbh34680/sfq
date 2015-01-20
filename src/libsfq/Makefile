@@ -1,11 +1,14 @@
 
-CC        = gcc
-OBJS      = sfq-fio.o sfq-sem.o sfq-init.o sfq-info.o sfq-prt.o sfq-misc.o sfq-stat.o sfq-push.o sfq-pop.o sfq-shift.o sfq-map.o sfq-clear.o sfq-exec.o sfq-eloop.o sfq-log.o
-TARGET    = libsfq.so
+CC         = gcc
 
-INCDIRS   = -I. -I../inc
-INCFILES  = sfq-lib.h ../inc/sfq.h
-CFLAGSEXT = -O2
+OBJS       = sfq-fio.o sfq-sem.o sfq-init.o sfq-info.o sfq-prt.o sfq-misc.o sfq-stat.o
+OBJS      += sfq-push.o sfq-pop.o sfq-shift.o sfq-map.o sfq-clear.o sfq-exec.o sfq-eloop.o sfq-log.o
+
+TARGET     = libsfq.so
+
+INCDIRS    = -I. -I../inc
+INCFILES   = sfq-lib.h ../inc/sfq.h
+CFLAGSEXT  = -O2
 
 # -Wl,--stack,10485760
 CFLAGS    = -Wall -fPIC -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 $(CFLAGSEXT)

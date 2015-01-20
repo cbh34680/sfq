@@ -9,7 +9,7 @@ include_once("analyticstracking.php");
 
 try
 {
-	$sfqc = SFQueue::newClient('webque-0');
+	$sfqc = SFQueue::newClient([ 'quename' => 'webque-0' ]);
 	$resp = $sfqc->pop();
 }
 catch (Exception $ex)
