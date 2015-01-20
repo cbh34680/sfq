@@ -12,10 +12,18 @@ int main(int argc, char** argv)
 	struct sfqc_program_args pgargs;
 	struct sfq_value val;
 
+#ifdef FROM_XINETD
+	struct sfqc_xinetd_data xd;
+#endif
+
 SFQC_MAIN_ENTER
 
 	bzero(&pgargs, sizeof(pgargs));
 	bzero(&val, sizeof(val));
+
+#ifdef FROM_XINETD
+	bzero(&xd, sizeof(xd));
+#endif
 
 /* */
 	irc = sfqc_parse_program_args(argc, argv, "D:N:p:q", SFQ_false, &pgargs);
@@ -36,6 +44,21 @@ SFQC_MAIN_ENTER
 		goto EXIT_LABEL;
 	}
 
+#ifdef FROM_XINETD
+	xd.pgargs = pgargs;
+
+	irc = sfqc_xinetd_readdata(&xd);
+
+	if (irc != 0)
+	{
+		message = "can't read stdin";
+		jumppos = __LINE__;
+		goto EXIT_LABEL;
+	}
+
+	pgargs = xd.pgargs;
+#endif
+
 	irc = sfq_pop(pgargs.querootdir, pgargs.quename, &val);
 	if (irc != 0)
 	{
@@ -53,7 +76,7 @@ SFQC_MAIN_ENTER
 			}
 			default:
 			{
-				message = "sfq_pop";
+				message = "sfq_pop() fault";
 				break;
 			}
 		}

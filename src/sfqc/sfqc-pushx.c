@@ -97,7 +97,7 @@ SFQC_MAIN_ENTER
 			}
 			default:
 			{
-				message = "sfq_push_binary";
+				message = "sfq_push_NN() fault";
 				break;
 			}
 		}

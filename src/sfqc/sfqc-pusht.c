@@ -96,7 +96,7 @@ SFQC_MAIN_ENTER
 			}
 			default:
 			{
-				message = "sfq_push_text";
+				message = "sfq_push_text() fault";
 				break;
 			}
 		}
