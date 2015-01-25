@@ -76,6 +76,8 @@ SFQC_MAIN_ENTER
 	}
 	else
 	{
+		irc = SFQ_RC_USR_APPERR;
+
 		message = "unknown payload_type";
 		jumppos = __LINE__;
 		goto EXIT_LABEL;
