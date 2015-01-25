@@ -127,7 +127,7 @@ xd_ptr には値が設定されているので、xd の初期値としてコピ�
 
 	while (cont && fgets(buff, sizeof(buff), stdin))
 	{
-		sfqc_rtrim(buff);
+		sfq_rtrim(buff, NULL);
 
 		if (buff[0] == '\0')
 		{

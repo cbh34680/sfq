@@ -72,6 +72,8 @@ enum
 	SFQ_RC_EA_GETREGSEMAPHORE,
 	SFQ_RC_EA_REGSEMAPHORE,
 
+	SFQ_RC_EA_ISNOTDIR,
+
 	SFQ_RC_SYSERR_MIN		= 71,
 	SFQ_RC_ES_MEMALLOC,
 	SFQ_RC_ES_FILEOPEN,
@@ -82,6 +84,7 @@ enum
 	SFQ_RC_ES_STRDUP,
 	SFQ_RC_ES_PIPE,
 	SFQ_RC_ES_DUP,
+
 	SFQ_RC_ES_WRITE,
 	SFQ_RC_ES_MKDIR,
 	SFQ_RC_ES_REALPATH,
@@ -91,6 +94,7 @@ enum
 	SFQ_RC_ES_SIGNAL,
 	SFQ_RC_ES_CLOCKGET,
 	SFQ_RC_ES_FSTAT,
+	SFQ_RC_ES_CHDIR,
 
 	SFQ_RC_DEV_SEMLOCK,
 	SFQ_RC_DEV_SEMUNLOCK,
@@ -159,6 +163,7 @@ typedef sfq_bool (*sfq_map_callback)(ulong order, off_t elm_pos, const struct sf
 
 void sfq_set_print(sfq_bool printOnOff);
 sfq_bool sfq_get_print();
+void sfq_rtrim(char* str, const char* cmask);
 
 int sfq_map(const char* querootdir, const char* quename,
 	sfq_map_callback callback, sfq_bool reverse, void* userdata);

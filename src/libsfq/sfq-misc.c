@@ -970,3 +970,61 @@ char* sfq_alloc_concat_n(int n, ...)
 	return ret;
 }
 
+static sfq_bool is_in(char c, const char* pos)
+{
+	sfq_bool ret = SFQ_false;
+
+	if (pos)
+	{
+		while (*pos)
+		{
+			if (c == (*pos))
+			{
+				ret = SFQ_true;
+				break;
+			}
+
+			pos++;
+		}
+	}
+
+	return ret;
+}
+
+void sfq_rtrim(char* str, const char* cmask)
+{
+	char* pos = NULL;
+
+	if (! str)
+	{
+		return;
+	}
+
+	pos = &str[strlen(str)];
+
+	do
+	{
+		pos--;
+
+		if (cmask && cmask[0])
+		{
+			if (is_in(*pos, cmask))
+			{
+				(*pos) = '\0';
+				continue;
+			}
+		}
+		else
+		{
+			if (isspace(*pos))
+			{
+				(*pos) = '\0';
+				continue;
+			}
+		}
+
+		break;
+	}
+	while (pos != str);
+}
+

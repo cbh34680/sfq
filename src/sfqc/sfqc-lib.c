@@ -1,25 +1,5 @@
 #include "sfqc-lib.h"
 
-void sfqc_rtrim(char* p)
-{
-	char* pos = &p[strlen(p)];
-
-	do
-	{
-		pos--;
-
-		if (isspace(*pos))
-		{
-			(*pos) = '\0';
-		}
-		else
-		{
-			break;
-		}
-	}
-	while (pos != p);
-}
-
 static void to_camelcase(char* p)
 {
 	char* pos = p;
