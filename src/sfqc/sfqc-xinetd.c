@@ -97,7 +97,7 @@ int sfqc_xinetd_readdata(struct sfqc_xinetd_data* xd_ptr)
 	char buff[8192];
 	sfq_bool cont = SFQ_true;
 
-	const char* pattern = "^\\s*([^:[:blank:]]+)\\s*:\\s*(\\S+)\\s*$";
+	const char* pattern = "^\\s*([^:[:blank:]]+)\\s*:\\s*(.*)$";
 
 	struct sfqc_xinetd_data xd;
 

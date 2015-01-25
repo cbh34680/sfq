@@ -265,7 +265,7 @@ class SFQueueClientRemote extends SFQueueClient
 		return $ret;
 	}
 
-	private function isRemoteSuccess_($arg)
+	private function isRemoteSuccess_($resp)
 	{
 		$ret = false;
 
@@ -275,12 +275,12 @@ class SFQueueClientRemote extends SFQueueClient
 		}
 		else
 		{
-			if (! isset($arg['result_code']))
+			if (! isset($resp['header']['result_code']))
 			{
 				$this->throwException(1050);
 			}
 
-			$rc = intval($arg['result_code']);
+			$rc = intval($resp['header']['result_code']);
 
 			if ($rc == 0 /* SFQ_RC_SUCCESS */)
 			{
@@ -288,7 +288,13 @@ class SFQueueClientRemote extends SFQueueClient
 			}
 			else if ($rc > 21 /* SFQ_RC_FATAL_MIN */)
 			{
-				$this->throwException(2000 + $rc, "native error rc={$rc}");
+				$msg = "* Un-Known *";
+				if (isset($resp['header']['error_message']))
+				{
+					$msg = $resp['header']['error_message'];
+				}
+
+				$this->throwException(2000 + $rc, sprintf("remote error rc=%d msg=[%s]", $rc, $msg));
 			}
 		}
 
@@ -319,15 +325,15 @@ class SFQueueClientRemote extends SFQueueClient
 
 				foreach (explode(self::LF, $header_text) as $line)
 				{
-					if (! preg_match('/^\\s*([^:[:blank:]]+)\\s*:\\s*(\\S+)\\s*$/', trim($line), $matches))
+					if (! preg_match('/^\\s*([^:[:blank:]]+)\\s*:\\s*(.*)$/', trim($line), $matches))
 					{
 						continue;
 					}
 
 					list($all, $key, $val) = $matches;
 
-					$key = str_replace('-', '_', $key);
-					$header[$key] = $val;
+					$key = str_replace('-', '_', trim($key));
+					$header[$key] = trim($val);
 				}
 			}
 
@@ -430,7 +436,7 @@ class SFQueueClientRemote extends SFQueueClient
 		{
 			$resp = $this->remote_io('push', $params);
 
-			if ($this->isRemoteSuccess_($resp['header']))
+			if ($this->isRemoteSuccess_($resp))
 			{
 				return $resp['header']['uuid'];
 			}
@@ -449,7 +455,7 @@ class SFQueueClientRemote extends SFQueueClient
 
 		$resp = $this->remote_io($opname);
 
-		if ($this->isRemoteSuccess_($resp['header']))
+		if ($this->isRemoteSuccess_($resp))
 		{
 			$ret = $resp['header'];
 			$ret['payload'] = $resp['body'];
