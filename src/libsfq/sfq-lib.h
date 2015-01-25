@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <ctype.h>
 #include <limits.h>
 #include <sys/stat.h>        /* For mode constants */
 #include <assert.h>
@@ -106,12 +107,14 @@
 	int fire_line__  = -1; \
 	int fire_rc__ = SFQ_RC_UNKNOWN; \
 	int fire_errno__ = 0; \
-	char fire_reason__[128] = "";
+	char fire_reason__[128] = ""; \
+	sfq_trc_enter(__FILE__, __LINE__, __func__);
 
 
 #define SFQ_LIB_CHECKPOINT \
 	fire_rc__ = SFQ_RC_SUCCESS; \
-SFQ_FAIL_CATCH_LABEL__:
+SFQ_FAIL_CATCH_LABEL__: \
+	sfq_trc_leave(__FILE__, __LINE__, __func__, fire_rc__, fire_reason__);
 
 
 
@@ -170,6 +173,7 @@ SFQ_FAIL_CATCH_LABEL__:
  */
 #define SFQ_ENTP_ENTER \
 \
+	sfq_trc_open(); \
 SFQ_LIB_ENTER \
 	errno = 0;
 
@@ -178,6 +182,22 @@ SFQ_LIB_ENTER \
 \
 SFQ_LIB_LEAVE
 
+
+/* --------------------------------------------------------------
+ *
+ *
+ */
+#ifdef SFQ_TRACE_FILE
+	void sfq_trc_open();
+	void sfq_trc_enter(const char* file, int line, const char* func);
+	void sfq_trc_leave(const char* file, int line, const char* func, int rc, const char* msg);
+	void sfq_trc_close();
+#else
+	#define sfq_trc_open()
+	#define sfq_trc_enter(a, b, c)
+	#define sfq_trc_leave(a, b, c, d, e)
+	#define sfq_trc_close()
+#endif
 
 
 /* --------------------------------------------------------------

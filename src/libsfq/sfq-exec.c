@@ -151,9 +151,11 @@ fprintf(stderr, "\tsoutpath == serrpath [%s], redirect stderr to /dev/null\n", s
 static int child_write_dup_exec_exit(const struct sfq_eloop_params* elop, struct sfq_value* val)
 {
 SFQ_LIB_ENTER
+	const char* eworkdir = "/";
 	const char* execpath = "/bin/sh";
 	char* execargs = NULL;
 
+	int irc = -1;
 	int* pipefd = NULL;
 
 	char env_ulong[32] = "";
@@ -166,6 +168,18 @@ payload 以外はスタックにコピー
 payload は pipe 経由で送信
 */
 fprintf(stderr, "\tprepare exec\n");
+
+	if (val->eworkdir)
+	{
+		eworkdir = val->eworkdir;
+	}
+
+	irc = chdir(eworkdir);
+	if (irc != 0)
+	{
+		SFQ_FAIL(ES_CHDIR, "change dir to '%s'", eworkdir);
+	}
+fprintf(stderr, "\t\tchdir = %s\n", eworkdir);
 
 	if (val->execpath)
 	{
@@ -291,7 +305,9 @@ int sfq_execwait(const struct sfq_eloop_params* elop, struct sfq_value* val)
 		signal(SIGQUIT, SIG_DFL);
 
 		umask(0);
+/*
 		chdir("/");
+*/
 
 		child_write_dup_exec_exit(elop, val);
 

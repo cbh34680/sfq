@@ -5,12 +5,11 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <ctype.h>
 #include <limits.h>
 #include <sys/stat.h>
 #include <assert.h>
 #include <stdarg.h>
-
-#include <ctype.h>
 
 #ifdef WIN32
 	#include "win32-dummy-build.h"

@@ -17,7 +17,7 @@ SFQ_ENTP_ENTER
 	struct sfq_queue_object* qo = NULL;
 	struct sfq_process_info* procs = NULL;
 
-	char* cwd = NULL;
+	char* eworkdir = NULL;
 	char* full_soutpath = NULL;
 	char* full_serrpath = NULL;
 
@@ -26,6 +26,7 @@ SFQ_ENTP_ENTER
 	int slotno = -1;
 	off_t elm_pos = 0;
 	questate_t questate = 0;
+	int irc = -1;
 
 	off_t IfPush_next_elmpos = 0;
 	off_t IfPush_elm_end_pos = 0;
@@ -39,13 +40,6 @@ SFQ_ENTP_ENTER
 	bzero(&prev_eh, sizeof(prev_eh));
 	sfq_init_ioeb(&ioeb);
 
-/* get current directory */
-	cwd = getcwd(NULL, 0);
-	if (! cwd)
-	{
-		SFQ_FAIL(ES_GETCWD, "getcwd");
-	}
-
 /* check argument */
 	if (! val)
 	{
@@ -57,11 +51,46 @@ str[0] == '\0' のときは str に NULL を設定
 
 --> 空文字列は存在しない状態にする
 */
+	STR_SET_NULL_IFEMPTY(val->eworkdir);
 	STR_SET_NULL_IFEMPTY(val->execpath);
 	STR_SET_NULL_IFEMPTY(val->execargs);
 	STR_SET_NULL_IFEMPTY(val->metatext);
 	STR_SET_NULL_IFEMPTY(val->soutpath);
 	STR_SET_NULL_IFEMPTY(val->serrpath);
+
+/* get current directory */
+	if (val->eworkdir)
+	{
+		struct stat stbuf;
+
+		irc = stat(val->eworkdir, &stbuf);
+		if (irc != 0)
+		{
+			SFQ_FAIL(EA_PATHNOTEXIST, "dir not exist '%s'", val->eworkdir);
+		}
+
+		if (! S_ISDIR(stbuf.st_mode))
+		{
+			SFQ_FAIL(EA_ISNOTDIR, "'%s' is not dir", val->eworkdir);
+		}
+
+		eworkdir = strdup(val->eworkdir);
+		if (! eworkdir)
+		{
+			SFQ_FAIL(ES_STRDUP, "eworkdir");
+		}
+	}
+
+	if (! eworkdir)
+	{
+		eworkdir = getcwd(NULL, 0);
+		if (! eworkdir)
+		{
+			SFQ_FAIL(ES_GETCWD, "getcwd");
+		}
+	}
+
+	sfq_rtrim(eworkdir, "/");
 
 /*
 ログ関連は相対パスから絶対パスに変換
@@ -70,10 +99,10 @@ str[0] == '\0' のときは str に NULL を設定
 	{
 		if ((val->soutpath[0] != '/') && (strcmp(val->soutpath, "-") != 0))
 		{
-			full_soutpath = sfq_alloc_concat_n(3, cwd, "/", val->soutpath);
+			full_soutpath = sfq_alloc_concat_n(3, eworkdir, "/", val->soutpath);
 			if (! full_soutpath)
 			{
-				SFQ_FAIL(EA_CONCAT_N, "cwd/soutpath");
+				SFQ_FAIL(EA_CONCAT_N, "eworkdir/soutpath");
 			}
 
 			val->soutpath = full_soutpath;
@@ -84,10 +113,10 @@ str[0] == '\0' のときは str に NULL を設定
 	{
 		if ((val->serrpath[0] != '/') && (strcmp(val->serrpath, "-") != 0))
 		{
-			full_serrpath = sfq_alloc_concat_n(3, cwd, "/", val->serrpath);
+			full_serrpath = sfq_alloc_concat_n(3, eworkdir, "/", val->serrpath);
 			if (! full_serrpath)
 			{
-				SFQ_FAIL(EA_CONCAT_N, "cwd/serrpath");
+				SFQ_FAIL(EA_CONCAT_N, "eworkdir/serrpath");
 			}
 
 			val->serrpath = full_serrpath;
@@ -370,8 +399,8 @@ id, pushtime, uuid はここで生成する
 
 SFQ_LIB_CHECKPOINT
 
-	free(cwd);
-	cwd = NULL;
+	free(eworkdir);
+	eworkdir = NULL;
 
 	free(full_soutpath);
 	full_soutpath = NULL;

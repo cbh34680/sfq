@@ -3,6 +3,7 @@ CC         = gcc
 
 OBJS       = sfq-fio.o sfq-sem.o sfq-init.o sfq-info.o sfq-prt.o sfq-misc.o sfq-stat.o
 OBJS      += sfq-push.o sfq-pop.o sfq-shift.o sfq-map.o sfq-clear.o sfq-exec.o sfq-eloop.o sfq-log.o
+OBJS      += sfq-trc.o
 
 TARGET     = libsfq.so
 
@@ -32,6 +33,16 @@ clean:
 debug:
 	make clean
 	make "CFLAGSEXT=-g -O0 -DSFQ_DEBUG_BUILD"
+
+#
+# [注意]
+#
+# トレースファイルはロックされないので複数プロセス & 複数スレッド
+# からライブラリを呼び出さないこと
+#
+trace:
+	make clean
+	make "CFLAGSEXT=-DSFQ_TRACE_FILE=\\\"/tmp/sfq-trace.log\\\""
 
 #
 
