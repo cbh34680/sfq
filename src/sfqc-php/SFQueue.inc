@@ -23,6 +23,7 @@ class SFQueueClientException extends Exception
 		1040	=> 'illegal argument type exception',
 		1050	=> 'unknown error',
 		1060	=> 'socket io error',
+		1070	=> 'resolv host-address error',
 	];
 
 	function __construct($code, $mesg=null)
@@ -220,10 +221,12 @@ class SFQueueClientRemote extends SFQueueClient
 
 	function __construct($params, $throwException)
 	{
-		if (is_array($params))
+		if (! is_array($params))
 		{
-			$this->conn_params = $params;
+			throw new SFQueueClientException(1040);
 		}
+
+		$this->conn_params = $params;
 	}
 
 // private:
@@ -231,27 +234,29 @@ class SFQueueClientRemote extends SFQueueClient
 	{
 		$ret = false;
 
-		if ($arg)
+		if (! $arg)
 		{
-			//
-			// 必要なら IP アドレスに書き換え
-			//
-			if ($arg === 'localhost')
-			{
-				return '127.0.0.1';
-			}
+			throw new SFQueueClientException(1040);
+		}
 
-			if (! preg_match('/\A[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\Z/', $arg))
+		//
+		// 必要なら IP アドレスに書き換え
+		//
+		if ($arg === 'localhost')
+		{
+			$ret = '127.0.0.1';
+		}
+		else if (! preg_match('/\A[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\Z/', $arg))
+		{
+			$addr = gethostbyname($arg);
+			if ($addr == $arg)
 			{
-				$addr = gethostbyname($arg);
-				if ($addr == $arg)
-				{
-					// error
-				}
-				else
-				{
-					$ret = $addr;
-				}
+				// error
+				throw new SFQueueClientException(1070);
+			}
+			else
+			{
+				$ret = $addr;
 			}
 		}
 
