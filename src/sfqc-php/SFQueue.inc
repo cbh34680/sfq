@@ -266,7 +266,7 @@ class SFQueueClientRemote extends SFQueueClient
 	private static function parse_response($arg)
 	{
 		//
-		$header = [];
+		$ret = [];
 		$body = null;
 
 		$sep_offset = strpos($arg, self::CRLF . self::CRLF);
@@ -277,7 +277,7 @@ class SFQueueClientRemote extends SFQueueClient
 
 		if ($sep_offset === false)
 		{
-			$ret['body'] = $arg;
+			$body = $arg;
 		}
 		else
 		{
@@ -295,14 +295,19 @@ class SFQueueClientRemote extends SFQueueClient
 					list($all, $key, $val) = $matches;
 
 					$key = str_replace('-', '_', trim($key));
-					$header[$key] = trim($val);
+					$ret[$key] = trim($val);
 				}
 			}
 
 			$body = substr($arg, $sep_offset + 4);
 		}
 
-		return [ 'header' => $header, 'body' => $body ];
+		if ($body)
+		{
+			$ret['payload'] = $body;
+		}
+
+		return $ret;
 	}
 
 	function remote_io($opname, $params=[])
@@ -460,12 +465,12 @@ class SFQueueClientRemote extends SFQueueClient
 	{
 		$ret = false;
 
-		if (! isset($resp['header']['result_code']))
+		if (! isset($resp['result_code']))
 		{
 			throw new SFQueueClientException(1050);
 		}
 
-		$rc = intval($resp['header']['result_code']);
+		$rc = intval($resp['result_code']);
 
 		if ($rc == 0 /* SFQ_RC_SUCCESS */)
 		{
@@ -474,9 +479,9 @@ class SFQueueClientRemote extends SFQueueClient
 		else
 		{
 			$msg = "* Un-Known *";
-			if (isset($resp['header']['error_message']))
+			if (isset($resp['error_message']))
 			{
-				$msg = $resp['header']['error_message'];
+				$msg = $resp['error_message'];
 			}
 
 			$this->lastError($rc);
@@ -505,7 +510,7 @@ class SFQueueClientRemote extends SFQueueClient
 		$resp = $this->remote_io('push', $params);
 		if ($this->isDataOrThrow($resp))
 		{
-			$ret = $resp['header']['uuid'];
+			$ret = $resp['uuid'];
 		}
 
 		return $ret;
@@ -525,8 +530,7 @@ class SFQueueClientRemote extends SFQueueClient
 		$resp = $this->remote_io($opname, $params);
 		if ($this->isDataOrThrow($resp))
 		{
-			$ret = $resp['header'];
-			$ret['payload'] = $resp['body'];
+			$ret = $resp;
 		}
 
 		return $ret;
