@@ -32,14 +32,13 @@ System.out.println(javaLibPath);
 	static boolean dll_loaded;
 	static Throwable ta_;
 
+	boolean nativeError_ = false;
 	String querootdir_;
 	String quename_;
 
 	SFQueueClientLocal(Map<String, Object> params, boolean throwException)
 		throws SFQueueClientException
 	{
-		super(throwException);
-
 		if (dll_loaded)
 		{
 			querootdir_ = (String)params.get("querootdir");
@@ -47,78 +46,92 @@ System.out.println(javaLibPath);
 		}
 		else
 		{
-			throwException(1010, ta_.getMessage());
+			nativeError_ = true;
+
+			throw new SFQueueClientException(1010, ta_.getMessage());
 		}
 	}
 
+	@Override
 	public String push(Map<String, Object> arg) throws SFQueueClientException
 	{
+		String ret = null;
+
 		clearLastError();
 
-		if (notInitialized_)
+		if (nativeError_)
 		{
-			throwException(1020);
+			throw new SFQueueClientException(1020);
+		}
+
+		HashMap<String, Object> params = new HashMap<>(arg);
+		int rc = wrap_sfq_push(querootdir_, quename_, params);
+
+		if (rc == SFQ_RC_SUCCESS)
+		{
+			Object uuid = params.get("uuid");
+			if (! (uuid instanceof String))
+			{
+				throw new SFQueueClientException(3010);
+			}
+
+			ret = (String)uuid;
 		}
 		else
 		{
-			HashMap<String, Object> params = new HashMap<>(arg);
+			setLastError(rc);
+			setLastMessage("native error rc={" + rc + "}");
 
-			int rc = wrap_sfq_push(querootdir_, quename_, params);
-
-			if (rc == SFQ_RC_SUCCESS)
+			if (rc >= SFQ_RC_FATAL_MIN)
 			{
-				Object uuid = params.get("uuid");
-				if (uuid instanceof String)
-				{
-					return (String)uuid;
-				}
-
-				throwException(3010);
-			}
-			else if (rc > SFQ_RC_FATAL_MIN)
-			{
-				throwException(2000 + rc, "native error rc={" + rc + "}");
+				throw new SFQueueClientException(2000 + rc, "native error rc={" + rc + "}");
 			}
 		}
 
-		return null;
+		return ret;
 	}
 
-	private Map<String, Object> native_takeout_(String funcname) throws SFQueueClientException
+	private Map<String, Object> native_takeout(String funcname) throws SFQueueClientException
 	{
+		Map<String, Object> ret = null;
+
 		clearLastError();
 
-		if (notInitialized_)
+		if (nativeError_)
 		{
-			throwException(1020);
+			throw new SFQueueClientException(1020);
+		}
+
+		HashMap<String, Object> params = new HashMap<>();
+		int rc = warp_sfq_takeout(querootdir_, quename_, params, funcname);
+
+		if (rc == SFQ_RC_SUCCESS)
+		{
+			ret = params;
 		}
 		else
 		{
-			HashMap<String, Object> params = new HashMap<>();
+			setLastError(rc);
+			setLastMessage("native error rc={" + rc + "}");
 
-			int rc = warp_sfq_takeout(querootdir_, quename_, params, funcname);
-
-			if (rc == SFQ_RC_SUCCESS)
+			if (rc >= SFQ_RC_FATAL_MIN)
 			{
-				return params;
-			}
-			else if (rc > SFQ_RC_FATAL_MIN)
-			{
-				throwException(2000 + rc, "native error rc={" + rc + "}");
+				throw new SFQueueClientException(2000 + rc, "native error rc={" + rc + "}");
 			}
 		}
 
-		return null;
+		return ret;
 	}
 
-	public Map<String, Object> pop() throws SFQueueClientException
+	@Override
+	public Map<String, Object> pop(Map<String, Object> param) throws SFQueueClientException
 	{
-		return native_takeout_("sfq_pop");
+		return native_takeout("sfq_pop");
 	}
 
-	public Map<String, Object> shift() throws SFQueueClientException
+	@Override
+	public Map<String, Object> shift(Map<String, Object> param) throws SFQueueClientException
 	{
-		return native_takeout_("sfq_shift");
+		return native_takeout("sfq_shift");
 	}
-
 }
