@@ -1,5 +1,6 @@
 package jp.co.iret.sfq;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public abstract class SFQueueClient implements SFQueueClientInterface
@@ -10,7 +11,7 @@ public abstract class SFQueueClient implements SFQueueClientInterface
 	int lastError_ = 0;
 	String lastMessage_ = "";
 
-	public void setLastError(int arg)
+	public void setLastError(final int arg)
 	{
 		lastError_ = arg;
 	}
@@ -39,11 +40,11 @@ public abstract class SFQueueClient implements SFQueueClientInterface
 	@Override
 	public Map<String, Object> pop() throws SFQueueClientException
 	{
-		return pop(null);
+		return pop(new HashMap<>());
 	}
 	@Override
 	public Map<String, Object> shift() throws SFQueueClientException
 	{
-		return shift(null);
+		return shift(new HashMap<>());
 	}
 }

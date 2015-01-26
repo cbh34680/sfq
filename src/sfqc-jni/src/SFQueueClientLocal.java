@@ -19,9 +19,9 @@ public class SFQueueClientLocal extends SFQueueClient
 
 			dll_loaded = true;
 		}
-		catch (Throwable ta)
+		catch (final Throwable ta)
 		{
-String javaLibPath = System.getProperty("java.library.path");
+final String javaLibPath = System.getProperty("java.library.path");
 System.out.println(javaLibPath);
 			ta_ = ta;
 			dll_loaded = false;
@@ -36,24 +36,23 @@ System.out.println(javaLibPath);
 	String querootdir_;
 	String quename_;
 
-	SFQueueClientLocal(Map<String, Object> params, boolean throwException)
+	SFQueueClientLocal(final Map<String, Object> params)
 		throws SFQueueClientException
 	{
-		if (dll_loaded)
-		{
-			querootdir_ = (String)params.get("querootdir");
-			quename_ = (String)params.get("quename");
-		}
-		else
+		if (! dll_loaded)
 		{
 			nativeError_ = true;
 
 			throw new SFQueueClientException(1010, ta_.getMessage());
 		}
+
+		//
+		querootdir_ = (String)params.get("querootdir");
+		quename_ = (String)params.get("quename");
 	}
 
 	@Override
-	public String push(Map<String, Object> arg) throws SFQueueClientException
+	public String push(final Map<String, Object> arg) throws SFQueueClientException
 	{
 		String ret = null;
 
@@ -64,12 +63,12 @@ System.out.println(javaLibPath);
 			throw new SFQueueClientException(1020);
 		}
 
-		HashMap<String, Object> params = new HashMap<>(arg);
-		int rc = wrap_sfq_push(querootdir_, quename_, params);
+		final HashMap<String, Object> params = new HashMap<>(arg);
+		final int rc = wrap_sfq_push(querootdir_, quename_, params);
 
 		if (rc == SFQ_RC_SUCCESS)
 		{
-			Object uuid = params.get("uuid");
+			final Object uuid = params.get("uuid");
 			if (! (uuid instanceof String))
 			{
 				throw new SFQueueClientException(3010);
@@ -91,7 +90,7 @@ System.out.println(javaLibPath);
 		return ret;
 	}
 
-	private Map<String, Object> native_takeout(String funcname) throws SFQueueClientException
+	private Map<String, Object> native_takeout(final String funcname) throws SFQueueClientException
 	{
 		Map<String, Object> ret = null;
 
@@ -102,8 +101,8 @@ System.out.println(javaLibPath);
 			throw new SFQueueClientException(1020);
 		}
 
-		HashMap<String, Object> params = new HashMap<>();
-		int rc = warp_sfq_takeout(querootdir_, quename_, params, funcname);
+		final HashMap<String, Object> params = new HashMap<>();
+		final int rc = warp_sfq_takeout(querootdir_, quename_, params, funcname);
 
 		if (rc == SFQ_RC_SUCCESS)
 		{
@@ -124,13 +123,13 @@ System.out.println(javaLibPath);
 	}
 
 	@Override
-	public Map<String, Object> pop(Map<String, Object> param) throws SFQueueClientException
+	public Map<String, Object> pop(final Map<String, Object> param) throws SFQueueClientException
 	{
 		return native_takeout("sfq_pop");
 	}
 
 	@Override
-	public Map<String, Object> shift(Map<String, Object> param) throws SFQueueClientException
+	public Map<String, Object> shift(final Map<String, Object> param) throws SFQueueClientException
 	{
 		return native_takeout("sfq_shift");
 	}
