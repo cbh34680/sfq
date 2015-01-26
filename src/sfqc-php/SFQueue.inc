@@ -93,8 +93,6 @@ class SFQueueClientLocal extends SFQueueClient
 	{
 		if (extension_loaded('sfqc_php'))
 		{
-			$this->nativeError_ = false;
-
 			if (is_array($params))
 			{
 				$this->querootdir_ = @$params['querootdir'];
