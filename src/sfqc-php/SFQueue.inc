@@ -9,7 +9,7 @@ interface SFQueueClientInterface
 	public function shift($params);
 }
 
-// ---------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------
 //
 
 class SFQueueClientException extends Exception
@@ -46,7 +46,7 @@ class SFQueueClientException extends Exception
 	}
 }
 
-// ---------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------
 //
 
 abstract class SFQueueClient implements SFQueueClientInterface
@@ -79,7 +79,7 @@ abstract class SFQueueClient implements SFQueueClientInterface
 	}
 }
 
-// ---------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------
 //
 
 class SFQueueClientLocal extends SFQueueClient
@@ -208,7 +208,7 @@ class SFQueueClientLocal extends SFQueueClient
 	}
 }
 
-// ---------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------
 //
 
 class SFQueueClientRemote extends SFQueueClient
@@ -559,7 +559,7 @@ class SFQueueClientRemote extends SFQueueClient
 	}
 }
 
-// ---------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------
 //
 
 class SFQueue
