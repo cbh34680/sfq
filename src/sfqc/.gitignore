@@ -18,9 +18,11 @@
 /sfqc-pop
 /sfqc-pushb
 /sfqc-pusht
-/sfqc-pushx
 /sfqc-shift
 /sfqc-sets
+/sfqc-pushx
+/sfqc-popx
+/sfqc-shiftx
 /?.c
 /?.php
 /vchk

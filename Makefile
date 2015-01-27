@@ -1,7 +1,9 @@
 
-BASEI = include/sfq.h
-BASEL = lib/libsfq.so lib/libsfqc.so
-BASEX = bin/sfqc-init bin/sfqc-info bin/sfqc-list bin/sfqc-pusht bin/sfqc-pushb bin/sfqc-pop bin/sfqc-shift bin/sfqc-clear bin/sfqc-sets
+BASEI  = include/sfq.h
+BASEL  = lib/libsfq.so lib/libsfqc.so
+BASEX  = bin/sfqc-init bin/sfqc-info bin/sfqc-list bin/sfqc-pusht bin/sfqc-pushb 
+BASEX += bin/sfqc-pop bin/sfqc-shift bin/sfqc-clear bin/sfqc-sets
+BASEX += bin/sfqc-pushx bin/sfqc-popx bin/sfqc-shiftx
 
 EXTNL = lib/sfqc-jni.jar lib/libsfqc-jni.so
 
@@ -69,6 +71,17 @@ bin/sfqc-clear: src/sfqc/sfqc-clear
 bin/sfqc-sets: src/sfqc/sfqc-sets
 	cd src/sfqc/; make $(MAKEOPT); cp -p sfqc-sets ../../bin/sfqc-sets
 
+#
+bin/sfqc-pushx: src/sfqc/sfqc-pushx
+	cd src/sfqc/; make $(MAKEOPT); cp -p sfqc-pushx ../../bin/sfqc-pushx
+
+bin/sfqc-popx: src/sfqc/sfqc-popx
+	cd src/sfqc/; make $(MAKEOPT); cp -p sfqc-popx ../../bin/sfqc-popx
+
+bin/sfqc-shiftx: src/sfqc/sfqc-shiftx
+	cd src/sfqc/; make $(MAKEOPT); cp -p sfqc-shiftx ../../bin/sfqc-shiftx
+
+#
 debug:
 	make clean
 	make "MAKEOPT=debug"
