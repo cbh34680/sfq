@@ -854,7 +854,7 @@ SFQ_LIB_LEAVE
 	}
 
 /*
-printf("[%.*s] %zu\n", (int)ioeb->eh.key_ ## _size, key_, (size_t)ioeb->eh.key_ ## _size); \
+# printf("[%.*s] %zu\n", (int)ioeb->eh.key_ ## _size, key_, (size_t)ioeb->eh.key_ ## _size); \
 */
 
 sfq_bool sfq_readelm_alloc(struct sfq_queue_object* qo, off_t seek_pos, struct sfq_ioelm_buff* ioeb)
