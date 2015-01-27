@@ -352,14 +352,12 @@ class SFQueueClientRemote extends SFQueueClient
 			$addr = self::hostname2addr($host);
 
 			//
-			if (isset($this->conn_params['querootdir']))
+			foreach ([ 'querootdir', 'quename', 'eworkdir' ] as $copyKey)
 			{
-				$params['querootdir'] = $this->conn_params['querootdir'];
-			}
-
-			if (isset($this->conn_params['quename']))
-			{
-				$params['quename'] = $this->conn_params['quename'];
+				if (isset($this->conn_params[$copyKey]))
+				{
+					$params[$copyKey] = $this->conn_params[$copyKey];
+				}
 			}
 
 			$body = null;
