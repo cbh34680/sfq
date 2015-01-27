@@ -27,7 +27,7 @@ SFQ_LIB_ENTER
 	b = sfq_readqfh(qo, &qfh, NULL);
 	if (! b)
 	{
-		SFQ_FAIL(EA_READQFH, "sfq_readqfh");
+		SFQ_FAIL(EA_QFHRW, "sfq_readqfh");
 	}
 
 	(*questate_ptr) = qfh.qh.dval.questate;
@@ -81,13 +81,13 @@ SFQ_LIB_ENTER
 		{
 			if (errno != ENOENT)
 			{
-				SFQ_FAIL(ES_UNLINK,
+				SFQ_FAIL(ES_FILE,
 					"delete semaphore fault, check permission (e.g. /dev/shm%s)",
 					om->semname);
 			}
 		}
 
-		SFQ_FAIL(DEV_SEMUNLOCK, "success unlock semaphore [%s] (for develop)\n", om->semname);
+		SFQ_FAIL(ES_SEMAPHORE, "success unlock semaphore [%s] (for develop)\n", om->semname);
 	}
 
 /* open queue */
@@ -108,14 +108,14 @@ SFQ_LIB_ENTER
 */
 		forceLeakQueue = SFQ_true;
 
-		SFQ_FAIL(DEV_SEMLOCK, "success lock semaphore [%s] (for develop)\n", qo->om->semname);
+		SFQ_FAIL(ES_SEMAPHORE, "success lock semaphore [%s] (for develop)\n", qo->om->semname);
 	}
 
 /* read queue header */
 	b = sfq_readqfh(qo, &qfh, &procs);
 	if (! b)
 	{
-		SFQ_FAIL(EA_READQFH, "sfq_readqfh");
+		SFQ_FAIL(EA_QFHRW, "sfq_readqfh");
 	}
 
 /* update state */
@@ -161,7 +161,7 @@ exec が OFF から ON に変わった
 	b = sfq_writeqfh(qo, &qfh, procs, "SET");
 	if (! b)
 	{
-		SFQ_FAIL(EA_WRITEQFH, "sfq_writeqfh");
+		SFQ_FAIL(EA_QFHRW, "sfq_writeqfh");
 	}
 
 SFQ_LIB_CHECKPOINT

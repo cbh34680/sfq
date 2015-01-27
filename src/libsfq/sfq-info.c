@@ -29,7 +29,7 @@ SFQ_ENTP_ENTER
 	b = sfq_readqfh(qo, &qfh, &procs);
 	if (! b)
 	{
-		SFQ_FAIL(EA_READQFH, "sfq_readqfh");
+		SFQ_FAIL(EA_QFHRW, "sfq_readqfh");
 	}
 
 /* print queue header */

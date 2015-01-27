@@ -24,7 +24,7 @@ SFQ_ENTP_ENTER
 	b = sfq_readqfh(qo, &qfh, NULL);
 	if (! b)
 	{
-		SFQ_FAIL(EA_READQFH, "sfq_readqfh");
+		SFQ_FAIL(EA_QFHRW, "sfq_readqfh");
 	}
 
 	sfq_qh_init_pos(&qfh.qh);
@@ -33,7 +33,7 @@ SFQ_ENTP_ENTER
 	b = sfq_writeqfh(qo, &qfh, NULL, "CLR");
 	if (! b)
 	{
-		SFQ_FAIL(EA_WRITEQFH, "sfq_writeqfh");
+		SFQ_FAIL(EA_QFHRW, "sfq_writeqfh");
 	}
 
 //#ifdef SFQ_DEBUG_BUILD

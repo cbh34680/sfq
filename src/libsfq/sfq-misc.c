@@ -83,7 +83,7 @@ SFQ_LIB_ENTER
 	buf = alloca(bufsize);
 	if (! buf)
 	{
-		SFQ_FAIL(ES_MEMALLOC, "ALLOC(buf)");
+		SFQ_FAIL(ES_MEMORY, "ALLOC(buf)");
 	}
 
 /* usrid */
@@ -95,7 +95,7 @@ SFQ_LIB_ENTER
 		getpwuid_r(usrid, &pwd, buf, bufsize, &result);
 		if (! result)
 		{
-			SFQ_FAIL(ES_MEMALLOC, "specified uid not found");
+			SFQ_FAIL(ES_MEMORY, "specified uid not found");
 		}
 
 		if (usrnam_ptr)
@@ -103,7 +103,7 @@ SFQ_LIB_ENTER
 			usrnam = strdup(pwd.pw_name);
 			if (! usrnam)
 			{
-				SFQ_FAIL(ES_MEMALLOC, "strdup(pw_name)");
+				SFQ_FAIL(ES_MEMORY, "strdup(pw_name)");
 			}
 
 			(*usrnam_ptr) = usrnam;
@@ -119,7 +119,7 @@ SFQ_LIB_ENTER
 		getgrgid_r(grpid, &grp, buf, bufsize, &result);
 		if (! result)
 		{
-			SFQ_FAIL(ES_MEMALLOC, "specified gid not found");
+			SFQ_FAIL(ES_MEMORY, "specified gid not found");
 		}
 
 		if (grpnam_ptr)
@@ -127,7 +127,7 @@ SFQ_LIB_ENTER
 			grpnam = strdup(grp.gr_name);
 			if (! grpnam)
 			{
-				SFQ_FAIL(ES_MEMALLOC, "strdup(gr_name)");
+				SFQ_FAIL(ES_MEMORY, "strdup(gr_name)");
 			}
 
 			(*grpnam_ptr) = grpnam;
@@ -174,7 +174,7 @@ SFQ_LIB_ENTER
 	buf = alloca(bufsize);
 	if (! buf)
 	{
-		SFQ_FAIL(ES_MEMALLOC, "ALLOC(buf)");
+		SFQ_FAIL(ES_MEMORY, "ALLOC(buf)");
 	}
 
 /* user */
@@ -186,7 +186,7 @@ SFQ_LIB_ENTER
 		getpwnam_r(usrnam, &pwd, buf, bufsize, &result);
 		if (! result)
 		{
-			SFQ_FAIL(ES_MEMALLOC, "specified user not found");
+			SFQ_FAIL(ES_MEMORY, "specified user not found");
 		}
 
 		if (usrid_ptr)
@@ -204,7 +204,7 @@ SFQ_LIB_ENTER
 		getgrnam_r(grpnam, &grp, buf, bufsize, &result);
 		if (! result)
 		{
-			SFQ_FAIL(ES_MEMALLOC, "specified group not found");
+			SFQ_FAIL(ES_MEMORY, "specified group not found");
 		}
 
 		if (grpid_ptr)
@@ -330,7 +330,7 @@ payload, payload_size, payload_type は必ず同期する
 
 		if (! val->payload_type)
 		{
-			SFQ_FAIL(EA_NOTPAYLOADTYPE, "payload_type is not set");
+			SFQ_FAIL(EA_NOTPAYLOAD, "payload_type is not set");
 		}
 
 		payload_size = val->payload_size;
@@ -346,7 +346,7 @@ null-term 文字列の場合に payload_size が未設定の場合は自動算�
 			}
 			else
 			{
-				SFQ_FAIL(EA_NOTPAYLOADSIZE, "payload_size is not set");
+				SFQ_FAIL(EA_NOTPAYLOAD, "payload_size is not set");
 			}
 		}
 
@@ -529,56 +529,56 @@ SFQ_LIB_ENTER
 
 	if (! payload)
 	{
-		SFQ_FAIL(ES_STRDUP, "payload");
+		SFQ_FAIL(ES_MEMORY, "payload");
 	}
 
 /* */
 	querootdir = strdup(val->querootdir ? val->querootdir : NA);
 	if (! querootdir)
 	{
-		SFQ_FAIL(ES_STRDUP, "querootdir");
+		SFQ_FAIL(ES_MEMORY, "querootdir");
 	}
 
 	quename = strdup(val->quename ? val->quename : NA);
 	if (! quename)
 	{
-		SFQ_FAIL(ES_STRDUP, "quename");
+		SFQ_FAIL(ES_MEMORY, "quename");
 	}
 
 	eworkdir = strdup(val->eworkdir ? val->eworkdir : NA);
 	if (! eworkdir)
 	{
-		SFQ_FAIL(ES_STRDUP, "eworkdir");
+		SFQ_FAIL(ES_MEMORY, "eworkdir");
 	}
 
 	execpath = strdup(val->execpath ? val->execpath : NA);
 	if (! execpath)
 	{
-		SFQ_FAIL(ES_STRDUP, "execpath");
+		SFQ_FAIL(ES_MEMORY, "execpath");
 	}
 
 	execargs = strdup(val->execargs ? val->execargs : NA);
 	if (! execargs)
 	{
-		SFQ_FAIL(ES_STRDUP, "execargs");
+		SFQ_FAIL(ES_MEMORY, "execargs");
 	}
 
 	metatext = strdup(val->metatext ? val->metatext : NA);
 	if (! metatext)
 	{
-		SFQ_FAIL(ES_STRDUP, "metatext");
+		SFQ_FAIL(ES_MEMORY, "metatext");
 	}
 
 	soutpath = strdup(val->soutpath ? val->soutpath : NA);
 	if (! soutpath)
 	{
-		SFQ_FAIL(ES_STRDUP, "soutpath");
+		SFQ_FAIL(ES_MEMORY, "soutpath");
 	}
 
 	serrpath = strdup(val->serrpath ? val->serrpath : NA);
 	if (! serrpath)
 	{
-		SFQ_FAIL(ES_STRDUP, "serrpath");
+		SFQ_FAIL(ES_MEMORY, "serrpath");
 	}
 
 /* */
@@ -678,19 +678,19 @@ SFQ_LIB_ENTER
 /* */
 	if (! querootdir)
 	{
-		querootdir = getenv("SFQ_QUEUE_DIR");
+		querootdir = getenv("SFQ_QUEROOTDIR");
 		if (! querootdir)
 		{
-			querootdir = SFQ_DEFAULT_QUEUE_DIR;
+			querootdir = SFQ_DEFAULT_QUEROOTDIR;
 		}
 	}
 
 	if (! quename)
 	{
-		quename = getenv("SFQ_QUEUE_NAME");
+		quename = getenv("SFQ_QUENAME");
 		if (! quename)
 		{
-			quename = SFQ_DEFAULT_QUEUE_NAME;
+			quename = SFQ_DEFAULT_QUENAME;
 		}
 	}
 
@@ -704,7 +704,7 @@ SFQ_LIB_ENTER
 	om_querootdir = realpath(querootdir, NULL);
 	if (! om_querootdir)
 	{
-		SFQ_FAIL(ES_REALPATH, "om_realpath");
+		SFQ_FAIL(ES_PATH, "om_realpath");
 	}
 
 /*
@@ -730,7 +730,7 @@ om_querootdir を使うこと
 	quedir = malloc(quedir_size);
 	if (! quedir)
 	{
-		SFQ_FAIL(ES_MEMALLOC, "quedir");
+		SFQ_FAIL(ES_MEMORY, "quedir");
 	}
 	snprintf(quedir, quedir_size, "%s/%s", om_querootdir, quename);
 
@@ -746,7 +746,7 @@ om_querootdir を使うこと
 	quefile = malloc(quefile_size);
 	if (! quefile)
 	{
-		SFQ_FAIL(ES_MEMALLOC, "quefile");
+		SFQ_FAIL(ES_MEMORY, "quefile");
 	}
 	snprintf(quefile, quefile_size, "%s/%s", quedir, SFQ_QUEUE_FILENAME);
 
@@ -762,7 +762,7 @@ om_querootdir を使うこと
 	quelogdir = malloc(quelogdir_size);
 	if (! quelogdir)
 	{
-		SFQ_FAIL(ES_MEMALLOC, "quelogdir");
+		SFQ_FAIL(ES_MEMORY, "quelogdir");
 	}
 	snprintf(quelogdir, quelogdir_size, "%s/%s", quedir, SFQ_QUEUE_LOGDIRNAME);
 
@@ -777,7 +777,7 @@ om_querootdir を使うこと
 	queproclogdir = malloc(queproclogdir_size);
 	if (! queproclogdir)
 	{
-		SFQ_FAIL(ES_MEMALLOC, "queproclogdir");
+		SFQ_FAIL(ES_MEMORY, "queproclogdir");
 	}
 	snprintf(queproclogdir, queproclogdir_size, "%s/%s", quelogdir, SFQ_QUEUE_PROC_LOGDIRNAME);
 
@@ -792,7 +792,7 @@ om_querootdir を使うこと
 	queexeclogdir = malloc(queexeclogdir_size);
 	if (! queexeclogdir)
 	{
-		SFQ_FAIL(ES_MEMALLOC, "queexeclogdir");
+		SFQ_FAIL(ES_MEMORY, "queexeclogdir");
 	}
 	snprintf(queexeclogdir, queexeclogdir_size, "%s/%s", quelogdir, SFQ_QUEUE_EXEC_LOGDIRNAME);
 
@@ -801,7 +801,7 @@ om_querootdir を使うこと
 	semname = strdup(quefile);
 	if (! semname)
 	{
-		SFQ_FAIL(ES_MEMALLOC, "semname");
+		SFQ_FAIL(ES_MEMORY, "semname");
 	}
 
 	if (quefile_len > 1)
@@ -821,14 +821,14 @@ om_querootdir を使うこと
 	om_quename = strdup(quename);
 	if (! om_quename)
 	{
-		SFQ_FAIL(ES_STRDUP, "om_quename");
+		SFQ_FAIL(ES_MEMORY, "om_quename");
 	}
 
 /* */
 	om = malloc(sizeof(*om));
 	if (! om)
 	{
-		SFQ_FAIL(ES_MEMALLOC, "om");
+		SFQ_FAIL(ES_MEMORY, "om");
 	}
 
 	om->querootdir = om_querootdir;

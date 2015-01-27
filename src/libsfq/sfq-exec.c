@@ -57,7 +57,7 @@ SFQ_LIB_ENTER
 	argv = alloca(argv_size);
 	if (! argv)
 	{
-		SFQ_FAIL(ES_MEMALLOC, "argv");
+		SFQ_FAIL(ES_MEMORY, "argv");
 	}
 
 	bzero(argv, argv_size);
@@ -98,7 +98,7 @@ SFQ_LIB_ENTER
 				argv[i] = sfq_stradup(token);
 				if (! argv[i])
 				{
-					SFQ_FAIL(ES_MEMALLOC, "argv_i");
+					SFQ_FAIL(ES_MEMORY, "argv_i");
 				}
 */
 			}
@@ -151,7 +151,7 @@ fprintf(stderr, "\tsoutpath == serrpath [%s], redirect stderr to /dev/null\n", s
 static int child_write_dup_exec_exit(const struct sfq_eloop_params* elop, struct sfq_value* val)
 {
 SFQ_LIB_ENTER
-	const char* eworkdir = "/";
+	const char* eworkdir = NULL;
 	const char* execpath = "/bin/sh";
 	char* execargs = NULL;
 
@@ -173,11 +173,20 @@ fprintf(stderr, "\tprepare exec\n");
 	{
 		eworkdir = val->eworkdir;
 	}
+	else
+	{
+		eworkdir = getenv("SFQ_EWORKDIR");
+
+		if (! eworkdir)
+		{
+			eworkdir = "/";
+		}
+	}
 
 	irc = chdir(eworkdir);
 	if (irc != 0)
 	{
-		SFQ_FAIL(ES_CHDIR, "change dir to '%s'", eworkdir);
+		SFQ_FAIL(ES_PATH, "change dir to '%s'", eworkdir);
 	}
 fprintf(stderr, "\t\tchdir = %s\n", eworkdir);
 
@@ -186,7 +195,7 @@ fprintf(stderr, "\t\tchdir = %s\n", eworkdir);
 		execpath = sfq_stradup(val->execpath);
 		if (! execpath)
 		{
-			SFQ_FAIL(ES_MEMALLOC, "execpath");
+			SFQ_FAIL(ES_MEMORY, "execpath");
 		}
 fprintf(stderr, "\t\texecpath = %s\n", execpath);
 	}
@@ -196,7 +205,7 @@ fprintf(stderr, "\t\texecpath = %s\n", execpath);
 		execargs = sfq_stradup(val->execargs);
 		if (! execargs)
 		{
-			SFQ_FAIL(ES_MEMALLOC, "execargs");
+			SFQ_FAIL(ES_MEMORY, "execargs");
 		}
 fprintf(stderr, "\t\texecargs = %s\n", execargs);
 	}
@@ -210,7 +219,7 @@ fprintf(stderr, "\t\texecargs = %s\n", execargs);
 		pipefd = alloca(sizeof(int) * 2);
 		if (! pipefd)
 		{
-			SFQ_FAIL(ES_MEMALLOC, "pipefd");
+			SFQ_FAIL(ES_MEMORY, "pipefd");
 		}
 
 		pipefd[0] = pipefd[1] = 0;
@@ -218,14 +227,14 @@ fprintf(stderr, "\t\texecargs = %s\n", execargs);
 
 		if (irc == -1)
 		{
-			SFQ_FAIL(ES_PIPE, "pipefd");
+			SFQ_FAIL(ES_FORK, "pipefd");
 		}
 
 		wn = atomic_write(pipefd[WRITE], (char*)val->payload, val->payload_size);
 
 		if (wn != val->payload_size)
 		{
-			SFQ_FAIL(ES_WRITE, "atomic_write pipefd[WRITE]");
+			SFQ_FAIL(ES_FORK, "atomic_write pipefd[WRITE]");
 		}
 
 		close(pipefd[WRITE]);
@@ -234,31 +243,37 @@ fprintf(stderr, "\t\texecargs = %s\n", execargs);
 
 		if (irc == -1)
 		{
-			SFQ_FAIL(ES_DUP, "pipefd[READ] -> STDIN_FILENO");
+			SFQ_FAIL(ES_FORK, "pipefd[READ] -> STDIN_FILENO");
 		}
 
 fprintf(stderr, "\t\tpayload size = %zu\n", val->payload_size);
 	}
 
+	/* que dir */
+	setenv("SFQ_ROOTDIR", elop->om_querootdir, 1);
+
 	/* queue */
-	setenv("SFQ_QUENAME", elop->om_quename, 0);
+	setenv("SFQ_QUENAME", elop->om_quename, 1);
+
+	/* work dir */
+	setenv("SFQ_EWORKDIR", eworkdir, 1);
 
 	/* id */
 	snprintf(env_ulong, sizeof(env_ulong), "%zu", val->id);
-	setenv("SFQ_ID", env_ulong, 0);
+	setenv("SFQ_ID", env_ulong, 1);
 
 	/* pushtime */
 	snprintf(env_ulong, sizeof(env_ulong), "%zu", val->pushtime);
-	setenv("SFQ_PUSHTIME", env_ulong, 0);
+	setenv("SFQ_PUSHTIME", env_ulong, 1);
 
 	/* uuid */
 	uuid_unparse(val->uuid, uuid_s);
-	setenv("SFQ_UUID", uuid_s, 0);
+	setenv("SFQ_UUID", uuid_s, 1);
 
 	/* metatext */
 	if (val->metatext)
 	{
-		setenv("SFQ_META", val->metatext, 0);
+		setenv("SFQ_META", val->metatext, 1);
 
 fprintf(stderr, "\t\tmetatext = %s\n", val->metatext);
 	}

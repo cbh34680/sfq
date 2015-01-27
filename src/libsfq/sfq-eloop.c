@@ -25,7 +25,7 @@ SFQ_LIB_ENTER
 	b = sfq_readqfh(qo, &qfh, &procs);
 	if (! b)
 	{
-		SFQ_FAIL(EA_READQFH, "sfq_readqfh");
+		SFQ_FAIL(EA_QFHRW, "sfq_readqfh");
 	}
 
 	if (qfh.qh.sval.procs_num <= elop->slotno)
@@ -77,7 +77,7 @@ SFQ_LIB_ENTER
 	b = sfq_writeqfh(qo, &qfh, procs, "UPS");
 	if (! b)
 	{
-		SFQ_FAIL(EA_WRITEQFH, "sfq_writeqfh");
+		SFQ_FAIL(EA_QFHRW, "sfq_writeqfh");
 	}
 
 /* */

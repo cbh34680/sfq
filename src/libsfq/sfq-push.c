@@ -77,7 +77,7 @@ str[0] == '\0' のときは str に NULL を設定
 		eworkdir = strdup(val->eworkdir);
 		if (! eworkdir)
 		{
-			SFQ_FAIL(ES_STRDUP, "eworkdir");
+			SFQ_FAIL(ES_MEMORY, "eworkdir");
 		}
 	}
 
@@ -86,7 +86,7 @@ str[0] == '\0' のときは str に NULL を設定
 		eworkdir = getcwd(NULL, 0);
 		if (! eworkdir)
 		{
-			SFQ_FAIL(ES_GETCWD, "getcwd");
+			SFQ_FAIL(ES_PATH, "getcwd");
 		}
 	}
 
@@ -149,7 +149,7 @@ push 可能条件の判定
 	b = sfq_readqfh(qo, &qfh, &procs);
 	if (! b)
 	{
-		SFQ_FAIL(EA_READQFH, "sfq_readqfh");
+		SFQ_FAIL(EA_QFHRW, "sfq_readqfh");
 	}
 
 /* check accept state */
@@ -299,7 +299,7 @@ id, pushtime, uuid はここで生成する
 	b = sfq_writeelm(qo, elm_pos, &ioeb);
 	if (! b)
 	{
-		SFQ_FAIL(EA_RWELEMENT, "sfq_writeelm");
+		SFQ_FAIL(EA_ELMRW, "sfq_writeelm");
 	}
 
 	if (qfh.qh.dval.elm_num == 0)
@@ -336,7 +336,7 @@ id, pushtime, uuid はここで生成する
 */
 			if (fstat(fileno(qo->fp), &stbuf) != 0)
 			{
-				SFQ_FAIL(ES_FSTAT, "fstat(qo->fp)");
+				SFQ_FAIL(ES_FILE, "fstat(qo->fp)");
 			}
 
 			if (stbuf.st_mode & S_IXOTH)
@@ -394,7 +394,7 @@ id, pushtime, uuid はここで生成する
 	b = sfq_writeqfh(qo, &qfh, procs, "PSH");
 	if (! b)
 	{
-		SFQ_FAIL(EA_WRITEQFH, "sfq_writeqfh");
+		SFQ_FAIL(EA_QFHRW, "sfq_writeqfh");
 	}
 
 SFQ_LIB_CHECKPOINT
