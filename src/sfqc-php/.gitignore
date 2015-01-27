@@ -8,3 +8,4 @@
 /zend_operators.h
 /root.sh
 /copy-from-cvs.sh
+/diff-cvs.sh

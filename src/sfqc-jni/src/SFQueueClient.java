@@ -1,46 +1,29 @@
 package jp.co.iret.sfq;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public abstract class SFQueueClient implements SFQueueClientInterface
 {
 	static final int SFQ_RC_SUCCESS		= 0;
 	static final int SFQ_RC_FATAL_MIN	= 21;
 
-	SFQueueClient(boolean throwException)
-	{
-		throwException_ = throwException;
-		notInitialized_ = false;
-	}
-
-	boolean throwException_;
-	boolean notInitialized_;
-
 	int lastError_ = 0;
 	String lastMessage_ = "";
 
-	protected void throwException(int code)
-		throws SFQueueClientException
+	public void setLastError(final int arg)
 	{
-		throwException(code, null);
-	}
-
-	protected void throwException(int code, String mesg)
-		throws SFQueueClientException
-	{
-		lastError_ = code;
-
-		lastMessage_ = (mesg == null)
-			? SFQueueClientException.c2m(code)
-			: mesg;
-
-		if (throwException_)
-		{
-			throw new SFQueueClientException(code, mesg);
-		}
+		lastError_ = arg;
 	}
 
 	public int lastError()
 	{
 		return lastError_;
+	}
+
+	public void setLastMessage(final String arg)
+	{
+		lastMessage_ = arg;
 	}
 
 	public String lastMessage()
@@ -52,5 +35,16 @@ public abstract class SFQueueClient implements SFQueueClientInterface
 	{
 		lastError_ = 0;
 		lastMessage_ = "";
+	}
+
+	@Override
+	public Map<String, Object> pop() throws SFQueueClientException
+	{
+		return pop(new HashMap<>());
+	}
+	@Override
+	public Map<String, Object> shift() throws SFQueueClientException
+	{
+		return shift(new HashMap<>());
 	}
 }

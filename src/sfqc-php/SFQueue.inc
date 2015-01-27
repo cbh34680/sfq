@@ -5,11 +5,11 @@ interface SFQueueClientInterface
 {
 	public function push_text($params);
 	public function push_binary($params);
-	public function pop();
-	public function shift();
+	public function pop($params);
+	public function shift($params);
 }
 
-// ---------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------
 //
 
 class SFQueueClientException extends Exception
@@ -22,6 +22,8 @@ class SFQueueClientException extends Exception
 		1030	=> 'it does not yet implemented',
 		1040	=> 'illegal argument type exception',
 		1050	=> 'unknown error',
+		1060	=> 'socket io error',
+		1070	=> 'resolv host-address error',
 	];
 
 	function __construct($code, $mesg=null)
@@ -45,46 +47,30 @@ class SFQueueClientException extends Exception
 	}
 }
 
-// ---------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------
 //
 
 abstract class SFQueueClient implements SFQueueClientInterface
 {
-	function __construct($throwException)
-	{
-		$this->throwException_ = $throwException;
-
-		$this->notInitialized_ = false;
-	}
-
-// protected:
-	protected $notInitialized_ = true;
-
-	protected $throwException_;
-
 	private $lastError_ = 0;
 	private $lastMessage_ = '';
 
-	protected function throwException($code, $mesg=null)
+	public function lastError($arg=null)
 	{
-		$this->lastError_ = $code;
-		$this->lastMessage_ = $mesg ? $mesg : SFQueueClientException::c2m($code);
-
-		if ($this->throwException_)
+		if (is_null($arg))
 		{
-			throw new SFQueueClientException($code, $mesg);
+			return $this->lastError_;
 		}
+		$this->lastError_ = $arg;
 	}
 
-// public:
-	public function lastError()
+	public function lastMessage($arg=null)
 	{
-		return $this->lastError_;
-	}
-
-	public function lastMessage()
-	{
-		return $this->lastMessage_;
+		if (is_null($arg))
+		{
+			return $this->lastMessage_;
+		}
+		$this->lastMessage_ = $arg;
 	}
 
 	public function clearLastError()
@@ -94,11 +80,13 @@ abstract class SFQueueClient implements SFQueueClientInterface
 	}
 }
 
-// ---------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------
 //
 
 class SFQueueClientLocal extends SFQueueClient
 {
+	private $nativeError_ = false;
+
 	protected $quename_;
 	private $querootdir_;
 
@@ -106,8 +94,6 @@ class SFQueueClientLocal extends SFQueueClient
 	{
 		if (extension_loaded('sfqc_php'))
 		{
-			parent::__construct($throwException);
-
 			if (is_array($params))
 			{
 				$this->querootdir_ = @$params['querootdir'];
@@ -116,70 +102,79 @@ class SFQueueClientLocal extends SFQueueClient
 		}
 		else
 		{
-			$this->notInitialized_ = true;
+			$this->nativeError_ = true;
 
-			$this->throwException(1010);
+			throw new SFQueueClientException(1010);
 		}
 	}
 
 // private:
-	private function isNativeSuccess_($rc)
+	private function native_push($params)
 	{
 		$ret = false;
 
-		if ($this->notInitialized_)
+		$this->clearLastError();
+
+		if ($this->nativeError_)
 		{
-			$this->throwException(1020);
+			throw new SFQueueClientException(1020);
+		}
+
+		if (! is_array($params))
+		{
+			throw new SFQueueClientException(1040);
+		}
+
+		$rc = wrap_sfq_push($this->querootdir_, $this->quename_, $params);
+
+		if ($rc == SFQ_RC_SUCCESS)
+		{
+			$ret = $params['uuid'];
 		}
 		else
 		{
-			if ($rc == SFQ_RC_SUCCESS)
+			$this->lastError($rc);
+			$this->lastMessage("native error rc={$rc}");
+
+			if ($rc >= SFQ_RC_FATAL_MIN)
 			{
-				$ret = true;
-			}
-			else if ($rc > SFQ_RC_FATAL_MIN)
-			{
-				$this->throwException(2000 + $rc, "native error rc={$rc}");
+				throw new SFQueueClientException(2000 + $rc, "native error rc={$rc}");
 			}
 		}
 
 		return $ret;
 	}
 
-	private function native_push_($params)
+	private function native_takeout($funcname)
 	{
+		$ret = false;
+
 		$this->clearLastError();
 
-		if (is_array($params))
+		if ($this->nativeError_)
 		{
-			$rc = wrap_sfq_push($this->querootdir_, $this->quename_, $params);
-
-			if ($this->isNativeSuccess_($rc))
-			{
-				return $params['uuid'];
-			}
+			throw new SFQueueClientException(1020);
 		}
-		else
-		{
-			$this->throwException(1040);
-		}
-
-		return false;
-	}
-
-	private function native_takeout_($funcname)
-	{
-		$this->clearLastError();
 
 		$params = [];
 		$rc = wrap_sfq_takeout($this->querootdir_, $this->quename_, $params, $funcname);
 
-		if ($this->isNativeSuccess_($rc))
+		if ($rc == SFQ_RC_SUCCESS)
 		{
-			return $params;
+			$ret = $params;
+		}
+		else
+		{
+			$this->lastError($rc);
+			$this->lastMessage("native error rc={$rc}");
+
+			if ($rc >= SFQ_RC_FATAL_MIN)
+			{
+				throw new SFQueueClientException(2000 + $rc, "native error rc={$rc}");
+			}
 		}
 
-		return false;
+		return $ret;
 	}
 
 // public:
@@ -190,7 +185,7 @@ class SFQueueClientLocal extends SFQueueClient
 			$params['payload_type'] = 'text';
 		}
 
-		return $this->native_push_($params);
+		return $this->native_push($params);
 	}
 
 	function push_binary($params)
@@ -200,21 +195,21 @@ class SFQueueClientLocal extends SFQueueClient
 			$params['payload_type'] = 'binary';
 		}
 
-		return $this->native_push_($params);
+		return $this->native_push($params);
 	}
 
-	function pop()
+	function pop($params=[])
 	{
-		return $this->native_takeout_('sfq_pop');
+		return $this->native_takeout('sfq_pop');
 	}
 
-	function shift()
+	function shift($params=[])
 	{
-		return $this->native_takeout_('sfq_shift');
+		return $this->native_takeout('sfq_shift');
 	}
 }
 
-// ---------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------
 //
 
 class SFQueueClientRemote extends SFQueueClient
@@ -226,12 +221,12 @@ class SFQueueClientRemote extends SFQueueClient
 
 	function __construct($params, $throwException)
 	{
-		parent::__construct($throwException);
-
-		if (is_array($params))
+		if (! is_array($params))
 		{
-			$this->conn_params = $params;
+			throw new SFQueueClientException(1040);
 		}
+
+		$this->conn_params = $params;
 	}
 
 // private:
@@ -239,62 +234,29 @@ class SFQueueClientRemote extends SFQueueClient
 	{
 		$ret = false;
 
-		if ($arg)
+		if (! $arg)
 		{
-			//
-			// 必要なら IP アドレスに書き換え
-			//
-			if ($arg === 'localhost')
-			{
-				return '127.0.0.1';
-			}
-
-			if (! preg_match('/\A[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\Z/', $arg))
-			{
-				$addr = gethostbyname($arg);
-				if ($addr != $arg)
-				{
-					//
-					// アドレスが解決できない
-					//
-					$ret = $addr;
-				}
-			}
+			throw new SFQueueClientException(1040);
 		}
 
-		return $ret;
-	}
-
-	private function isRemoteSuccess_($resp)
-	{
-		$ret = false;
-
-		if ($this->notInitialized_)
+		//
+		// 必要なら IP アドレスに書き換え
+		//
+		if ($arg === 'localhost')
 		{
-			$this->throwException(1020);
+			$ret = '127.0.0.1';
 		}
-		else
+		else if (! preg_match('/\A[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\Z/', $arg))
 		{
-			if (! isset($resp['header']['result_code']))
+			$addr = gethostbyname($arg);
+			if ($addr == $arg)
 			{
-				$this->throwException(1050);
+				// error
+				throw new SFQueueClientException(1070);
 			}
-
-			$rc = intval($resp['header']['result_code']);
-
-			if ($rc == 0 /* SFQ_RC_SUCCESS */)
+			else
 			{
-				$ret = true;
-			}
-			else if ($rc > 21 /* SFQ_RC_FATAL_MIN */)
-			{
-				$msg = "* Un-Known *";
-				if (isset($resp['header']['error_message']))
-				{
-					$msg = $resp['header']['error_message'];
-				}
-
-				$this->throwException(2000 + $rc, sprintf("remote error rc=%d msg=[%s]", $rc, $msg));
+				$ret = $addr;
 			}
 		}
 
@@ -304,7 +266,7 @@ class SFQueueClientRemote extends SFQueueClient
 	private static function parse_response($arg)
 	{
 		//
-		$header = [];
+		$ret = [];
 		$body = null;
 
 		$sep_offset = strpos($arg, self::CRLF . self::CRLF);
@@ -315,7 +277,7 @@ class SFQueueClientRemote extends SFQueueClient
 
 		if ($sep_offset === false)
 		{
-			$ret['body'] = $arg;
+			$body = $arg;
 		}
 		else
 		{
@@ -333,137 +295,245 @@ class SFQueueClientRemote extends SFQueueClient
 					list($all, $key, $val) = $matches;
 
 					$key = str_replace('-', '_', trim($key));
-					$header[$key] = trim($val);
+					$ret[$key] = trim($val);
 				}
 			}
 
 			$body = substr($arg, $sep_offset + 4);
 		}
 
-		return [ 'header' => $header, 'body' => $body ];
+		if ($body)
+		{
+			$ret['payload'] = $body;
+		}
+
+		return $ret;
 	}
 
 	function remote_io($opname, $params=[])
 	{
-		$host = $this->conn_params['host'];
-		$port = $this->conn_params['port'][$opname];
+		$ret = false;
 
-		$to_read = $this->conn_params['timeout']['read'];
-		$to_write = $this->conn_params['timeout']['write'];
+		$connected = false;
 
-		//
-		$addr = self::hostname2addr($host);
-
-		//
-		if (isset($this->conn_params['querootdir']))
+		try
 		{
-			$params['querootdir'] = $this->conn_params['querootdir'];
-		}
-
-		if (isset($this->conn_params['quename']))
-		{
-			$params['quename'] = $this->conn_params['quename'];
-		}
-
-		$body = null;
-		if (isset($params['payload']))
-		{
-			$body = $params['payload'];
-
-			if (! isset($params['payload-length']))
+			if (! isset($this->conn_params['host']))
 			{
-				$params['payload-length'] = strlen($body);
+				throw new Exception("connection host is not set");
+			}
+
+			$host = $this->conn_params['host'];
+			$port = @$this->conn_params['port'][$opname];
+
+			if (! $port)
+			{
+				switch ($opname)
+				{
+					case 'push':	$port = 12701; break;
+					case 'pop':		$port = 12711; break;
+					case 'shift':	$port = 12721; break;
+
+					default:
+					{
+						throw new Exception("{$opname}: unknown operation");
+						break;
+					}
+				}
+			}
+
+			$to_read = @$this->conn_params['timeout']['read'];
+			$to_write = @$this->conn_params['timeout']['write'];
+
+			$to_read || $to_read = [ 'sec'=>2, 'usec'=>0 ];
+			$to_write || $to_write = [ 'sec'=>2, 'usec'=>0 ];
+
+			//
+			$addr = self::hostname2addr($host);
+
+			//
+			if (isset($this->conn_params['querootdir']))
+			{
+				$params['querootdir'] = $this->conn_params['querootdir'];
+			}
+
+			if (isset($this->conn_params['quename']))
+			{
+				$params['quename'] = $this->conn_params['quename'];
+			}
+
+			$body = null;
+			if (isset($params['payload']))
+			{
+				$body = $params['payload'];
+
+				if (! isset($params['payload-length']))
+				{
+					$params['payload-length'] = strlen($body);
+				}
+			}
+
+			//
+			$header_arr = [];
+			foreach ($params as $k=>$v)
+			{
+				if ($k === 'payload')
+				{
+					continue;
+				}
+
+				$header_arr[] = sprintf("%s: %s", str_replace('_', '-', $k), $v);
+			}
+			$header = implode(self::CRLF, $header_arr);
+
+			//
+			$sock = @socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
+			if ($sock === false)
+			{
+				throw new Exception('socket_create');
+			}
+
+			$t = @socket_connect($sock, $addr, $port);
+			if ($t === false)
+			{
+				throw new Exception('socket_connect');
+			}
+			$connected = true;
+
+			socket_set_option($sock, SOL_SOCKET, SO_RCVTIMEO, $to_read);
+			socket_set_option($sock, SOL_SOCKET, SO_SNDTIMEO, $to_write);
+
+			$t = @socket_write($sock, $header, strlen($header));
+			if ($t === false)
+			{
+				throw new Exception('socket_write');
+			}
+
+			$sep = self::CRLF . self::CRLF;
+			$t = @socket_write($sock, $sep, strlen($sep));
+			if ($t === false)
+			{
+				throw new Exception('socket_write');
+			}
+
+			if (isset($body))
+			{
+				$t = @socket_write($sock, $body, strlen($body));
+				if ($t === false)
+				{
+					throw new Exception('socket_write');
+				}
+			}
+
+			$resp_text = '';
+			do
+			{
+				$buff = @socket_read($sock, 8192);
+				if ($buff !== false)
+				{
+					$resp_text .= $buff;
+				}
+			}
+			while (! empty($buff));
+
+			@socket_shutdown($sock, 2);
+			@socket_close($sock);
+
+			unset($sock);
+
+			//
+			$ret = self::parse_response($resp_text);
+		}
+		catch (Exception $ex)
+		{
+			if (isset($sock))
+			{
+				if ($connected)
+				{
+					@socket_shutdown($sock, 2);
+				}
+				@socket_close($sock);
+			}
+
+			throw new SFQueueClientException(1060);
+		}
+
+		return $ret;
+	}
+
+	private function isDataOrThrow($resp)
+	{
+		$ret = false;
+
+		if (! isset($resp['result_code']))
+		{
+			throw new SFQueueClientException(1050);
+		}
+
+		$rc = intval($resp['result_code']);
+
+		if ($rc == 0 /* SFQ_RC_SUCCESS */)
+		{
+			$ret = true;
+		}
+		else
+		{
+			$msg = "* Un-Known *";
+			if (isset($resp['error_message']))
+			{
+				$msg = $resp['error_message'];
+			}
+
+			$this->lastError($rc);
+			$this->lastMessage("remote error rc={$rc} msg={$msg}");
+
+			if ($rc >= 21 /* SFQ_RC_FATAL_MIN */)
+			{
+				throw new SFQueueClientException(2000 + $rc, "remote error rc={$rc} msg={$msg}");
 			}
 		}
 
-		//
-		$header_arr = [];
-
-		foreach ($params as $k=>$v)
-		{
-			if ($k === 'payload')
-			{
-				continue;
-			}
-
-			$header_arr[] = sprintf("%s: %s", str_replace('_', '-', $k), $v);
-		}
-
-		$header = implode(self::CRLF, $header_arr);
-
-		$sep = self::CRLF . self::CRLF;
-
-		//
-		$sock = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
-
-		socket_connect($sock, $addr, $port);
-
-		socket_set_option($sock, SOL_SOCKET, SO_RCVTIMEO, $to_read);
-		socket_set_option($sock, SOL_SOCKET, SO_SNDTIMEO, $to_write);
-
-		socket_write($sock, $header, strlen($header));
-		socket_write($sock, $sep, strlen($sep));
-
-		if (isset($body))
-		{
-			socket_write($sock, $body, strlen($body));
-		}
-
-		$resp_text = '';
-
-		do
-		{
-			$buff = socket_read($sock, 8192);
-			if ($buff !== false)
-			{
-				$resp_text .= $buff;
-			}
-		}
-		while (! empty($buff));
-
-		socket_shutdown($sock, 2);
-		socket_close($sock);
-
-		//
-		return self::parse_response($resp_text);
+		return $ret;
 	}
 
 	private function remote_push($params)
 	{
+		$ret = false;
+
 		$this->clearLastError();
 
-		if (is_array($params))
+		if (! is_array($params))
 		{
-			$resp = $this->remote_io('push', $params);
-
-			if ($this->isRemoteSuccess_($resp))
-			{
-				return $resp['header']['uuid'];
-			}
-		}
-		else
-		{
-			$this->throwException(1040);
+			throw new SFQueueClientException(1040);
 		}
 
-		return false;
+		$resp = $this->remote_io('push', $params);
+		if ($this->isDataOrThrow($resp))
+		{
+			$ret = $resp['uuid'];
+		}
+
+		return $ret;
 	}
 
-	function remote_takeout($opname)
+	function remote_takeout($opname, $params)
 	{
+		$ret = false;
+
 		$this->clearLastError();
 
-		$resp = $this->remote_io($opname);
-
-		if ($this->isRemoteSuccess_($resp))
+		if (! is_array($params))
 		{
-			$ret = $resp['header'];
-			$ret['payload'] = $resp['body'];
-
-			return $ret;
+			throw new SFQueueClientException(1040);
 		}
 
-		return false;
+		$resp = $this->remote_io($opname, $params);
+		if ($this->isDataOrThrow($resp))
+		{
+			$ret = $resp;
+		}
+
+		return $ret;
 	}
 
 // public:
@@ -487,18 +557,18 @@ class SFQueueClientRemote extends SFQueueClient
 		return $this->remote_push($params);
 	}
 
-	function pop()
+	function pop($params=[])
 	{
-		return $this->remote_takeout('pop');
+		return $this->remote_takeout('pop', $params);
 	}
 
-	function shift()
+	function shift($params=[])
 	{
-		return $this->remote_takeout('shift');
+		return $this->remote_takeout('shift', $params);
 	}
 }
 
-// ---------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------
 //
 
 class SFQueue
@@ -518,23 +588,6 @@ class SFQueue
 			return new SFQueueClientLocal($params, true);
 		}
 	}
-
-	static function newClientNotThrow($params=[])
-	{
-		if (isset($params['host']))
-		{
-			// connect remote host
-
-			return new SFQueueClientRemote($params, false);
-		}
-		else
-		{
-			// connect localhost
-
-			return new SFQueueClientLocal($params, false);
-		}
-	}
-
 }
 
 //
@@ -623,11 +676,6 @@ EOS;
 		$etest(SFQueue::newClient());
 		echo PHP_EOL;
 
-	// local (not throw exception)
-
-		$test(SFQueue::newClientNotThrow());
-		echo PHP_EOL;
-
 	// remote (throw exception)
 		$copt = [
 			'host' => 'localhost',
@@ -644,11 +692,6 @@ EOS;
 		];
 
 		$etest(SFQueue::newClient($copt));
-		echo PHP_EOL;
-
-	// remote (not throw exception)
-
-		$test(SFQueue::newClientNotThrow($copt));
 		echo PHP_EOL;
 	}
 }

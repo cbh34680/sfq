@@ -18,13 +18,16 @@ public class SFQueueClientException extends Exception
 				put(1020,	"it has not yet been initialized");
 				put(1030,	"it does not yet implemented");
 				put(1040,	"illegal argument type exception");
+				put(1050,	"unknown error");
+				put(1060,	"socket io error");
+				put(1070,	"resolv host-address error");
 
 				put(3010,	"illegal type response exception");
 			}
 		};
 	}
 
-	static String c2m(int code)
+	static String c2m(final int code)
 	{
 		if (mesgmap.containsKey(code))
 		{
@@ -34,19 +37,19 @@ public class SFQueueClientException extends Exception
 		return "unknown code (" + code + ")";
 	}
 
-	SFQueueClientException(int code)
+	SFQueueClientException(final int code)
 	{
 		this(code, c2m(code));
 	}
 
-	SFQueueClientException(int code, String mesg)
+	SFQueueClientException(final int code, final String mesg)
 	{
 		super(mesg);
 
 		code_ = code;
 	}
 
-	private int code_;
+	private final int code_;
 
 	public int getCode()
 	{
