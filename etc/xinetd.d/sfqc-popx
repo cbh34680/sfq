@@ -1,0 +1,10 @@
+service sfqc-popx
+{
+	disable	= no
+	flags		= REUSE NORETRY NODELAY IPv4
+	socket_type	= stream
+	wait		= no
+	user		= devuser
+	server		= [sfq command install path]/sfqc-popx
+	server_args	= -q -p adda
+}

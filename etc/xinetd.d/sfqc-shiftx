@@ -1,0 +1,10 @@
+service sfqc-shiftx
+{
+	disable	= no
+	flags		= REUSE NORETRY NODELAY IPv4
+	socket_type	= stream
+	wait		= no
+	user		= devuser
+	server		= [sfq command install path]/sfqc-shiftx
+	server_args	= -q -p adda
+}
