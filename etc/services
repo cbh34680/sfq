@@ -1,0 +1,10 @@
+
+# add the following to /etc/services
+
+#
+# sfq
+#
+sfqc-pushx      12701/tcp
+sfqc-popx       12711/tcp
+sfqc-shiftx     12721/tcp
+
