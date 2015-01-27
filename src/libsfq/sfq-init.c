@@ -140,7 +140,7 @@ root の場合、"-U" か "-G" の指定があるときのみ通過させる
 		procs = alloca(procs_size);
 		if (! procs)
 		{
-			SFQ_FAIL(ES_MEMALLOC, "ALLOC(procs)");
+			SFQ_FAIL(ES_MEMORY, "ALLOC(procs)");
 		}
 
 		bzero(procs, procs_size);
@@ -214,7 +214,7 @@ root の場合、"-U" か "-G" の指定があるときのみ通過させる
 	b = sfq_writeqfh(qo, &qfh, procs, "INI");
 	if (! b)
 	{
-		SFQ_FAIL(EA_WRITEQFH, "sfq_writeqfh");
+		SFQ_FAIL(EA_QFHRW, "sfq_writeqfh");
 	}
 
 /* print queue header */

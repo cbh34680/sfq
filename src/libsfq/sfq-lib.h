@@ -64,20 +64,20 @@
  * 定数／マクロ定義
  *
  */
-#ifndef SFQ_DEFAULT_QUEUE_DIR
-	#define SFQ_DEFAULT_QUEUE_DIR	"/var/tmp"
+#ifndef SFQ_DEFAULT_QUEROOTDIR
+	#define SFQ_DEFAULT_QUEROOTDIR		"/var/tmp"
 #endif
 
-#ifndef SFQ_DEFAULT_QUEUE_NAME
-	#define SFQ_DEFAULT_QUEUE_NAME	"noname"
+#ifndef SFQ_DEFAULT_QUENAME
+	#define SFQ_DEFAULT_QUENAME		"noname"
 #endif
 
-#define SFQ_MAGICSTR			"sfq"
+#define SFQ_MAGICSTR				"sfq"
 
-#define SFQ_QUEUE_FILENAME		"data.sfq"
-#define SFQ_QUEUE_LOGDIRNAME		"logs"
-#define SFQ_QUEUE_PROC_LOGDIRNAME	"proc"
-#define SFQ_QUEUE_EXEC_LOGDIRNAME	"exec"
+#define SFQ_QUEUE_FILENAME			"data.sfq"
+#define SFQ_QUEUE_LOGDIRNAME			"logs"
+#define SFQ_QUEUE_PROC_LOGDIRNAME		"proc"
+#define SFQ_QUEUE_EXEC_LOGDIRNAME		"exec"
 
 #define SFQ_ALIGN_MARGIN(e)		(((( (e) / 8 ) + (( (e) % 8) ? 1 : 0)) * 8) - (e) )
 

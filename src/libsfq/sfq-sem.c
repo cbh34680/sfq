@@ -67,7 +67,7 @@ SFQ_LIB_ENTER
 	semname_dup = strdup(semname);
 	if (! semname_dup)
 	{
-		SFQ_FAIL(ES_MEMALLOC, "strdup");
+		SFQ_FAIL(ES_MEMORY, "strdup");
 	}
 
 /*
@@ -78,7 +78,7 @@ SFQ_LIB_ENTER
 	GLOBAL_snos_arr = realloc(GLOBAL_snos_arr, realloc_size);
 	if (! GLOBAL_snos_arr)
 	{
-		SFQ_FAIL(ES_MEMALLOC, "realloc");
+		SFQ_FAIL(ES_MEMORY, "realloc");
 	}
 
 	snos = &GLOBAL_snos_arr[GLOBAL_snos_arr_num];
@@ -245,7 +245,7 @@ SFQ_LIB_ENTER
 	semobj = sem_open(semname, O_CREAT, 0666, 1);
 	if (semobj == SEM_FAILED)
 	{
-		SFQ_FAIL(ES_SEMOPEN,
+		SFQ_FAIL(ES_SEMAPHORE,
 			"semaphore open error, check permission file=[/dev/shm%s]", semname);
 	}
 
@@ -270,7 +270,7 @@ SFQ_LIB_ENTER
 
 	if (irc == -1)
 	{
-		SFQ_FAIL(ES_SEMIO,
+		SFQ_FAIL(ES_SEMAPHORE,
 			"semaphore lock error, try unlock command=[sfqc-sets {-N quename} semunlock on]");
 	}
 

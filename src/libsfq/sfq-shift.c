@@ -35,20 +35,20 @@ SFQ_ENTP_ENTER
 	out_querootdir = strdup(qo->om->querootdir);
 	if (! out_querootdir)
 	{
-		SFQ_FAIL(ES_STRDUP, "out_querootdir");
+		SFQ_FAIL(ES_MEMORY, "out_querootdir");
 	}
 
 	out_quename = strdup(qo->om->quename);
 	if (! out_quename)
 	{
-		SFQ_FAIL(ES_STRDUP, "out_quename");
+		SFQ_FAIL(ES_MEMORY, "out_quename");
 	}
 
 /* read file-header */
 	b = sfq_readqfh(qo, &qfh, NULL);
 	if (! b)
 	{
-		SFQ_FAIL(EA_READQFH, "sfq_readqfh");
+		SFQ_FAIL(EA_QFHRW, "sfq_readqfh");
 	}
 
 /* check accept state */
@@ -78,7 +78,7 @@ SFQ_ENTP_ENTER
 	b = sfq_readelm_alloc(qo, elmpos, &ioeb);
 	if (! b)
 	{
-		SFQ_FAIL(EA_RWELEMENT, "sfq_readelm_alloc");
+		SFQ_FAIL(EA_ELMRW, "sfq_readelm_alloc");
 	}
 
 //#ifdef SFQ_DEBUG_BUILD
@@ -119,7 +119,7 @@ SFQ_ENTP_ENTER
 	b = sfq_writeqfh(qo, &qfh, NULL, "SHF");
 	if (! b)
 	{
-		SFQ_FAIL(EA_WRITEQFH, "sfq_writeqfh");
+		SFQ_FAIL(EA_QFHRW, "sfq_writeqfh");
 	}
 
 	if (unlink_pos)

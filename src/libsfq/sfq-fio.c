@@ -217,7 +217,7 @@ SFQ_LIB_ENTER
 	fp = fopen(om->quefile, fopen_mode);
 	if (! fp)
 	{
-		SFQ_FAIL(ES_FILEOPEN, "file open error '%s' (systemd[PrivateTmp=true] enable?)",
+		SFQ_FAIL(ES_FILE, "file open error '%s' (systemd[PrivateTmp=true] enable?)",
 			om->quefile);
 	}
 
@@ -232,7 +232,7 @@ SFQ_LIB_ENTER
 		siosize = pread(fileno(fp), &qfs, sizeof(qfs), 0);
 		if (siosize == -1)
 		{
-			SFQ_FAIL(ES_FILEIO, "FILE-READ(qfs)");
+			SFQ_FAIL(ES_FILE, "FILE-READ(qfs)");
 		}
 
 /* check magic string */
@@ -252,7 +252,7 @@ SFQ_LIB_ENTER
 	qo = malloc(sizeof(*qo));
 	if (! qo)
 	{
-		SFQ_FAIL(ES_MEMALLOC, "malloc(locked_file)");
+		SFQ_FAIL(ES_MEMORY, "malloc(locked_file)");
 	}
 
 	qo->om = om;
@@ -460,7 +460,7 @@ SFQ_LIB_ENTER
 	{
 		if (errno != ENOENT)
 		{
-			SFQ_FAIL(ES_UNLINK,
+			SFQ_FAIL(ES_FILE,
 				"delete semaphore fault, check permission (e.g. /dev/shm%s)",
 				om->semname);
 		}
@@ -633,13 +633,13 @@ SFQ_LIB_ENTER
 	siosize = pwrite(fileno(qo->fp), qfh, sizeof(*qfh), 0);
 	if (siosize != sizeof(*qfh))
 	{
-		SFQ_FAIL(EA_WRITEQFH, "write(qfh)");
+		SFQ_FAIL(EA_QFHRW, "write(qfh)");
 	}
 /*
 	b = seek_set_write_(qo->fp, 0, qfh, sizeof(*qfh));
 	if (! b)
 	{
-		SFQ_FAIL(EA_WRITEQFH, "FILE-WRITE(qfh)");
+		SFQ_FAIL(EA_QFHRW, "FILE-WRITE(qfh)");
 	}
 */
 
@@ -656,13 +656,13 @@ SFQ_LIB_ENTER
 		siosize = pwrite(fileno(qo->fp), procs, procs_size, qfh->qh.sval.procseg_start_pos);
 		if (siosize != procs_size)
 		{
-			SFQ_FAIL(ES_FILEIO, "FILE-WRITE(procs)");
+			SFQ_FAIL(ES_FILE, "FILE-WRITE(procs)");
 		}
 /*
 		iosize = fwrite(procs, procs_size, 1, qo->fp);
 		if (iosize != 1)
 		{
-			SFQ_FAIL(ES_FILEIO, "FILE-WRITE(procs)");
+			SFQ_FAIL(ES_FILE, "FILE-WRITE(procs)");
 		}
 */
 	}
@@ -720,7 +720,7 @@ SFQ_LIB_ENTER
 
 			if (! procs)
 			{
-				SFQ_FAIL(ES_MEMALLOC, "ALLOC(procs)");
+				SFQ_FAIL(ES_MEMORY, "ALLOC(procs)");
 			}
 
 			siosize = pread(fileno(qo->fp), procs, procs_size,
@@ -728,13 +728,13 @@ SFQ_LIB_ENTER
 
 			if (siosize != procs_size)
 			{
-				SFQ_FAIL(ES_FILEIO, "FILE-READ(procs)");
+				SFQ_FAIL(ES_FILE, "FILE-READ(procs)");
 			}
 /*
 			iosize = fread(procs, procs_size, 1, qo->fp);
 			if (iosize != 1)
 			{
-				SFQ_FAIL(ES_FILEIO, "FILE-READ(procs)");
+				SFQ_FAIL(ES_FILE, "FILE-READ(procs)");
 			}
 */
 
@@ -786,7 +786,7 @@ SFQ_LIB_LEAVE
 		assert(ioeb->key_); \
 		if (fwrite(ioeb->key_, ioeb->eh.key_ ## _size, 1, qo->fp) != 1) \
 		{ \
-			SFQ_FAIL(ES_FILEIO, "fwrite"); \
+			SFQ_FAIL(ES_FILE, "fwrite"); \
 		} \
 	}
 
@@ -818,7 +818,7 @@ SFQ_LIB_ENTER
 		iosize = fwrite(ioeb->payload, ioeb->eh.payload_size, 1, qo->fp);
 		if (iosize != 1)
 		{
-			SFQ_FAIL(ES_FILEIO, "FILE-WRITE(payload)");
+			SFQ_FAIL(ES_FILE, "FILE-WRITE(payload)");
 		}
 	}
 
@@ -845,16 +845,16 @@ SFQ_LIB_LEAVE
 		key_ = malloc(ioeb->eh.key_ ## _size); \
 		if (! key_) \
 		{ \
-			SFQ_FAIL(ES_MEMALLOC, "malloc"); \
+			SFQ_FAIL(ES_MEMORY, "malloc"); \
 		} \
 		if (fread(key_, ioeb->eh.key_ ## _size, 1, qo->fp) != 1) \
 		{ \
-			SFQ_FAIL(ES_FILEIO, "fread"); \
+			SFQ_FAIL(ES_FILE, "fread"); \
 		} \
 	}
 
 /*
-printf("[%.*s] %zu\n", (int)ioeb->eh.key_ ## _size, key_, (size_t)ioeb->eh.key_ ## _size); \
+# printf("[%.*s] %zu\n", (int)ioeb->eh.key_ ## _size, key_, (size_t)ioeb->eh.key_ ## _size); \
 */
 
 sfq_bool sfq_readelm_alloc(struct sfq_queue_object* qo, off_t seek_pos, struct sfq_ioelm_buff* ioeb)
@@ -904,13 +904,13 @@ SFQ_LIB_ENTER
 		payload = malloc(ioeb->eh.payload_size);
 		if (! payload)
 		{
-			SFQ_FAIL(ES_MEMALLOC, "ALLOC(payload_size)");
+			SFQ_FAIL(ES_MEMORY, "ALLOC(payload_size)");
 		}
 
 		iosize = fread(payload, ioeb->eh.payload_size, 1, qo->fp);
 		if (iosize != 1)
 		{
-			SFQ_FAIL(ES_FILEIO, "FILE-READ(payload)");
+			SFQ_FAIL(ES_FILE, "FILE-READ(payload)");
 		}
 	}
 

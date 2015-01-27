@@ -34,7 +34,7 @@ SFQ_ENTP_ENTER
 	b = sfq_readqfh(qo, &qfh, NULL);
 	if (! b)
 	{
-		SFQ_FAIL(EA_READQFH, "sfq_readqfh");
+		SFQ_FAIL(EA_QFHRW, "sfq_readqfh");
 	}
 
 /* check empty */
@@ -71,7 +71,7 @@ SFQ_ENTP_ENTER
 		b = sfq_readelm_alloc(qo, currpos, &ioeb);
 		if (! b)
 		{
-			SFQ_FAIL(EA_RWELEMENT, "sfq_readelm_alloc");
+			SFQ_FAIL(EA_ELMRW, "sfq_readelm_alloc");
 		}
 
 #ifdef SFQ_DEBUG_BUILD
