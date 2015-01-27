@@ -59,6 +59,8 @@ public class SFQueue
 
 					put("port", port);
 
+					put("timeout", 2000);
+
 					put("querootdir", "/home/devuser/rq0");
 					put("quename", "test0");
 					put("eworkdir", "/home/devuser/rq0/w");
