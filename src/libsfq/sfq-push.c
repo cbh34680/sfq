@@ -74,10 +74,10 @@ str[0] == '\0' のときは str に NULL を設定
 			SFQ_FAIL(EA_ISNOTDIR, "'%s' is not dir", val->eworkdir);
 		}
 
-		eworkdir = strdup(val->eworkdir);
+		eworkdir = realpath(val->eworkdir, NULL);
 		if (! eworkdir)
 		{
-			SFQ_FAIL(ES_MEMORY, "eworkdir");
+			SFQ_FAIL(ES_MEMORY, "realpath(eworkdir)");
 		}
 	}
 
@@ -91,6 +91,7 @@ str[0] == '\0' のときは str に NULL を設定
 	}
 
 	sfq_rtrim(eworkdir, "/");
+	val->eworkdir = eworkdir;
 
 /*
 ログ関連は相対パスから絶対パスに変換

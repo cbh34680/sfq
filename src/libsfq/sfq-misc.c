@@ -364,12 +364,12 @@ null-term 文字列の場合に payload_size が未設定の場合は自動算�
 	}
 
 /* */
-	VAL2IOEB_SET_NTSTR(eworkdir,   SFQ_MIN(USHRT_MAX, PATH_MAX));
-	VAL2IOEB_SET_NTSTR(execpath,   SFQ_MIN(USHRT_MAX, PATH_MAX));
-	VAL2IOEB_SET_NTSTR(execargs,   SFQ_MIN(UINT_MAX, sc_arg_max));
-	VAL2IOEB_SET_NTSTR(metatext,   USHRT_MAX);
-	VAL2IOEB_SET_NTSTR(soutpath,   SFQ_MIN(USHRT_MAX, PATH_MAX));
-	VAL2IOEB_SET_NTSTR(serrpath,   SFQ_MIN(USHRT_MAX, PATH_MAX));
+	VAL2IOEB_SET_NTSTR(eworkdir,  SFQ_MIN(USHRT_MAX, PATH_MAX));
+	VAL2IOEB_SET_NTSTR(execpath,  SFQ_MIN(USHRT_MAX, PATH_MAX));
+	VAL2IOEB_SET_NTSTR(execargs,  SFQ_MIN(UINT_MAX, sc_arg_max));
+	VAL2IOEB_SET_NTSTR(metatext,  USHRT_MAX);
+	VAL2IOEB_SET_NTSTR(soutpath,  SFQ_MIN(USHRT_MAX, PATH_MAX));
+	VAL2IOEB_SET_NTSTR(serrpath,  SFQ_MIN(USHRT_MAX, PATH_MAX));
 
 /* for debug */
 	add_all =
