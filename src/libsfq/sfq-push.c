@@ -17,7 +17,7 @@ SFQ_ENTP_ENTER
 	struct sfq_queue_object* qo = NULL;
 	struct sfq_process_info* procs = NULL;
 
-	char* eworkdir = NULL;
+	char* wrkdir = NULL;
 	char* full_soutpath = NULL;
 	char* full_serrpath = NULL;
 
@@ -74,24 +74,28 @@ str[0] == '\0' のときは str に NULL を設定
 			SFQ_FAIL(EA_ISNOTDIR, "'%s' is not dir", val->eworkdir);
 		}
 
-		eworkdir = realpath(val->eworkdir, NULL);
-		if (! eworkdir)
+		wrkdir = realpath(val->eworkdir, NULL);
+		if (! wrkdir)
 		{
-			SFQ_FAIL(ES_MEMORY, "realpath(eworkdir)");
+			SFQ_FAIL(ES_MEMORY, "realpath(wrkdir)");
 		}
 	}
 
-	if (! eworkdir)
+	if (! wrkdir)
 	{
-		eworkdir = getcwd(NULL, 0);
-		if (! eworkdir)
+		wrkdir = getcwd(NULL, 0);
+		if (! wrkdir)
 		{
 			SFQ_FAIL(ES_PATH, "getcwd");
 		}
 	}
 
-	sfq_rtrim(eworkdir, "/");
-	val->eworkdir = eworkdir;
+	sfq_rtrim(wrkdir, "/");
+
+	if (val->eworkdir)
+	{
+		val->eworkdir = wrkdir;
+	}
 
 /*
 ログ関連は相対パスから絶対パスに変換
@@ -100,10 +104,10 @@ str[0] == '\0' のときは str に NULL を設定
 	{
 		if ((val->soutpath[0] != '/') && (strcmp(val->soutpath, "-") != 0))
 		{
-			full_soutpath = sfq_alloc_concat_n(3, eworkdir, "/", val->soutpath);
+			full_soutpath = sfq_alloc_concat_n(3, wrkdir, "/", val->soutpath);
 			if (! full_soutpath)
 			{
-				SFQ_FAIL(EA_CONCAT_N, "eworkdir/soutpath");
+				SFQ_FAIL(EA_CONCAT_N, "wrkdir/soutpath");
 			}
 
 			val->soutpath = full_soutpath;
@@ -114,10 +118,10 @@ str[0] == '\0' のときは str に NULL を設定
 	{
 		if ((val->serrpath[0] != '/') && (strcmp(val->serrpath, "-") != 0))
 		{
-			full_serrpath = sfq_alloc_concat_n(3, eworkdir, "/", val->serrpath);
+			full_serrpath = sfq_alloc_concat_n(3, wrkdir, "/", val->serrpath);
 			if (! full_serrpath)
 			{
-				SFQ_FAIL(EA_CONCAT_N, "eworkdir/serrpath");
+				SFQ_FAIL(EA_CONCAT_N, "wrkdir/serrpath");
 			}
 
 			val->serrpath = full_serrpath;
@@ -400,8 +404,8 @@ id, pushtime, uuid はここで生成する
 
 SFQ_LIB_CHECKPOINT
 
-	free(eworkdir);
-	eworkdir = NULL;
+	free(wrkdir);
+	wrkdir = NULL;
 
 	free(full_soutpath);
 	full_soutpath = NULL;
