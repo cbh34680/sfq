@@ -63,11 +63,11 @@ public class SFQueueClientRemote extends SFQueueClient
 				}
 			}
 
-			//final InetAddress addr = InetAddress.getByName(host);
+			final int timeout = (int)conn_params.getOrDefault("timeout", 2000);
 
 			//
 			final ArrayList<String> header_arr = new ArrayList<>();
-			final List<String> copyKeys = Arrays.asList("querootdir", "quename");
+			final List<String> copyKeys = Arrays.asList("querootdir", "quename", "eworkdir");
 			final List<String> ignoreKeys = Arrays.asList("payload");
 
 			//
@@ -108,7 +108,7 @@ public class SFQueueClientRemote extends SFQueueClient
 			final String header = String.join(CRLF,  header_arr) + CRLF + CRLF;
 			try (Socket sock = new Socket(host, port))
 			{
-				sock.setSoTimeout(2000);
+				sock.setSoTimeout(timeout);
 
 				try (OutputStream os = sock.getOutputStream(); DataInputStream dis = new DataInputStream(sock.getInputStream()))
 				{
