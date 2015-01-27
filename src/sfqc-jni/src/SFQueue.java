@@ -61,6 +61,7 @@ public class SFQueue
 
 					put("querootdir", "/home/devuser/rq0");
 					put("quename", "test0");
+					put("eworkdir", "/home/devuser/rq0/w");
 				}
 			};
 
@@ -71,8 +72,6 @@ o.println("push start");
 			final Map<String, Object> params1 = new HashMap<String, Object>()
 			{
 				{
-					put("eworkdir", "/home/devuser/rq0/w");
-
 					put("metatext", "params1");
 					put("payload", "string test");
 				}

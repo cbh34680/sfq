@@ -67,7 +67,7 @@ public class SFQueueClientRemote extends SFQueueClient
 
 			//
 			final ArrayList<String> header_arr = new ArrayList<>();
-			final List<String> copyKeys = Arrays.asList("querootdir", "quename");
+			final List<String> copyKeys = Arrays.asList("querootdir", "quename", "eworkdir");
 			final List<String> ignoreKeys = Arrays.asList("payload");
 
 			//
