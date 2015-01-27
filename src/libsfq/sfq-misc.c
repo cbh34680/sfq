@@ -704,7 +704,7 @@ SFQ_LIB_ENTER
 	om_querootdir = realpath(querootdir, NULL);
 	if (! om_querootdir)
 	{
-		SFQ_FAIL(ES_PATH, "om_realpath");
+		SFQ_FAIL(ES_PATH, "%s: resolv realpath", querootdir);
 	}
 
 /*
