@@ -65,19 +65,19 @@
  *
  */
 #ifndef SFQ_DEFAULT_QUEROOTDIR
-	#define SFQ_DEFAULT_QUEROOTDIR		"/var/tmp"
+	#define SFQ_DEFAULT_QUEROOTDIR	"/var/tmp"
 #endif
 
 #ifndef SFQ_DEFAULT_QUENAME
-	#define SFQ_DEFAULT_QUENAME		"noname"
+	#define SFQ_DEFAULT_QUENAME	"noname"
 #endif
 
-#define SFQ_MAGICSTR				"sfq"
+#define SFQ_MAGICSTR			"sfq"
 
-#define SFQ_QUEUE_FILENAME			"data.sfq"
-#define SFQ_QUEUE_LOGDIRNAME			"logs"
-#define SFQ_QUEUE_PROC_LOGDIRNAME		"proc"
-#define SFQ_QUEUE_EXEC_LOGDIRNAME		"exec"
+#define SFQ_QUEUE_FILENAME		"data.sfq"
+#define SFQ_QUEUE_LOGDIRNAME		"logs"
+#define SFQ_QUEUE_PROC_LOGDIRNAME	"proc"
+#define SFQ_QUEUE_EXEC_LOGDIRNAME	"exec"
 
 #define SFQ_ALIGN_MARGIN(e)		(((( (e) / 8 ) + (( (e) % 8) ? 1 : 0)) * 8) - (e) )
 
@@ -389,8 +389,8 @@ struct sfq_ioelm_buff
 {
 	struct sfq_e_header eh;
 /*
-	const char* execusrnam;
-	const char* execgrpnam;
+#	const char* execusrnam;
+#	const char* execgrpnam;
 */
 
 	const sfq_byte* payload;
@@ -491,6 +491,7 @@ sfq_bool sfq_readqfh(struct sfq_queue_object* qo,
 sfq_bool sfq_writeqfh(struct sfq_queue_object* qo, struct sfq_file_header* qfh,
 	const struct sfq_process_info* procs, const char* lastoper);
 
+sfq_bool sfq_disable_elm(struct sfq_queue_object* qo, off_t seek_pos, sfq_bool disabled);
 sfq_bool sfq_unlink_prevelm(struct sfq_queue_object* qo, off_t seek_pos);
 sfq_bool sfq_unlink_nextelm(struct sfq_queue_object* qo, off_t seek_pos);
 sfq_bool sfq_link_nextelm(struct sfq_queue_object* qo, off_t seek_pos, off_t updval);

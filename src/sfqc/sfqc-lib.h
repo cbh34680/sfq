@@ -45,6 +45,7 @@
 #define SFQC_RESERVE_SLOT_MIN		(4)
 
 #define SFQC_CRLF			"\r\n"
+#define SFQC_LF				"\n"
 
 
 /* プログラム引数 */

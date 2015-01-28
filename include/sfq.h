@@ -51,6 +51,7 @@ enum
 	SFQ_RC_EA_SEEKSETIO,
 
 	SFQ_RC_EA_UNLINKELM,
+	SFQ_RC_EA_DISABLEELM,
 	SFQ_RC_EA_ELMRW,
 	SFQ_RC_EA_QFHRW,
 	SFQ_RC_EA_COPYVALUE,
@@ -59,8 +60,8 @@ enum
 	SFQ_RC_EA_CREATENAMES,
 	SFQ_RC_EA_PWDNAME2ID,
 	SFQ_RC_EA_NOTPERMIT,
-	SFQ_RC_EA_CONCAT_N,
 
+	SFQ_RC_EA_CONCAT_N,
 	SFQ_RC_EA_NOTPAYLOAD,
 	SFQ_RC_EA_LOCKSEMAPHORE,
 	SFQ_RC_EA_REGSEMAPHORE,
@@ -142,13 +143,29 @@ struct sfq_value
 	size_t elmsize_;
 };
 
-typedef sfq_bool (*sfq_map_callback)(ulong order, off_t elm_pos, const struct sfq_value* val, void* userdata);
+/* */
+struct sfq_map_callback_param
+{
+	ulong order;
+	off_t elm_pos;
+	const struct sfq_value* val;
+	void* userdata;
+
+	sfq_bool disabled;
+};
+
+typedef sfq_bool (*sfq_map_callback)(struct sfq_map_callback_param* param);
+/*
+# typedef sfq_bool (*sfq_map_callback)(ulong order, off_t elm_pos, const struct sfq_value* val, void* userdata);
+*/
 
 void sfq_set_print(sfq_bool printOnOff);
 sfq_bool sfq_get_print();
 void sfq_rtrim(char* str, const char* cmask);
 
-int sfq_map(const char* querootdir, const char* quename,
+int sfq_map_ro(const char* querootdir, const char* quename,
+	sfq_map_callback callback, sfq_bool reverse, void* userdata);
+int sfq_map_rw(const char* querootdir, const char* quename,
 	sfq_map_callback callback, sfq_bool reverse, void* userdata);
 
 int sfq_init(const char* querootdir, const char* quename,

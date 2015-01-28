@@ -1,7 +1,6 @@
 #include "sfqc-lib.h"
 
 #define _T_	"\t"
-#define LF	"\n"
 
 struct prtelm_data
 {
@@ -10,37 +9,42 @@ struct prtelm_data
 	sfq_bool verbose;
 };
 
-sfq_bool print_element(ulong order, off_t elm_pos, const struct sfq_value* val, void* userdata)
+/*
+# sfq_bool print_element(ulong order, off_t elm_pos, const struct sfq_value* val, void* userdata)
+*/
+sfq_bool print_element(struct sfq_map_callback_param* param)
 {
 	int irc = 0;
 	struct tm tmp;
 
-	char dt[32] = "";
+	char pushtime[32] = "";
 	char uuid_s[37] = "";
 
-	struct prtelm_data* ped = (struct prtelm_data*)userdata;
+	struct prtelm_data* ped = (struct prtelm_data*)param->userdata;
 	struct sfq_value pval;
 
 /* */
 	bzero(&pval, sizeof(pval));
 
-	localtime_r(&val->pushtime, &tmp);
-	strftime(dt, sizeof(dt), "%Y-%m-%d %H:%M:%S", &tmp);
+	localtime_r(&param->val->pushtime, &tmp);
+	strftime(pushtime, sizeof(pushtime), "%Y-%m-%d %H:%M:%S", &tmp);
 
-	uuid_unparse(val->uuid, uuid_s);
+	uuid_unparse(param->val->uuid, uuid_s);
 
 /* */
-	irc = sfq_alloc_print_value(val, &pval);
+	irc = sfq_alloc_print_value(param->val, &pval);
 	if (irc == SFQ_RC_SUCCESS)
 	{
 		if (ped->verbose)
 		{
-			printf("************************ order %lu ************************\n", order);
+			printf("************************ %lu. element ************************\n",
+				param->order);
 
 			printf("%-13s: %s\n",  "querootdir",	pval.querootdir);
 			printf("%-13s: %s\n",  "quename",	pval.quename);
-			printf("%-13s: %zu\n", "offset",	elm_pos);
+			printf("%-13s: %zu\n", "offset",	param->elm_pos);
 			printf("%-13s: %zu\n", "id",		pval.id);
+			printf("%-13s: %s\n",  "pushtime",	pushtime);
 			printf("%-13s: %s\n",  "uuid",		uuid_s);
 			printf("%-13s: %s\n",  "eworkdir",	pval.eworkdir);
 			printf("%-13s: %s\n",  "execpath",	pval.execpath);
@@ -48,9 +52,10 @@ sfq_bool print_element(ulong order, off_t elm_pos, const struct sfq_value* val, 
 			printf("%-13s: %s\n",  "metatext",	pval.metatext);
 			printf("%-13s: %s\n",  "soutpath",	pval.soutpath);
 			printf("%-13s: %s\n",  "serrpath",	pval.serrpath);
-			printf("%-13s: %u\n",  "payload-type",	val->payload_type);
-			printf("%-13s: %zu\n", "payload-size",	val->payload_size);
-			printf("%-13s: %zu\n", "elmsize_",	val->elmsize_);
+			printf("%-13s: %u\n",  "payload-type",	pval.payload_type);
+			printf("%-13s: %zu\n", "payload-size",	pval.payload_size);
+			printf("%-13s: %d\n",  "disabled",	pval.disabled);
+			printf("%-13s: %zu\n", "elmsize_",	pval.elmsize_);
 			printf("%-13s: %s\n",  "payload",	(char*)pval.payload);
 		}
 		else
@@ -58,17 +63,17 @@ sfq_bool print_element(ulong order, off_t elm_pos, const struct sfq_value* val, 
 			printf
 			(
 				"%s" _T_         "%s" _T_
-				"%lu" _T_ "%zu" _T_ "%zu" _T_ "%s" _T_ "%s" _T_
+				"%lu" _T_     "%zu" _T_        "%zu" _T_ "%s" _T_  "%s" _T_
 				"%s" _T_       "%s" _T_       "%s" _T_
 				"%s" _T_       "%s" _T_       "%s" _T_
-				"%u" _T_           "%zu" _T_          "%zu" _T_
+				"%u" _T_           "%zu" _T_          "%d" _T_       "%zu" _T_
 				"%s"
-				LF,
+				"\n",
 				pval.querootdir, pval.quename,
-				order,    elm_pos,  pval.id,  dt,      uuid_s,
+				param->order, param->elm_pos,  pval.id,  pushtime, uuid_s,
 				pval.eworkdir, pval.execpath, pval.execargs,
 				pval.metatext, pval.soutpath, pval.serrpath,
-				val->payload_type, val->payload_size, val->elmsize_,
+				pval.payload_type, pval.payload_size, pval.disabled, pval.elmsize_,
 				(char*)pval.payload
 			);
 		}
@@ -79,7 +84,7 @@ sfq_bool print_element(ulong order, off_t elm_pos, const struct sfq_value* val, 
 
 	if (ped->loop_limit)
 	{
-		return ((order + 1) < ped->loop_limit);
+		return ((param->order + 1) < ped->loop_limit);
 	}
 
 	return SFQ_true;
@@ -120,7 +125,7 @@ SFQC_MAIN_ENTER
 
 	ped.loop_limit = pgargs.num1char;
 
-	irc = sfq_map(pgargs.querootdir, pgargs.quename, print_element, pgargs.reverse, &ped);
+	irc = sfq_map_ro(pgargs.querootdir, pgargs.quename, print_element, pgargs.reverse, &ped);
 
 	if (irc != SFQ_RC_SUCCESS)
 	{

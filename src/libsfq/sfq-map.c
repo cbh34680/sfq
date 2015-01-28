@@ -1,13 +1,13 @@
 #include "sfq-lib.h"
 
-int sfq_map(const char* querootdir, const char* quename, sfq_map_callback callback,
-	sfq_bool reserve, void* userdata)
+static int sfq_map_(sfq_bool qopen_RW, const char* querootdir, const char* quename,
+	sfq_map_callback callback, sfq_bool reverse, void* userdata)
 {
 SFQ_ENTP_ENTER
 
 	struct sfq_queue_object* qo = NULL;
 
-	ulong num = 0;
+	ulong order = 1;
 	sfq_bool b = SFQ_false;
 
 	off_t endpos = 0;
@@ -24,7 +24,15 @@ SFQ_ENTP_ENTER
 	sfq_init_ioeb(&ioeb);
 
 /* open queue-file */
-	qo = sfq_open_queue_ro(querootdir, quename);
+	if (qopen_RW)
+	{
+		qo = sfq_open_queue_rw(querootdir, quename);
+	}
+	else
+	{
+		qo = sfq_open_queue_ro(querootdir, quename);
+	}
+
 	if (! qo)
 	{
 		SFQ_FAIL(EA_OPENQUEUE, "sfq_open_queue_ro");
@@ -46,11 +54,11 @@ SFQ_ENTP_ENTER
 	assert(qfh.qh.dval.elm_next_shift_pos);
 
 /* loop elements */
-	currpos = reserve
+	currpos = reverse
 		? qfh.qh.dval.elm_next_pop_pos
 		: qfh.qh.dval.elm_next_shift_pos;
 
-	endpos = reserve
+	endpos = reverse
 		? qfh.qh.dval.elm_next_shift_pos
 		: qfh.qh.dval.elm_next_pop_pos;
 
@@ -60,23 +68,23 @@ SFQ_ENTP_ENTER
 --> currpos はシグナルでの強制終了時に不正な値となることが考えられるのであてにしないこと
 --> currpos を条件から外した
 */
-	for (num=0; /*currpos && */(savepos != endpos) && loop_next; num++)
+	while (/*currpos && */ (savepos != endpos) && loop_next)
 	{
 		struct sfq_value val;
+		struct sfq_map_callback_param cb_param;
 
 /* */
-		savepos = currpos;
 		bzero(&val, sizeof(val));
+		bzero(&cb_param, sizeof(cb_param));
 
+		savepos = currpos;
+
+/* */
 		b = sfq_readelm_alloc(qo, currpos, &ioeb);
 		if (! b)
 		{
 			SFQ_FAIL(EA_ELMRW, "sfq_readelm_alloc");
 		}
-
-#ifdef SFQ_DEBUG_BUILD
-		sfq_print_e_header(&ioeb.eh);
-#endif
 
 /* set val */
 		b = sfq_copy_ioeb2val(&ioeb, &val);
@@ -88,10 +96,32 @@ SFQ_ENTP_ENTER
 		val.querootdir = qo->om->querootdir;
 		val.quename = qo->om->quename;
 
-		loop_next = callback(num, currpos, &val, userdata);
+/*
+パラメータを構築し、コールバック関数を呼び出す
+*/
+		cb_param.order = order;
+		cb_param.elm_pos = currpos;
+		cb_param.val = &val;
+		cb_param.userdata = userdata;
+		cb_param.disabled = ioeb.eh.disabled;
+
+		loop_next = callback(&cb_param);
+		order++;
+
+/*
+値が変更されていたら要素を更新する
+*/
+		if (ioeb.eh.disabled != cb_param.disabled)
+		{
+			b = sfq_disable_elm(qo, currpos, cb_param.disabled);
+			if (! b)
+			{
+				SFQ_FAIL(EA_DISABLEELM, "sfq_disable_elm");
+			}
+		}
 
 /* copy next element-offset to pos */
-		currpos = reserve
+		currpos = reverse
 			? ioeb.eh.prev_elmpos
 			: ioeb.eh.next_elmpos;
 
@@ -111,5 +141,17 @@ SFQ_LIB_CHECKPOINT
 SFQ_ENTP_LEAVE
 
 	return SFQ_LIB_RC();
+}
+
+int sfq_map_ro(const char* querootdir, const char* quename, sfq_map_callback callback,
+	sfq_bool reverse, void* userdata)
+{
+	return sfq_map_(SFQ_false, querootdir, quename, callback, reverse, userdata);
+}
+
+int sfq_map_rw(const char* querootdir, const char* quename, sfq_map_callback callback,
+	sfq_bool reverse, void* userdata)
+{
+	return sfq_map_(SFQ_true, querootdir, quename, callback, reverse, userdata);
 }
 
