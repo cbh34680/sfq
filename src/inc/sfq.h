@@ -185,6 +185,9 @@ int sfq_set_questate(const char* querootdir, const char* quename,
 size_t sfq_payload_len(const struct sfq_value* val);
 
 char* sfq_alloc_concat_n(int n, ...);
+char* sfq_alloc_concat_nt(const char* first, ...);
+
+#define sfq_alloc_concat(...)	sfq_alloc_concat_nt(__VA_ARGS__, NULL);
 
 /* stack allocate and string copy */
 #ifdef __GNUC__
@@ -210,6 +213,19 @@ char* sfq_alloc_concat_n(int n, ...);
 					strncpy(dst, (org), (copylen)); \
 					dst[ (copylen) ] = '\0'; \
 				} \
+			} \
+			dst; \
+		})
+
+
+	#define sfq_concat(...) \
+		({ \
+			char* dst = NULL; \
+			char* tmp_ = sfq_alloc_concat_nt(__VA_ARGS__, NULL); \
+			if (tmp_) { \
+				dst = sfq_stradup(tmp_); \
+				free(tmp_); \
+				tmp_ = NULL; \
 			} \
 			dst; \
 		})

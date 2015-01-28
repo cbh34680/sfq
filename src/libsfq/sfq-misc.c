@@ -951,11 +951,11 @@ char* sfq_alloc_concat_n(int n, ...)
 	size_t len = 0;
 	char* ret = NULL;
 
-	va_list list;
+	va_list ap;
 
-	va_start(list, n);
-	for (i=0; i<n; i++) { len += strlen(va_arg(list, char*)); }
-	va_end(list);
+	va_start(ap, n);
+	for (i=0; i<n; i++) { len += strlen(va_arg(ap, const char*)); }
+	va_end(ap);
 
 	ret = malloc(len + 1 /* '\0' */);
 	if (! ret)
@@ -964,9 +964,50 @@ char* sfq_alloc_concat_n(int n, ...)
 	}
 	ret[0] = '\0';
 
-	va_start(list, n);
-	for (i=0; i<n; i++) { strcat(ret, va_arg(list, char*)); }
-	va_end(list);
+	va_start(ap, n);
+	for (i=0; i<n; i++) { strcat(ret, va_arg(ap, const char*)); }
+	va_end(ap);
+
+	return ret;
+}
+
+char* sfq_alloc_concat_nt(const char* first, ...)
+{
+	size_t len = 0;
+	char* ret = NULL;
+
+	va_list ap;
+	va_list copy;
+
+	const char* curr = NULL;
+
+	va_start(ap, first);
+	va_copy(copy, ap);
+
+	curr = first;
+	while (curr)
+	{
+		len += strlen(curr);
+		curr = va_arg(ap, const char*);
+	}
+
+	va_end(ap);
+
+	ret = malloc(len + 1);
+	if (! ret)
+	{
+		return NULL;
+	}
+	ret[0] = '\0';
+
+	curr = first;
+	while (curr)
+	{
+		strcat(ret, curr);
+		curr = va_arg(copy, const char*);
+	}
+
+	va_end(copy);
 
 	return ret;
 }
