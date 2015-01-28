@@ -23,6 +23,7 @@
 /sfqc-pushx
 /sfqc-popx
 /sfqc-shiftx
+/sfqc-disable
 /?.c
 /?.php
 /vchk

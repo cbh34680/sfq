@@ -22,18 +22,26 @@
 #
 
 CC        = gcc
+
+#
 OBJSL     = sfqc-xinetd.o sfqc-push.o sfqc-lib.o sfqc-take.o base64.o
-OBJSE     = sfqc-init.o sfqc-info.o sfqc-list.o sfqc-pusht.o sfqc-pushb.o sfqc-pop.o sfqc-shift.o sfqc-clear.o sfqc-sets.o
+
+OBJSE     = sfqc-init.o sfqc-info.o sfqc-list.o sfqc-pusht.o sfqc-pushb.o
+OBJSE    += sfqc-pop.o sfqc-shift.o sfqc-clear.o sfqc-sets.o sfqc-disable.o
 OBJSE    += sfqc-pushx.o sfqc-popx.o sfqc-shiftx.o
 
 OBJS      = $(OBJSL) $(OBJSE)
 
-TARGETE   = sfqc-init sfqc-info sfqc-list sfqc-pusht sfqc-pushb sfqc-pop sfqc-shift sfqc-clear sfqc-sets
+#
+TARGETL   = libsfqc.so
+
+TARGETE   = sfqc-init sfqc-info sfqc-list sfqc-pusht sfqc-pushb sfqc-pop
+TARGETE  += sfqc-shift sfqc-clear sfqc-sets sfqc-disable
 TARGETE  += sfqc-pushx sfqc-popx sfqc-shiftx
 
-TARGETL   = libsfqc.so
 TARGET    = $(TARGETL) $(TARGETE)
 
+#
 INCDIRS   = -I. -I../inc -I../../include
 INCFILES  = ../inc/sfq.h sfqc-lib.h base64.h
 
@@ -90,6 +98,16 @@ sfqc-info: sfqc-info.o
 sfqc-list: sfqc-list.o
 	$(CC) $(ELDFLAGS) $(LIBDIRS) -o $@ $< $(LIBS)
 
+sfqc-clear: sfqc-clear.o
+	$(CC) $(ELDFLAGS) $(LIBDIRS) -o $@ $< $(LIBS)
+
+sfqc-sets: sfqc-sets.o
+	$(CC) $(ELDFLAGS) $(LIBDIRS) -o $@ $< $(LIBS)
+
+sfqc-disable: sfqc-disable.o
+	$(CC) $(ELDFLAGS) $(LIBDIRS) -o $@ $< $(LIBS)
+
+#
 sfqc-pusht: sfqc-pusht.o
 	$(CC) $(ELDFLAGS) $(LIBDIRS) -o $@ $< $(LIBS)
 
@@ -103,12 +121,6 @@ sfqc-popx: sfqc-popx.o
 	$(CC) $(ELDFLAGS) $(LIBDIRS) -o $@ $< $(LIBS)
 
 sfqc-shift: sfqc-shift.o
-	$(CC) $(ELDFLAGS) $(LIBDIRS) -o $@ $< $(LIBS)
-
-sfqc-clear: sfqc-clear.o
-	$(CC) $(ELDFLAGS) $(LIBDIRS) -o $@ $< $(LIBS)
-
-sfqc-sets: sfqc-sets.o
 	$(CC) $(ELDFLAGS) $(LIBDIRS) -o $@ $< $(LIBS)
 
 #

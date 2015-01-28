@@ -230,7 +230,8 @@ size_t sfq_payload_len(const struct sfq_value* val)
 		{
 			ret = val->payload_size;
 
-			if (val->payload_type & SFQ_PLT_NULLTERM)
+			if ((val->payload_type & SFQ_PLT_NULLTERM) &&
+			    (val->payload_type & SFQ_PLT_CHARARRAY))
 			{
 				ret--;
 			}
@@ -316,8 +317,10 @@ SFQ_LIB_ENTER
 
 /* */
 	ioeb->eh.eh_size = sizeof(ioeb->eh);
+
 	ioeb->eh.id = val->id;
 	ioeb->eh.pushtime = val->pushtime;
+	ioeb->eh.disabled = val->disabled;
 
 	uuid_copy(ioeb->eh.uuid, val->uuid);
 
@@ -420,6 +423,7 @@ sfq_bool sfq_copy_ioeb2val(const struct sfq_ioelm_buff* ioeb, struct sfq_value* 
 
 	val->id = ioeb->eh.id;
 	val->pushtime = ioeb->eh.pushtime;
+	val->disabled = ioeb->eh.disabled;
 	val->elmsize_ = ioeb->eh.elmsize_;
 
 	uuid_copy(val->uuid, ioeb->eh.uuid);
@@ -584,8 +588,10 @@ SFQ_LIB_ENTER
 /* */
 	dst->id = val->id;
 	dst->pushtime = val->pushtime;
-	uuid_copy(dst->uuid, val->uuid);
+	dst->disabled = val->disabled;
 	dst->elmsize_ = val->elmsize_;
+
+	uuid_copy(dst->uuid, val->uuid);
 
 	dst->payload_type = val->payload_type;
 	dst->payload_size = val->payload_size;
@@ -950,11 +956,11 @@ char* sfq_alloc_concat_n(int n, ...)
 	size_t len = 0;
 	char* ret = NULL;
 
-	va_list list;
+	va_list ap;
 
-	va_start(list, n);
-	for (i=0; i<n; i++) { len += strlen(va_arg(list, char*)); }
-	va_end(list);
+	va_start(ap, n);
+	for (i=0; i<n; i++) { len += strlen(va_arg(ap, const char*)); }
+	va_end(ap);
 
 	ret = malloc(len + 1 /* '\0' */);
 	if (! ret)
@@ -963,9 +969,50 @@ char* sfq_alloc_concat_n(int n, ...)
 	}
 	ret[0] = '\0';
 
-	va_start(list, n);
-	for (i=0; i<n; i++) { strcat(ret, va_arg(list, char*)); }
-	va_end(list);
+	va_start(ap, n);
+	for (i=0; i<n; i++) { strcat(ret, va_arg(ap, const char*)); }
+	va_end(ap);
+
+	return ret;
+}
+
+char* sfq_alloc_concat_nt(const char* first, ...)
+{
+	size_t len = 0;
+	char* ret = NULL;
+
+	va_list ap;
+	va_list copy;
+
+	const char* curr = NULL;
+
+	va_start(ap, first);
+	va_copy(copy, ap);
+
+	curr = first;
+	while (curr)
+	{
+		len += strlen(curr);
+		curr = va_arg(ap, const char*);
+	}
+
+	va_end(ap);
+
+	ret = malloc(len + 1);
+	if (! ret)
+	{
+		return NULL;
+	}
+	ret[0] = '\0';
+
+	curr = first;
+	while (curr)
+	{
+		strcat(ret, curr);
+		curr = va_arg(copy, const char*);
+	}
+
+	va_end(copy);
 
 	return ret;
 }

@@ -157,13 +157,10 @@ fprintf(stderr, "before loop [questate=%u]\n", questate);
 
 				strftime(bttime_s, sizeof(bttime_s), "%y-%m-%d %H:%M:%S", &tmbuf);
 
-				fmt = sfq_alloc_concat_n(2, bttime_s, " %03d");
+				fmt = sfq_concat(bttime_s, " %03d");
 				if (fmt)
 				{
 					snprintf(bttime_s, sizeof(bttime_s), fmt, (tvbuf.tv_usec / 1000));
-
-					free(fmt);
-					fmt = NULL;
 				}
 			}
 

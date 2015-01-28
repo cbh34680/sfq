@@ -104,7 +104,7 @@ str[0] == '\0' のときは str に NULL を設定
 	{
 		if ((val->soutpath[0] != '/') && (strcmp(val->soutpath, "-") != 0))
 		{
-			full_soutpath = sfq_alloc_concat_n(3, wrkdir, "/", val->soutpath);
+			full_soutpath = sfq_alloc_concat(wrkdir, "/", val->soutpath);
 			if (! full_soutpath)
 			{
 				SFQ_FAIL(EA_CONCAT_N, "wrkdir/soutpath");
@@ -118,7 +118,7 @@ str[0] == '\0' のときは str に NULL を設定
 	{
 		if ((val->serrpath[0] != '/') && (strcmp(val->serrpath, "-") != 0))
 		{
-			full_serrpath = sfq_alloc_concat_n(3, wrkdir, "/", val->serrpath);
+			full_serrpath = sfq_alloc_concat(wrkdir, "/", val->serrpath);
 			if (! full_serrpath)
 			{
 				SFQ_FAIL(EA_CONCAT_N, "wrkdir/serrpath");

@@ -538,22 +538,90 @@ SFQ_LIB_LEAVE
 	return qo;
 }
 
+static sfq_bool update_elm_by_offset_(FILE* fp, off_t pos, void* data, size_t datasize)
+{
+	ssize_t siosize = 0;
+
+SFQ_LIB_ENTER
+
+	if (! fp)
+	{
+		SFQ_FAIL(EA_FUNCARG, "fp is null");
+	}
+
+
+	siosize = pwrite(fileno(fp), data, datasize, pos);
+	if (siosize == -1)
+	{
+		SFQ_FAIL(ES_FILE, "pwrite(eh)");
+	}
+
+SFQ_LIB_CHECKPOINT
+
+SFQ_LIB_LEAVE
+
+	return SFQ_LIB_IS_SUCCESS();
+}
+
+sfq_bool sfq_disable_elm(struct sfq_queue_object* qo, off_t seek_pos, sfq_bool disabled)
+{
+	off_t add_pos = offsetof(struct sfq_e_header, disabled);
+
+	return update_elm_by_offset_(qo->fp, seek_pos + add_pos, &disabled, sizeof(disabled));
+}
+
 enum
 {
 	UPDATE_PREV_ELMPOS = 1,
 	UPDATE_NEXT_ELMPOS = 2,
 };
 
+#if 1
+static sfq_bool update_elmpos_(FILE* fp, off_t seek_pos, int type, off_t updval)
+{
+	sfq_bool ret = SFQ_false;
+
+	off_t add_pos = 0;
+
+SFQ_LIB_ENTER
+
+	switch (type)
+	{
+		case UPDATE_PREV_ELMPOS:
+		{
+			add_pos = offsetof(struct sfq_e_header, prev_elmpos);
+			break;
+		}
+		case UPDATE_NEXT_ELMPOS:
+		{
+			add_pos = offsetof(struct sfq_e_header, next_elmpos);
+			break;
+		}
+		default:
+		{
+			SFQ_FAIL(EA_ASSERT, "%d: un-expected type", type);
+		}
+	}
+
+	ret = update_elm_by_offset_(fp, seek_pos + add_pos, &updval, sizeof(updval));
+
+SFQ_LIB_CHECKPOINT
+
+SFQ_LIB_LEAVE
+
+	return ret;
+}
+#else
 static sfq_bool update_elmpos_(FILE* fp, off_t seek_pos, int type, off_t updval)
 {
 	ssize_t siosize = 0;
-	//sfq_bool b = SFQ_false;
 	struct sfq_e_header eh;
 
+SFQ_LIB_ENTER
 	siosize = pread(fileno(fp), &eh, sizeof(eh), seek_pos);
 	if (siosize == -1)
 	{
-		return SFQ_false;
+		SFQ_FAIL(ES_FILE, "pread(eh)");
 	}
 
 	switch (type)
@@ -573,29 +641,35 @@ static sfq_bool update_elmpos_(FILE* fp, off_t seek_pos, int type, off_t updval)
 
 		default:
 		{
-			abort();
+			SFQ_FAIL(EA_ASSERT, "%d: un-expected type", type);
+			break;
 		}
 	}
 
 	siosize = pwrite(fileno(fp), &eh, sizeof(eh), seek_pos);
 	if (siosize == -1)
 	{
-		return SFQ_false;
+		SFQ_FAIL(ES_FILE, "pwrite(eh)");
 	}
 
-	return SFQ_true;
+SFQ_LIB_CHECKPOINT
+
+SFQ_LIB_LEAVE
+
+	return SFQ_LIB_IS_SUCCESS();
 }
+#endif
 
 sfq_bool sfq_unlink_prevelm(struct sfq_queue_object* qo, off_t seek_pos)
 {
-	/* prev_elmpos に 0 を設定し、リンクを切る */
+/* prev_elmpos に 0 を設定し、リンクを切る */
 
 	return update_elmpos_(qo->fp, seek_pos, UPDATE_PREV_ELMPOS, 0);
 }
 
 sfq_bool sfq_unlink_nextelm(struct sfq_queue_object* qo, off_t seek_pos)
 {
-	/* next_elmpos に 0 を設定し、リンクを切る */
+/* next_elmpos に 0 を設定し、リンクを切る */
 
 	return update_elmpos_(qo->fp, seek_pos, UPDATE_NEXT_ELMPOS, 0);
 }

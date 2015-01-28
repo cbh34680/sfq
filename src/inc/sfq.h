@@ -51,6 +51,7 @@ enum
 	SFQ_RC_EA_SEEKSETIO,
 
 	SFQ_RC_EA_UNLINKELM,
+	SFQ_RC_EA_DISABLEELM,
 	SFQ_RC_EA_ELMRW,
 	SFQ_RC_EA_QFHRW,
 	SFQ_RC_EA_COPYVALUE,
@@ -59,8 +60,8 @@ enum
 	SFQ_RC_EA_CREATENAMES,
 	SFQ_RC_EA_PWDNAME2ID,
 	SFQ_RC_EA_NOTPERMIT,
-	SFQ_RC_EA_CONCAT_N,
 
+	SFQ_RC_EA_CONCAT_N,
 	SFQ_RC_EA_NOTPAYLOAD,
 	SFQ_RC_EA_LOCKSEMAPHORE,
 	SFQ_RC_EA_REGSEMAPHORE,
@@ -88,9 +89,9 @@ enum
 /* PayLoad Type: uchar */
 enum
 {
-	SFQ_PLT_NULLTERM	= 1U,
-	SFQ_PLT_BINARY		= 2U,
-	SFQ_PLT_CHARARRAY	= 4U,
+	SFQ_PLT_NULLTERM		= 1U,
+	SFQ_PLT_BINARY			= 2U,
+	SFQ_PLT_CHARARRAY		= 4U,
 };
 
 /* Queue Status: ushort */
@@ -138,16 +139,33 @@ struct sfq_value
 	size_t payload_size;
 	const sfq_byte* payload;
 
+	sfq_bool disabled;
 	size_t elmsize_;
 };
 
-typedef sfq_bool (*sfq_map_callback)(ulong order, off_t elm_pos, const struct sfq_value* val, void* userdata);
+/* */
+struct sfq_map_callback_param
+{
+	ulong order;
+	off_t elm_pos;
+	const struct sfq_value* val;
+	void* userdata;
+
+	sfq_bool disabled;
+};
+
+typedef sfq_bool (*sfq_map_callback)(struct sfq_map_callback_param* param);
+/*
+# typedef sfq_bool (*sfq_map_callback)(ulong order, off_t elm_pos, const struct sfq_value* val, void* userdata);
+*/
 
 void sfq_set_print(sfq_bool printOnOff);
 sfq_bool sfq_get_print();
 void sfq_rtrim(char* str, const char* cmask);
 
-int sfq_map(const char* querootdir, const char* quename,
+int sfq_map_ro(const char* querootdir, const char* quename,
+	sfq_map_callback callback, sfq_bool reverse, void* userdata);
+int sfq_map_rw(const char* querootdir, const char* quename,
 	sfq_map_callback callback, sfq_bool reverse, void* userdata);
 
 int sfq_init(const char* querootdir, const char* quename,
@@ -184,6 +202,9 @@ int sfq_set_questate(const char* querootdir, const char* quename,
 size_t sfq_payload_len(const struct sfq_value* val);
 
 char* sfq_alloc_concat_n(int n, ...);
+char* sfq_alloc_concat_nt(const char* first, ...);
+
+#define sfq_alloc_concat(...)	sfq_alloc_concat_nt(__VA_ARGS__, NULL);
 
 /* stack allocate and string copy */
 #ifdef __GNUC__
@@ -209,6 +230,19 @@ char* sfq_alloc_concat_n(int n, ...);
 					strncpy(dst, (org), (copylen)); \
 					dst[ (copylen) ] = '\0'; \
 				} \
+			} \
+			dst; \
+		})
+
+
+	#define sfq_concat(...) \
+		({ \
+			char* dst = NULL; \
+			char* tmp_ = sfq_alloc_concat_nt(__VA_ARGS__, NULL); \
+			if (tmp_) { \
+				dst = sfq_stradup(tmp_); \
+				free(tmp_); \
+				tmp_ = NULL; \
 			} \
 			dst; \
 		})
