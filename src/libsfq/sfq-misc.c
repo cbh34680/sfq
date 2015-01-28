@@ -230,7 +230,8 @@ size_t sfq_payload_len(const struct sfq_value* val)
 		{
 			ret = val->payload_size;
 
-			if (val->payload_type & SFQ_PLT_NULLTERM)
+			if ((val->payload_type & SFQ_PLT_NULLTERM) &&
+			    (val->payload_type & SFQ_PLT_CHARARRAY))
 			{
 				ret--;
 			}

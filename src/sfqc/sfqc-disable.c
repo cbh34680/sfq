@@ -2,9 +2,7 @@
 
 sfq_bool disable_element(struct sfq_map_callback_param* param)
 {
-	printf("%zu\n", param->order);
-
-	if (param->order == 1)
+	//if (param->order == 1)
 	{
 		param->disabled = SFQ_true;
 	}
