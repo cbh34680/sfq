@@ -330,7 +330,8 @@ struct sfq_e_header
 	ushort eh_size;			/* 2 */
 	payload_type_t payload_type;	/* 1 */
 	sfq_uchar elmmargin_;		/* 1 ... for debug, set by sfq_copy_val2ioeb() */
-	sfq_byte filler1[4];		/* 4 */
+	sfq_bool disabled;		/* 1 */
+	sfq_byte filler1[3];		/* 3 */
 
 	ushort eworkdir_size;		/* 2 ... (x) USHRT_MAX PATH_MAX */
 	ushort execpath_size;		/* 2 ... (x) USHRT_MAX PATH_MAX */

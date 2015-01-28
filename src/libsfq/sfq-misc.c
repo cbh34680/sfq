@@ -421,6 +421,7 @@ sfq_bool sfq_copy_ioeb2val(const struct sfq_ioelm_buff* ioeb, struct sfq_value* 
 	val->id = ioeb->eh.id;
 	val->pushtime = ioeb->eh.pushtime;
 	val->elmsize_ = ioeb->eh.elmsize_;
+	val->disabled = ioeb->eh.disabled;
 
 	uuid_copy(val->uuid, ioeb->eh.uuid);
 

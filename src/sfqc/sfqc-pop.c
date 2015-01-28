@@ -60,7 +60,7 @@ SFQC_MAIN_ENTER
 #endif
 
 	irc = sfq_pop(pgargs.querootdir, pgargs.quename, &val);
-	if (irc != 0)
+	if (irc != SFQ_RC_SUCCESS)
 	{
 		switch (irc)
 		{

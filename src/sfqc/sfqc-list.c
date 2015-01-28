@@ -134,6 +134,8 @@ SFQC_MAIN_ENTER
 
 	if (pgargs.num1char)
 	{
+		/* プログラム引数) -1 ... -9 */
+
 		fprintf(stderr, "\n");
 	}
 	else

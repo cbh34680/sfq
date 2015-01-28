@@ -1,6 +1,6 @@
 #include "sfq-lib.h"
 
-int sfq_pop(const char* in_querootdir, const char* in_quename, struct sfq_value* val)
+static int sfq_pop_(const char* in_querootdir, const char* in_quename, struct sfq_value* val)
 {
 SFQ_ENTP_ENTER
 
@@ -164,5 +164,36 @@ SFQ_LIB_CHECKPOINT
 SFQ_ENTP_LEAVE
 
 	return SFQ_LIB_RC();
+}
+
+/*
+ * 無効状態については、とりあえず簡単な実装にしておく
+ */
+int sfq_pop(const char* in_querootdir, const char* in_quename, struct sfq_value* val_ptr)
+{
+	int irc = -1;
+
+	while (1)
+	{
+		struct sfq_value val;
+
+		bzero(&val, sizeof(val));
+
+		irc = sfq_pop_(in_querootdir, in_quename, &val);
+
+		if (irc == SFQ_RC_SUCCESS)
+		{
+			if (val.disabled)
+			{
+				continue;
+			}
+
+			(*val_ptr) = val;
+		}
+
+		break;
+	}
+
+	return irc;
 }
 

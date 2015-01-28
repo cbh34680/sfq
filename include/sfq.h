@@ -88,9 +88,9 @@ enum
 /* PayLoad Type: uchar */
 enum
 {
-	SFQ_PLT_NULLTERM	= 1U,
-	SFQ_PLT_BINARY		= 2U,
-	SFQ_PLT_CHARARRAY	= 4U,
+	SFQ_PLT_NULLTERM		= 1U,
+	SFQ_PLT_BINARY			= 2U,
+	SFQ_PLT_CHARARRAY		= 4U,
 };
 
 /* Queue Status: ushort */
@@ -138,6 +138,7 @@ struct sfq_value
 	size_t payload_size;
 	const sfq_byte* payload;
 
+	sfq_bool disabled;
 	size_t elmsize_;
 };
 
