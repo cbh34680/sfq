@@ -633,10 +633,6 @@ sfq_bool sfq_link_nextelm(struct sfq_queue_object* qo, off_t seek_pos, off_t upd
 sfq_bool sfq_writeqfh(struct sfq_queue_object* qo, struct sfq_file_header* qfh,
 	const struct sfq_process_info* procs, const char* lastoper)
 {
-/*
-	sfq_bool b = SFQ_false;
-	size_t iosize = 0;
-*/
 	ssize_t siosize = 0;
 
 SFQ_LIB_ENTER
@@ -660,13 +656,6 @@ SFQ_LIB_ENTER
 	{
 		SFQ_FAIL(EA_QFHRW, "write(qfh)");
 	}
-/*
-	b = seek_set_write_(qo->fp, 0, qfh, sizeof(*qfh));
-	if (! b)
-	{
-		SFQ_FAIL(EA_QFHRW, "FILE-WRITE(qfh)");
-	}
-*/
 
 	if (procs)
 	{
@@ -683,13 +672,6 @@ SFQ_LIB_ENTER
 		{
 			SFQ_FAIL(ES_FILE, "FILE-WRITE(procs)");
 		}
-/*
-		iosize = fwrite(procs, procs_size, 1, qo->fp);
-		if (iosize != 1)
-		{
-			SFQ_FAIL(ES_FILE, "FILE-WRITE(procs)");
-		}
-*/
 	}
 
 SFQ_LIB_CHECKPOINT
@@ -703,10 +685,6 @@ sfq_bool sfq_readqfh(struct sfq_queue_object* qo, struct sfq_file_header* qfh,
 	struct sfq_process_info** procs_ptr)
 {
 	struct sfq_process_info* procs = NULL;
-/*
-	sfq_bool b = SFQ_false;
-	size_t iosize = 0;
-*/
 	ssize_t siosize = 0;
 
 SFQ_LIB_ENTER
@@ -720,13 +698,6 @@ SFQ_LIB_ENTER
 	bzero(qfh, sizeof(*qfh));
 
 /* read file-header */
-/*
-	b = seek_set_read_(qo->fp, 0, qfh, sizeof(*qfh));
-	if (! b)
-	{
-		SFQ_FAIL(EA_SEEKSETIO, "seek_set_read_(qfh)");
-	}
-*/
 	siosize = pread(fileno(qo->fp), qfh, sizeof(*qfh), 0);
 	if (siosize != sizeof(*qfh))
 	{
@@ -755,17 +726,6 @@ SFQ_LIB_ENTER
 			{
 				SFQ_FAIL(ES_FILE, "FILE-READ(procs)");
 			}
-/*
-			iosize = fread(procs, procs_size, 1, qo->fp);
-			if (iosize != 1)
-			{
-				SFQ_FAIL(ES_FILE, "FILE-READ(procs)");
-			}
-*/
-
-//#ifdef SFQ_DEBUG_BUILD
-//			sfq_print_procs(procs, qfh->qh.sval.procs_num);
-//#endif
 
 			(*procs_ptr) = procs;
 		}
