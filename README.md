@@ -6,7 +6,7 @@ sfq is a library that provides a file-based queue function in a multi-threaded /
 * OS) CentOS 7 64bit
 
 [Build]
-* 1) yum -y install jansson-devel
+* 1) yum -y install jansson-devel libcap-devel libuuid-devel
 * 2) git clone (get source tree)
 * 3) make (use sfq/Makefile)
 
