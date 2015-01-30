@@ -228,6 +228,7 @@ SFQ_LIB_ENTER
 	int irc = -1;
 	int* pipefd = NULL;
 
+	char* env_ptr = NULL;
 	char env_ulong[32] = "";
 	char uuid_s[36 + 1] = "";
 
@@ -355,6 +356,23 @@ elog_print("\t\texecargs = %s", execargs);
 		}
 
 elog_print("\t\tpayload size = %zu", val->payload_size);
+	}
+
+	/* exec loop */
+	env_ptr = getenv("SFQ_EXECLOOP");
+	if (env_ptr)
+	{
+		char* e = NULL;
+		ulong ul = strtoul(env_ptr, &e, 0);
+
+		ul++;
+
+		snprintf(env_ulong, sizeof(env_ulong), "%zu", ul);
+		setenv("SFQ_EXECLOOP", env_ulong, 1);
+	}
+	else
+	{
+		setenv("SFQ_EXECLOOP", "1", 1);
 	}
 
 	/* que dir */
