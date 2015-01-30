@@ -5,6 +5,19 @@ cd $(dirname $(readlink -f "$0"))
 
 rm -rf sfqc_php
 
+cat << EOF > ../../lib/pkgconfig/libsfq.pc
+prefix=$(readlink -f ../..)
+exec_prefix=\${prefix}
+libdir=\${exec_prefix}/lib
+includedir=\${prefix}/include
+
+Name: sfq
+Description: Library for manipulating queue data
+Version: 0.11
+Libs: -L\${libdir} -lcap -luuid -lsfq
+Cflags: -I\${includedir}
+EOF
+
 pcp=$(readlink -f ../../lib/pkgconfig)
 export PKG_CONFIG_PATH="$pcp"
 echo "PKG_CONFIG_PATH=[$PKG_CONFIG_PATH]"
