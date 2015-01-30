@@ -576,7 +576,6 @@ enum
 	UPDATE_NEXT_ELMPOS = 2,
 };
 
-#if 1
 static sfq_bool update_elmpos_(FILE* fp, off_t seek_pos, int type, off_t updval)
 {
 	sfq_bool ret = SFQ_false;
@@ -611,54 +610,6 @@ SFQ_LIB_LEAVE
 
 	return ret;
 }
-#else
-static sfq_bool update_elmpos_(FILE* fp, off_t seek_pos, int type, off_t updval)
-{
-	ssize_t siosize = 0;
-	struct sfq_e_header eh;
-
-SFQ_LIB_ENTER
-	siosize = pread(fileno(fp), &eh, sizeof(eh), seek_pos);
-	if (siosize == -1)
-	{
-		SFQ_FAIL(ES_FILE, "pread(eh)");
-	}
-
-	switch (type)
-	{
-		case UPDATE_PREV_ELMPOS:
-		{
-			eh.prev_elmpos = updval;
-			break;
-		}
-
-		case UPDATE_NEXT_ELMPOS:
-		{
-
-			eh.next_elmpos = updval;
-			break;
-		}
-
-		default:
-		{
-			SFQ_FAIL(EA_ASSERT, "%d: un-expected type", type);
-			break;
-		}
-	}
-
-	siosize = pwrite(fileno(fp), &eh, sizeof(eh), seek_pos);
-	if (siosize == -1)
-	{
-		SFQ_FAIL(ES_FILE, "pwrite(eh)");
-	}
-
-SFQ_LIB_CHECKPOINT
-
-SFQ_LIB_LEAVE
-
-	return SFQ_LIB_IS_SUCCESS();
-}
-#endif
 
 sfq_bool sfq_unlink_prevelm(struct sfq_queue_object* qo, off_t seek_pos)
 {

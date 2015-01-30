@@ -16,9 +16,32 @@ static size_t atomic_write(int fd, char *buf, int count)
 	return (got < 0 ? got : count - need);
 }
 
+static int get_char_count(char delim, const char* searchstr)
+{
+	int cnt = -1;
+
+	if (searchstr)
+	{
+		const char* pos = NULL;
+
+		cnt = 0;
+		pos = searchstr;
+		while (*pos)
+		{
+			if ((*pos) == delim)
+			{
+				cnt++;
+			}
+			pos++;
+		}
+	}
+
+	return cnt;
+}
+
 #define READ			(0)
 #define WRITE			(1)
-#define DELIMITER_CHAR		'\t'
+#define EXECARG_DELIM		'\t'
 
 static void execapp(const char* execpath, char* execargs)
 {
@@ -34,23 +57,17 @@ SFQ_LIB_ENTER
 	{
 /*
 (カンマ区切りの) 引数の数を数える
+
+--> カンマの数 + 1 = 値の数
 */
-		char* pos = NULL;
-
-		valnum = 1;
-
-		pos = execargs;
-		while (*pos)
-		{
-			if ((*pos) == DELIMITER_CHAR)
-			{
-				valnum++;
-			}
-
-			pos++;
-		}
+		valnum = 1 + get_char_count(EXECARG_DELIM, execargs);
 	}
 
+/*
+argv = [ execpath, execargs[0], execargs[1], ..., execargs[n], NULL ]
+
+--> count(execargs) + 2
+*/
 	argc = valnum + 2;
 	argv_size = (sizeof(char*) * argc);
 
@@ -59,7 +76,6 @@ SFQ_LIB_ENTER
 	{
 		SFQ_FAIL(ES_MEMORY, "argv");
 	}
-
 	bzero(argv, argv_size);
 
 /* set argv */
@@ -67,41 +83,27 @@ SFQ_LIB_ENTER
 
 	if (execargs)
 	{
-		if (valnum == 1)
-		{
-			argv[1] = execargs;
-		}
-		else
-		{
-			char delimiter_str[] = { DELIMITER_CHAR, '\0' };
+		char delimiter_str[] = { EXECARG_DELIM, '\0' };
 
-			char* pos = NULL;
-			char* saveptr = NULL;
-			char* token = NULL;
-			int i = 0;
+		char* pos = NULL;
+		char* saveptr = NULL;
+		char* token = NULL;
+		int i = 0;
 
-			for (i=1, pos=execargs; ; i++, pos=NULL)
+		for (i=1, pos=execargs; ; i++, pos=NULL)
+		{
+			token = strtok_r(pos, delimiter_str, &saveptr);
+			if (! token)
 			{
-				token = strtok_r(pos, delimiter_str, &saveptr);
-				if (token == NULL)
-				{
-					break;
-				}
-
-				if ((i + 1) >= argc)
-				{
-					break;
-				}
-
-				argv[i] = token;
-/*
-				argv[i] = sfq_stradup(token);
-				if (! argv[i])
-				{
-					SFQ_FAIL(ES_MEMORY, "argv_i");
-				}
-*/
+				break;
 			}
+
+			if ((i + 1) >= argc)
+			{
+				break;
+			}
+
+			argv[i] = token;
 		}
 	}
 
@@ -148,6 +150,74 @@ elog_print("\tsoutpath == serrpath [%s], redirect stderr to /dev/null", soutpath
 		serrpath, logdir, val->uuid, val->id, "err", "SFQ_SERRPATH", dir_perm, file_perm);
 }
 
+#define PATH_DELIM	':'
+
+static int find_path(const char* needle, const char* arg_haystack)
+{
+	int ret = -1;
+	char* haystack = NULL;
+
+	char delimiter_str[] = { PATH_DELIM, '\0' };
+
+	char* pos = NULL;
+	char* saveptr = NULL;
+	char* token = NULL;
+	int i = 0;
+
+SFQ_LIB_ENTER
+
+	if ((! needle) || (! arg_haystack))
+	{
+		SFQ_FAIL(EA_FUNCARG, "arg is null");
+	}
+
+	haystack = sfq_stradup(arg_haystack);
+	if (! haystack)
+	{
+		SFQ_FAIL(ES_MEMORY, "sfq_stradup(arg_haystack)");
+	}
+
+	for (i=0, pos=haystack; ; i++, pos=NULL)
+	{
+		char* cmppath = NULL;
+
+		token = strtok_r(pos, delimiter_str, &saveptr);
+		if (! token)
+		{
+			break;
+		}
+
+/* check path */
+		cmppath = realpath(token, NULL);
+		if (cmppath)
+		{
+			if (strcmp(cmppath, needle) == 0)
+			{
+				ret = 1;
+			}
+
+			free(cmppath);
+			cmppath = NULL;
+		}
+
+		if (ret == 1)
+		{
+			break;
+		}
+	}
+
+	if (ret != 1)
+	{
+		ret = 0;
+	}
+
+SFQ_LIB_CHECKPOINT
+
+SFQ_LIB_LEAVE
+
+	return ret;
+}
+
 static int child_write_dup_exec_exit(const struct sfq_eloop_params* elop, struct sfq_value* val)
 {
 SFQ_LIB_ENTER
@@ -188,6 +258,45 @@ elog_print("\tprepare exec");
 		SFQ_FAIL(ES_PATH, "change dir to '%s'", eworkdir);
 	}
 elog_print("\t\tchdir = %s", eworkdir);
+
+	if (strcmp(eworkdir, "/") != 0)
+	{
+		const char* cur_path = getenv("PATH");
+		if (cur_path)
+		{
+			irc = find_path(eworkdir, cur_path);
+			if (irc < 0)
+			{
+				SFQ_FAIL(EA_ISINPATH, "find_path(%s, %s)", eworkdir, cur_path);
+			}
+
+			if (irc)
+			{
+elog_print("\t\tpath = %s (not add)", cur_path);
+			}
+			else
+			{
+/*
+現在の PATH 環境変数中に eworkdir が存在しない場合
+
+--> PATH 環境変数に eworkdir を追加する
+*/
+				const char* new_path = sfq_concat(eworkdir, ":", cur_path);
+				if (! new_path)
+				{
+					SFQ_FAIL(ES_MEMORY, "sfq_concat");
+				}
+
+				setenv("PATH", new_path, 1);
+elog_print("\t\tpath = %s (add)", new_path);
+			}
+		}
+		else
+		{
+			setenv("PATH", eworkdir, 1);
+elog_print("\t\tpath = %s (set)", eworkdir);
+		}
+	}
 
 	if (val->execpath)
 	{
@@ -246,20 +355,6 @@ elog_print("\t\texecargs = %s", execargs);
 		}
 
 elog_print("\t\tpayload size = %zu", val->payload_size);
-	}
-
-	if (strcmp(eworkdir, "/") != 0)
-	{
-		const char* cur_path = getenv("PATH");
-		if (cur_path)
-		{
-			const char* new_path = sfq_concat(eworkdir, ":", cur_path);
-			if (new_path)
-			{
-				setenv("PATH", new_path, 1);
-elog_print("\t\tpath = %s", new_path);
-			}
-		}
 	}
 
 	/* que dir */
