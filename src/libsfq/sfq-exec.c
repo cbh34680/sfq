@@ -132,7 +132,7 @@ static void output_reopen_4exec(const char* logdir, const struct sfq_value* val,
 /*
 標準出力先と標準エラー出力先が同じファイル名
 */
-fprintf(stderr, "\tsoutpath == serrpath [%s], redirect stderr to /dev/null\n", soutpath);
+elog_print("\tsoutpath == serrpath [%s], redirect stderr to /dev/null", soutpath);
 
 				serrpath = NULL;
 			}
@@ -167,7 +167,7 @@ payload 以外はスタックにコピー
 
 payload は pipe 経由で送信
 */
-fprintf(stderr, "\tprepare exec\n");
+elog_print("\tprepare exec");
 
 	if (val->eworkdir)
 	{
@@ -176,7 +176,6 @@ fprintf(stderr, "\tprepare exec\n");
 	else
 	{
 		eworkdir = getenv("SFQ_EWORKDIR");
-
 		if (! eworkdir)
 		{
 			eworkdir = "/";
@@ -188,7 +187,7 @@ fprintf(stderr, "\tprepare exec\n");
 	{
 		SFQ_FAIL(ES_PATH, "change dir to '%s'", eworkdir);
 	}
-fprintf(stderr, "\t\tchdir = %s\n", eworkdir);
+elog_print("\t\tchdir = %s", eworkdir);
 
 	if (val->execpath)
 	{
@@ -197,7 +196,7 @@ fprintf(stderr, "\t\tchdir = %s\n", eworkdir);
 		{
 			SFQ_FAIL(ES_MEMORY, "execpath");
 		}
-fprintf(stderr, "\t\texecpath = %s\n", execpath);
+elog_print("\t\texecpath = %s", execpath);
 	}
 
 	if (val->execargs)
@@ -207,7 +206,7 @@ fprintf(stderr, "\t\texecpath = %s\n", execpath);
 		{
 			SFQ_FAIL(ES_MEMORY, "execargs");
 		}
-fprintf(stderr, "\t\texecargs = %s\n", execargs);
+elog_print("\t\texecargs = %s", execargs);
 	}
 
 	if (val->payload && val->payload_size)
@@ -246,36 +245,56 @@ fprintf(stderr, "\t\texecargs = %s\n", execargs);
 			SFQ_FAIL(ES_FORK, "pipefd[READ] -> STDIN_FILENO");
 		}
 
-fprintf(stderr, "\t\tpayload size = %zu\n", val->payload_size);
+elog_print("\t\tpayload size = %zu", val->payload_size);
+	}
+
+	if (strcmp(eworkdir, "/") != 0)
+	{
+		const char* cur_path = getenv("PATH");
+		if (cur_path)
+		{
+			const char* new_path = sfq_concat(eworkdir, ":", cur_path);
+			if (new_path)
+			{
+				setenv("PATH", new_path, 1);
+elog_print("\t\tpath = %s", new_path);
+			}
+		}
 	}
 
 	/* que dir */
-	setenv("SFQ_ROOTDIR", elop->om_querootdir, 1);
+	setenv("SFQ_QUEROOTDIR", elop->om_querootdir, 1);
+elog_print("\t\tquerootdir = %s", elop->om_querootdir);
 
 	/* queue */
 	setenv("SFQ_QUENAME", elop->om_quename, 1);
+elog_print("\t\tquename = %s", elop->om_quename);
 
 	/* work dir */
 	setenv("SFQ_EWORKDIR", eworkdir, 1);
+elog_print("\t\teworkdir = %s", eworkdir);
 
 	/* id */
 	snprintf(env_ulong, sizeof(env_ulong), "%zu", val->id);
 	setenv("SFQ_ID", env_ulong, 1);
+elog_print("\t\tid = %zu", val->id);
 
 	/* pushtime */
 	snprintf(env_ulong, sizeof(env_ulong), "%zu", val->pushtime);
 	setenv("SFQ_PUSHTIME", env_ulong, 1);
+elog_print("\t\tpushtime = %zu", val->pushtime);
 
 	/* uuid */
 	uuid_unparse(val->uuid, uuid_s);
 	setenv("SFQ_UUID", uuid_s, 1);
+elog_print("\t\tuuid = %s", uuid_s);
 
 	/* metatext */
 	if (val->metatext)
 	{
 		setenv("SFQ_META", val->metatext, 1);
 
-fprintf(stderr, "\t\tmetatext = %s\n", val->metatext);
+elog_print("\t\tmetatext = %s", val->metatext);
 	}
 
 /* */
@@ -339,7 +358,7 @@ exec() が成功すればここには来ない
 		int irc = 0;
 		int status = 0;
 
-fprintf(stderr, "\tbefore wait child-process [pid=%d]\n", pid);
+elog_print("\tbefore wait child-process [pid=%d]", pid);
 
 /*
 子プロセスの終了を待つ
@@ -351,7 +370,7 @@ fprintf(stderr, "\tbefore wait child-process [pid=%d]\n", pid);
 			{
 				int exit_code = WEXITSTATUS(status);
 
-fprintf(stderr, "\tafter wait child-process [pid=%d exit=%d]\n", pid, exit_code);
+elog_print("\tafter wait child-process [pid=%d exit=%d]", pid, exit_code);
 				sfq_write_execrc(elop->om_queexeclogdir, val->uuid, exit_code);
 
 				return exit_code;

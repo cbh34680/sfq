@@ -28,12 +28,12 @@
 <body>
 <i>uuid:</i> <?= $uuid ?><br />
 <i>file:</i> <?= $file ?><br />
-<i>path:</i> <? if (isset($path)) { echo "{$path} (ts=" . date('y/m/d H:i:s', filemtime($path)) . ")"; } ?><br />
+<i>path:</i> <?php if (isset($path)) { echo "{$path} (ts=" . date('y/m/d H:i:s', filemtime($path)) . ")"; } ?><br />
 <br />
 <hr />
 <blockquote>
 <pre>
-<? if (isset($path)) { readfile($path); } ?>
+<?php if (isset($path)) { readfile($path); } ?>
 </pre>
 </blockquote>
 <hr />

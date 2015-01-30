@@ -112,16 +112,16 @@ SFQ_LIB_ENTER
 	pid_t pid = getpid();
 	pid_t ppid = getppid();
 
-fprintf(stderr, "#\n");
-fprintf(stderr, "# ppid    = %d\n", ppid);
-fprintf(stderr, "# pid     = %d\n", pid);
-fprintf(stderr, "# slotno  = %u\n", elop->slotno);
-fprintf(stderr, "# root    = %s\n", elop->om_querootdir);
-fprintf(stderr, "# queue   = %s\n", elop->om_quename);
-fprintf(stderr, "# execlog = %s\n", elop->om_queexeclogdir);
-fprintf(stderr, "#\n");
+elog_print("#");
+elog_print("# ppid    = %d", ppid);
+elog_print("# pid     = %d", pid);
+elog_print("# slotno  = %u", elop->slotno);
+elog_print("# root    = %s", elop->om_querootdir);
+elog_print("# queue   = %s", elop->om_quename);
+elog_print("# execlog = %s", elop->om_queexeclogdir);
+elog_print("#");
 
-fprintf(stderr, "before update_procstate\n");
+elog_print("before update_procstate");
 
 	/* 状態を LOOPSTART に変更 */
 	b = update_procstate(elop, SFQ_PIS_LOOPSTART, 0, &questate);
@@ -130,7 +130,7 @@ fprintf(stderr, "before update_procstate\n");
 		SFQ_FAIL(EA_UPDSTATUS, "loop start");
 	}
 
-fprintf(stderr, "before loop [questate=%u]\n", questate);
+elog_print("before loop [questate=%u]", questate);
 
 	for (loop=1; (shift_rc == SFQ_RC_SUCCESS) && (questate & SFQ_QST_EXEC_ON); loop++)
 	{
@@ -167,16 +167,16 @@ fprintf(stderr, "before loop [questate=%u]\n", questate);
 			bttime = tvbuf.tv_sec;
 		}
 
-fprintf(stderr, "loop(%zu) block-top [time=%zu time_s=%s]\n", loop, bttime, bttime_s);
+elog_print("loop%zu block-top [time=%zu time_s=%s]", loop, bttime, bttime_s);
 
-fprintf(stderr, "loop(%zu) attempt to shift\n", loop);
+elog_print("loop%zu attempt to shift", loop);
 
 		shift_rc = sfq_shift(elop->om_querootdir, elop->om_quename, &val);
 		if (shift_rc == SFQ_RC_W_NOELEMENT)
 		{
 			/* no more element */
 
-fprintf(stderr, "loop(%zu) no more element, break\n", loop);
+elog_print("loop%zu no more element, break", loop);
 
 			break;
 		}
@@ -186,10 +186,10 @@ fprintf(stderr, "loop(%zu) no more element, break\n", loop);
 /* */
 			uuid_unparse(val.uuid, uuid_s);
 
-fprintf(stderr, "loop(%zu) shift success [id=%zu pushtime=%zu uuid=%s]\n",
+elog_print("loop%zu shift success [id=%zu pushtime=%zu uuid=%s]",
 	loop, val.id, val.pushtime, uuid_s);
 
-fprintf(stderr, "loop(%zu) attempt to exec [id=%zu]\n", loop, val.id);
+elog_print("loop%zu attempt to exec [id=%zu]", loop, val.id);
 
 			execrc = sfq_execwait(elop, &val);
 
@@ -197,12 +197,12 @@ fprintf(stderr, "loop(%zu) attempt to exec [id=%zu]\n", loop, val.id);
 			{
 				/* execapp() exit(== 0) */
 				TO_state = SFQ_TOS_SUCCESS;
-fprintf(stderr, "loop(%zu) exec success\n", loop);
+elog_print("loop%zu exec success", loop);
 			}
 			else if (execrc == SFQ_RC_EC_EXECFAIL)
 			{
 				TO_state = SFQ_TOS_CANTEXEC;
-fprintf(stderr, "loop(%zu) exec fail\n", loop);
+elog_print("loop%zu exec fail", loop);
 			}
 			else if (execrc > 0)
 			{
@@ -211,14 +211,14 @@ fprintf(stderr, "loop(%zu) exec fail\n", loop);
 1 - 127 のユーザが使える exit-code
 */
 				TO_state = SFQ_TOS_APPEXIT_NON0;
-fprintf(stderr, "loop(%zu) exec app exit non-zero [rc=%d]\n", loop, execrc);
+elog_print("loop%zu exec app exit non-zero [rc=%d]", loop, execrc);
 			}
 			else
 			{
 /* 不明 */
 				/* can not execapp() */
 				TO_state = SFQ_TOS_CANTEXEC;
-fprintf(stderr, "loop(%zu) exec fail unknown-cause [rc=%d]\n", loop, execrc);
+elog_print("loop%zu exec fail unknown-cause [rc=%d]", loop, execrc);
 			}
 		}
 		else
@@ -227,7 +227,7 @@ fprintf(stderr, "loop(%zu) exec fail unknown-cause [rc=%d]\n", loop, execrc);
 			/* shift error (<> not found) */
 			TO_state = SFQ_TOS_FAULT;
 
-fprintf(stderr, "loop(%zu) shift fail [rc=%d]\n", loop, shift_rc);
+elog_print("loop%zu shift fail [rc=%d]", loop, shift_rc);
 		}
 
 printf("%s\t%d\t%s\t%zu\t%zu\t%d\n", bttime_s, shift_rc, uuid_s, val.id, val.pushtime, execrc);
@@ -242,12 +242,12 @@ printf("%s\t%d\t%s\t%zu\t%zu\t%d\n", bttime_s, shift_rc, uuid_s, val.id, val.pus
 			SFQ_FAIL(EA_UPDSTATUS, "loop increment");
 		}
 
-fprintf(stderr, "loop(%zu) block-bottom [questate=%u]\n", loop, questate);
+elog_print("loop%zu block-bottom [questate=%u]", loop, questate);
 	}
 
 SFQ_LIB_CHECKPOINT
 
-fprintf(stderr, "after loop [loop times=%zu]\n", loop);
+elog_print("after loop [loop times=%zu]", loop);
 
 /*
 ここでの update_procstate() の失敗は無視するしかないが
@@ -255,8 +255,8 @@ fprintf(stderr, "after loop [loop times=%zu]\n", loop);
 */
 	update_procstate(elop, SFQ_PIS_DONE, 0, NULL);
 
-fprintf(stderr, "after update_procstate\n");
-fprintf(stderr, "\n");
+elog_print("after update_procstate");
+elog_print("--");
 
 SFQ_LIB_LEAVE
 }

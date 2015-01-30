@@ -167,6 +167,8 @@ SFQ_FAIL_CATCH_LABEL__: \
 	goto SFQ_FAIL_CATCH_LABEL__;
 
 
+#define elog_print(format_, ...)	fprintf(stderr, "%s(%d)\t" format_ "\n", __FILE__, __LINE__, ##__VA_ARGS__)
+
 /* --------------------------------------------------------------
  *
  *

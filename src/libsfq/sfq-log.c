@@ -173,7 +173,7 @@ void sfq_output_reopen_4exec(FILE* fp, const time_t* now, const char* arg_wpath,
 	int irc = -1;
 	const char* opened = NULL;
 
-fprintf(stderr, "\tattempt to re-open(%s) file\n", ext);
+elog_print("\tattempt to re-open(%s) file", ext);
 
 	if (arg_wpath)
 	{
@@ -189,12 +189,12 @@ fprintf(stderr, "\tattempt to re-open(%s) file\n", ext);
 			{
 				const char* freopen_path = NULL;
 
-fprintf(stderr, "\tmkdir(%s) [perm=%x] for default log\n", ext, dir_perm);
+elog_print("\tmkdir(%s) [perm=%x] for default log", ext, dir_perm);
 				freopen_path = mkdir_and_alloc_wpath_4exec(logdir, uuid, id, ext, dir_perm);
 
 				if (freopen_path)
 				{
-fprintf(stderr, "\tfreopen(%s) file [mode=wb path=%s]\n", ext, freopen_path);
+elog_print("\tfreopen(%s) file [mode=wb path=%s]", ext, freopen_path);
 
 /*
 freopen_path は uuid をパスに含んでいるので重複しない
@@ -207,7 +207,7 @@ freopen_path は uuid をパスに含んでいるので重複しない
 						fd = fileno(fp);
 						if (fd != -1)
 						{
-fprintf(stderr, "\tchmod(%s) [perm=%x path=%s]\n", ext, file_perm, freopen_path);
+elog_print("\tchmod(%s) [perm=%x path=%s]", ext, file_perm, freopen_path);
 							irc = fchmod(fd, file_perm);
 
 							if (irc != 0)
@@ -302,7 +302,7 @@ perror("\t\tfreopen error");
 					{
 						char* cwd = getcwd(NULL, 0);
 
-fprintf(stderr, "\tsfq_mkdir_p(%s) dir [cwd=%s path=%s perm=%x]\n", ext, cwd, dir, dir_perm);
+elog_print("\tsfq_mkdir_p(%s) dir [cwd=%s path=%s perm=%x]", ext, cwd, dir, dir_perm);
 
 						if (sfq_mkdir_p(dir, dir_perm))
 						{
@@ -311,7 +311,7 @@ fprintf(stderr, "\tsfq_mkdir_p(%s) dir [cwd=%s path=%s perm=%x]\n", ext, cwd, di
 
 							firstOpen = (stat(freopen_path, &stbuf) == 0) ? SFQ_false : SFQ_true;
 
-fprintf(stderr, "\tfreopen(%s) file [cwd=%s path=%s mode=%s first=%d]\n", ext, cwd, freopen_path, freopen_mode, firstOpen);
+elog_print("\tfreopen(%s) file [cwd=%s path=%s mode=%s first=%d]", ext, cwd, freopen_path, freopen_mode, firstOpen);
 
 							if (freopen(freopen_path, freopen_mode, fp))
 							{
@@ -322,7 +322,7 @@ fprintf(stderr, "\tfreopen(%s) file [cwd=%s path=%s mode=%s first=%d]\n", ext, c
 									fd = fileno(fp);
 									if (fd != -1)
 									{
-fprintf(stderr, "\tchmod(%s) [perm=%x path=%s]\n", ext, file_perm, freopen_path);
+elog_print("\tchmod(%s) [perm=%x path=%s]", ext, file_perm, freopen_path);
 										irc = fchmod(fd, file_perm);
 
 										if (irc != 0)
@@ -369,7 +369,7 @@ perror("\t\tmkdir");
 	}
 	else
 	{
-fprintf(stderr, "\tre-open(%s) [mode=wb path=/dev/null]\n", ext);
+elog_print("\tre-open(%s) [mode=wb path=/dev/null]", ext);
 
 		freopen("/dev/null", "wb", fp);
 	}

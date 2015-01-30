@@ -5,8 +5,9 @@
 <html>
 <body>
 <?php include_once("analyticstracking.php") ?>
-<a href="https://github.com/cbh34680/sfq/blob/master/src/php-sfq/web-sample/<?= basename(__FILE__) ?>" target="_blank">source</a><br />
+<a href="https://github.com/cbh34680/sfq/blob/master/src/sfqc-php/web-sample/<?= basename(__FILE__) ?>" target="_blank">source</a><br />
 <?php
+
 try
 {
 	$reqv = [
@@ -16,7 +17,7 @@ try
 		'serrpath'     => '-',
 	];
 
-	$sfqc = SFQueue::newClient([ 'quename' => 'webque-1' ]');
+	$sfqc = SFQueue::newClient([ 'quename' => 'webque-1' ]);
 	$uuid = $sfqc->push_binary($reqv);
 
 	if ($uuid)
@@ -32,23 +33,23 @@ catch (Exception $ex)
 }
 
 ?>
-<? if (isset($ex)) : ?>
+<?php if (isset($ex)) : ?>
 <hr />
 CODE: <?= $ex->getCode() ?><br />
 MESG: <?= $ex->getMessage() ?><br />
-<? endif ?>
+<?php endif ?>
 <hr />
 <pre>
-<? if (isset($reqv)) { var_dump($reqv); } ?>
+<?php if (isset($reqv)) { var_dump($reqv); } ?>
 <?= var_dump(@$uuid) ?>
 </pre>
-<? if (isset($dir)) : ?>
+<?php if (isset($dir)) : ?>
 <hr />
-<i><a href='cat.php?uuid=<?= $uuid ?>&file=id.txt'  target='_blank'>see</a></i>: <?= $dir?>/id.txt<br />
-<i><a href='cat.php?uuid=<?= $uuid ?>&file=std.out' target='_blank'>see</a></i>: <?= $dir?>/std.out<br />
-<i><a href='cat.php?uuid=<?= $uuid ?>&file=std.err' target='_blank'>see</a></i>: <?= $dir?>/std.err<br />
-<i><a href='cat.php?uuid=<?= $uuid ?>&file=rc.txt'  target='_blank'>see</a></i>: <?= $dir?>/rc.txt<br />
-<? endif ?>
+<i><a href='cat.php?uuid=<?= $uuid ?>&file=id.txt'  target='_blank'>see</a></i>: <?= $dir ?>/id.txt<br />
+<i><a href='cat.php?uuid=<?= $uuid ?>&file=std.out' target='_blank'>see</a></i>: <?= $dir ?>/std.out<br />
+<i><a href='cat.php?uuid=<?= $uuid ?>&file=std.err' target='_blank'>see</a></i>: <?= $dir ?>/std.err<br />
+<i><a href='cat.php?uuid=<?= $uuid ?>&file=rc.txt'  target='_blank'>see</a></i>: <?= $dir ?>/rc.txt<br />
+<?php endif ?>
 </body>
 </html>
 

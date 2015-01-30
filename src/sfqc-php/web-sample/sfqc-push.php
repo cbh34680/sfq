@@ -4,8 +4,10 @@
 ?>
 <html>
 <body>
+<?php include_once("analyticstracking.php") ?>
+<a href="https://github.com/cbh34680/sfq/blob/master/src/sfqc-php/web-sample/<?= basename(__FILE__) ?>" target="_blank">source</a><br />
 <?php
-include_once("analyticstracking.php");
+
 try
 {
 	$reqv = [
@@ -21,14 +23,14 @@ catch (Exception $ex)
 }
 
 ?>
-<? if (isset($ex)) : ?>
+<?php if (isset($ex)) : ?>
 <hr />
 CODE: <?= $ex->getCode() ?><br />
 MESG: <?= $ex->getMessage() ?><br />
-<? endif ?>
+<?php endif ?>
 <hr />
 <pre>
-<? if (isset($reqv)) { var_dump($reqv); } ?>
+<?php if (isset($reqv)) { var_dump($reqv); } ?>
 <?= var_dump(@$resp) ?>
 </pre>
 </body>
