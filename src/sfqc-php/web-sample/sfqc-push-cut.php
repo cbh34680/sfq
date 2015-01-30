@@ -21,7 +21,7 @@ try
 
 	if ($uuid)
 	{
-		if (preg_match_all('/../', implode(explode('-', $uuid)), $matches))
+		#if (preg_match_all('/../', implode(explode('-', $uuid)), $matches))
 		{
 			$dir = '/var/tmp/webque-1/logs/exec/' . implode('/', $matches[0]);
 		}
