@@ -18,14 +18,14 @@ catch (Exception $ex)
 }
 
 ?>
-<? if (isset($ex)) : ?>
+<?php if (isset($ex)) : ?>
 <hr />
 CODE: <?= $ex->getCode() ?><br />
 MESG: <?= $ex->getMessage() ?><br />
-<? endif ?>
+<?php endif ?>
 <hr />
 <pre>
-<? if (isset($reqv)) { var_dump($reqv); } ?>
+<?php if (isset($reqv)) { var_dump($reqv); } ?>
 <?= var_dump(@$resp) ?>
 </pre>
 </body>

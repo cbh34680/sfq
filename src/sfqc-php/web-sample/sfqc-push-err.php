@@ -32,23 +32,23 @@ catch (Exception $ex)
 }
 
 ?>
-<? if (isset($ex)) : ?>
+<?php if (isset($ex)) : ?>
 <hr />
 CODE: <?= $ex->getCode() ?><br />
 MESG: <?= $ex->getMessage() ?><br />
-<? endif ?>
+<?php endif ?>
 <hr />
 <pre>
-<? if (isset($reqv)) { var_dump($reqv); } ?>
+<?php if (isset($reqv)) { var_dump($reqv); } ?>
 <?= var_dump(@$uuid) ?>
 </pre>
-<? if (isset($dir)) : ?>
+<?php if (isset($dir)) : ?>
 <hr />
-<i><a href='cat.php?uuid=<?= $uuid ?>&file=id.txt'  target='_blank'>see</a></i>: <?= $dir?>/id.txt<br />
-<i><a href='cat.php?uuid=<?= $uuid ?>&file=std.out' target='_blank'>see</a></i>: <?= $dir?>/std.out<br />
-<i><a href='cat.php?uuid=<?= $uuid ?>&file=std.err' target='_blank'>see</a></i>: <?= $dir?>/std.err<br />
-<i><a href='cat.php?uuid=<?= $uuid ?>&file=rc.txt'  target='_blank'>see</a></i>: <?= $dir?>/rc.txt<br />
-<? endif ?>
+<i><a href='cat.php?uuid=<?= $uuid ?>&file=id.txt'  target='_blank'>see</a></i>: <?= $dir ?>/id.txt<br />
+<i><a href='cat.php?uuid=<?= $uuid ?>&file=std.out' target='_blank'>see</a></i>: <?= $dir ?>/std.out<br />
+<i><a href='cat.php?uuid=<?= $uuid ?>&file=std.err' target='_blank'>see</a></i>: <?= $dir ?>/std.err<br />
+<i><a href='cat.php?uuid=<?= $uuid ?>&file=rc.txt'  target='_blank'>see</a></i>: <?= $dir ?>/rc.txt<br />
+<?php endif ?>
 </body>
 </html>
 
