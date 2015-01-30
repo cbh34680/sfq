@@ -441,6 +441,10 @@ sfq_bool sfq_pwdgrp_nam2id(const char* queuser, const char* quegroup,
 sfq_bool sfq_pwdgrp_id2nam_alloc(uid_t uid, gid_t gid,
         const char** usrnam_ptr, const char** grpnam_ptr);
 
+int sfq_count_char(char delim, const char* searchstr);
+char** sfq_alloc_split(char delim, const char* orgstr, int* num_ptr);
+void sfq_free_split(char** strarr);
+
 void sfq_print_sizes(void);
 void sfq_print_qo(const struct sfq_queue_object* qo);
 void sfq_print_qf_header(const struct sfq_file_header*);

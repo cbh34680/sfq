@@ -6,6 +6,19 @@ cd $(dirname $(readlink -f "$0"))
 rm -rf bin
 mkdir bin
 
+cat << EOF > ../../lib/pkgconfig/libsfq.pc
+prefix=$(readlink -f ../..)
+exec_prefix=\${prefix}
+libdir=\${exec_prefix}/lib
+includedir=\${prefix}/include
+
+Name: sfq
+Description: Library for manipulating queue data
+Version: 0.11
+Libs: -L\${libdir} -lcap -luuid -lsfq
+Cflags: -I\${includedir}
+EOF
+
 javac -deprecation -encoding UTF-8 -d bin -sourcepath src src/*.java
 javah -cp bin -d src jp.co.iret.sfq.SFQueueClientLocal
 

@@ -1075,3 +1075,120 @@ void sfq_rtrim(char* str, const char* cmask)
 	while (pos != str);
 }
 
+int sfq_count_char(char delim, const char* searchstr)
+{
+	int cnt = -1;
+
+	if (searchstr)
+	{
+		const char* pos = NULL;
+
+		cnt = 0;
+		pos = searchstr;
+		while (*pos)
+		{
+			if ((*pos) == delim)
+			{
+				cnt++;
+			}
+			pos++;
+		}
+	}
+
+	return cnt;
+}
+
+char** sfq_alloc_split(char delim, const char* orgstr, int* num_ptr)
+{
+	char** ret = NULL;
+	int num = 0;
+	char delimiter_str[] = { delim, '\0' };
+
+	char* copy = NULL;
+
+	char* pos = NULL;
+	char* saveptr = NULL;
+	char* token = NULL;
+	int i = 0;
+
+SFQ_LIB_ENTER
+
+	if (! orgstr)
+	{
+		SFQ_FAIL(EA_FUNCARG, "orgstr is null");
+	}
+
+	copy = sfq_stradup(orgstr);
+	if (! copy)
+	{
+		SFQ_FAIL(ES_MEMORY, "sfq_stradup(orgstr)");
+	}
+
+	num = sfq_count_char(delim, orgstr);
+	if (num < 0)
+	{
+		SFQ_FAIL(EA_ASSERT, "sfq_count_char");
+	}
+
+	ret = calloc(sizeof(char*), num + 1);
+	if (! ret)
+	{
+		SFQ_FAIL(ES_MEMORY, "calloc");
+	}
+
+	for (i=0, pos=copy; i<num; i++, pos=NULL)
+	{
+		char* dupstr = NULL;
+
+		token = strtok_r(pos, delimiter_str, &saveptr);
+		if (! token)
+		{
+			break;
+		}
+
+		dupstr = strdup(token);
+		if (! dupstr)
+		{
+			SFQ_FAIL(ES_MEMORY, "strdup(token)");
+		}
+
+		ret[i] = dupstr;
+	}
+
+	if (num_ptr)
+	{
+		(*num_ptr) = num;
+	}
+
+SFQ_LIB_CHECKPOINT
+
+	if (SFQ_LIB_IS_FAIL())
+	{
+		sfq_free_split(ret);
+		ret = NULL;
+	}
+
+SFQ_LIB_LEAVE
+
+	return ret;
+}
+
+void sfq_free_split(char** strarr)
+{
+	if (strarr)
+	{
+		char** pos = strarr;
+
+		while (*pos)
+		{
+			free(*pos);
+			(*pos) = NULL;
+
+			pos++;
+		}
+
+		free(strarr);
+		strarr = NULL;
+	}
+}
+
