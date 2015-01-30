@@ -16,29 +16,6 @@ static size_t atomic_write(int fd, char *buf, int count)
 	return (got < 0 ? got : count - need);
 }
 
-static int get_char_count(char delim, const char* searchstr)
-{
-	int cnt = -1;
-
-	if (searchstr)
-	{
-		const char* pos = NULL;
-
-		cnt = 0;
-		pos = searchstr;
-		while (*pos)
-		{
-			if ((*pos) == delim)
-			{
-				cnt++;
-			}
-			pos++;
-		}
-	}
-
-	return cnt;
-}
-
 #define READ			(0)
 #define WRITE			(1)
 #define EXECARG_DELIM		'\t'
@@ -60,7 +37,7 @@ SFQ_LIB_ENTER
 
 --> カンマの数 + 1 = 値の数
 */
-		valnum = 1 + get_char_count(EXECARG_DELIM, execargs);
+		valnum = 1 + sfq_count_char(EXECARG_DELIM, execargs);
 	}
 
 /*
