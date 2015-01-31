@@ -13,8 +13,8 @@ try
 	$reqv = [
 		'payload'     =>'date;date;date',
 		'payload_size' => 10,
-		'soutpath'     => '-',
-		'serrpath'     => '-',
+		'soutpath'     => '@',
+		'serrpath'     => '@',
 	];
 
 	$sfqc = SFQueue::newClient([ 'quename' => 'webque-1' ]);

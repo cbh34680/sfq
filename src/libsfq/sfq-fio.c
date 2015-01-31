@@ -644,7 +644,10 @@ SFQ_LIB_ENTER
 
 	if (lastoper)
 	{
-		strncpy(qfh->qh.dval.lastoper, lastoper, sizeof(qfh->qh.dval.lastoper) - 1);
+		snprintf(qfh->qh.dval.lastoper, sizeof(qfh->qh.dval.lastoper), "%s", lastoper);
+/*
+#		strncpy(qfh->qh.dval.lastoper, lastoper, sizeof(qfh->qh.dval.lastoper) - 1);
+*/
 	}
 
 	qfh->qh.dval.update_cnt++;

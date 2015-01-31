@@ -30,9 +30,9 @@ SFQC_MAIN_ENTER
 
 	if (pgargs.soutpath)
 	{
-		if (strcmp(pgargs.soutpath, "-") != 0)
+		if (strcmp(pgargs.soutpath, SFQ_DEFAULT_LOG) != 0)
 		{
-			message = "'-o' is only allowed '-'";
+			message = "'-o' is only allowed '@'";
 			jumppos = __LINE__;
 			goto EXIT_LABEL;
 		}
@@ -42,9 +42,9 @@ SFQC_MAIN_ENTER
 
 	if (pgargs.serrpath)
 	{
-		if (strcmp(pgargs.serrpath, "-") != 0)
+		if (strcmp(pgargs.serrpath, SFQ_DEFAULT_LOG) != 0)
 		{
-			message = "'-e' is only allowed '-'";
+			message = "'-e' is only allowed '@'";
 			jumppos = __LINE__;
 			goto EXIT_LABEL;
 		}
