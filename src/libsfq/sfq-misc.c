@@ -950,6 +950,7 @@ sfq_bool sfq_mkdir_p(const char *arg, mode_t perm)
 	return SFQ_true;
 }
 
+#if 0
 char* sfq_alloc_concat_n(int n, ...)
 {
 	int i = 0;
@@ -975,8 +976,9 @@ char* sfq_alloc_concat_n(int n, ...)
 
 	return ret;
 }
+#endif
 
-char* sfq_alloc_concat_nt(const char* first, ...)
+char* sfq_alloc_concat_NT(const char* first, ...)
 {
 	size_t len = 0;
 	char* ret = NULL;

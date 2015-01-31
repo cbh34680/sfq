@@ -11,8 +11,8 @@ try
 {
 	$reqv = [
 		'execpath' =>'env',
-		'soutpath' => '-',
-		'serrpath' => '-',
+		'soutpath' => '@',
+		'serrpath' => '@',
 	];
 
 	$sfqc = SFQueue::newClient([ 'quename' => 'webque-1' ]);

@@ -181,9 +181,9 @@ elog_print("\tattempt to re-open(%s) file", ext);
 
 /* len(arg_wpath) > 0 */
 
-		if (strcmp(arg_wpath, "-") == 0)
+		if (strcmp(arg_wpath, SFQ_DEFAULT_LOG) == 0)
 		{
-			/* "-o -" "-e -" はデフォルトのログファイルとする */
+			/* "-o @" "-e @" はデフォルトのログファイルとする */
 
 			if (logdir)
 			{

@@ -19,6 +19,9 @@
 extern "C" {
 #endif
 
+#define SFQ_INPUT_STDIN			"-"
+#define SFQ_DEFAULT_LOG			"@"
+
 #define SFQ_true			(1)
 #define SFQ_false			(0)
 
@@ -202,10 +205,12 @@ int sfq_set_questate(const char* querootdir, const char* quename,
 
 size_t sfq_payload_len(const struct sfq_value* val);
 
-char* sfq_alloc_concat_n(int n, ...);
-char* sfq_alloc_concat_nt(const char* first, ...);
+/*
+#char* sfq_alloc_concat_n(int n, ...);
+*/
+char* sfq_alloc_concat_NT(const char* first, ...);
 
-#define sfq_alloc_concat(...)	sfq_alloc_concat_nt(__VA_ARGS__, NULL);
+#define sfq_alloc_concat(...)	sfq_alloc_concat_NT(__VA_ARGS__, NULL);
 
 /* stack allocate and string copy */
 #ifdef __GNUC__
@@ -239,7 +244,7 @@ char* sfq_alloc_concat_nt(const char* first, ...);
 	#define sfq_concat(...) \
 		({ \
 			char* dst = NULL; \
-			char* tmp_ = sfq_alloc_concat_nt(__VA_ARGS__, NULL); \
+			char* tmp_ = sfq_alloc_concat_NT(__VA_ARGS__, NULL); \
 			if (tmp_) { \
 				dst = sfq_stradup(tmp_); \
 				free(tmp_); \

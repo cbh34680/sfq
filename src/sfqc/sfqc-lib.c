@@ -457,7 +457,7 @@ int sfqc_parse_program_args(int argc, char** argv, const char* optstring,
 
 				if (pgargs->execargs)
 				{
-					c = sfq_alloc_concat_n(3, pgargs->execargs, "\t", optarg);
+					c = sfq_alloc_concat(pgargs->execargs, "\t", optarg);
 				}
 				else
 				{
@@ -480,10 +480,10 @@ int sfqc_parse_program_args(int argc, char** argv, const char* optstring,
 			}
 
 			// 標準出力のリダイレクト先
-			case 'o': { RESET_STR(optarg ? optarg : "-", soutpath); break; }
+			case 'o': { RESET_STR(optarg ? optarg : SFQ_DEFAULT_LOG, soutpath); break; }
 
 			// 標準エラーのリダイレクト先
-			case 'e': { RESET_STR(optarg ? optarg : "-", serrpath); break; }
+			case 'e': { RESET_STR(optarg ? optarg : SFQ_DEFAULT_LOG, serrpath); break; }
 
 			case 'q':
 			{

@@ -47,7 +47,7 @@ SFQC_MAIN_ENTER
 
 	if (pgargs.inputfile)
 	{
-		if (strcmp(pgargs.inputfile, "-") == 0)
+		if (strcmp(pgargs.inputfile, SFQ_INPUT_STDIN) == 0)
 		{
 /* read from stdin */
 			irc = sfqc_readstdin(&mem, NULL);

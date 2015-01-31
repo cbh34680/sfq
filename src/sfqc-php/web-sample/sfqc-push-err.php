@@ -12,8 +12,8 @@ try
 	$reqv = [
 		'execpath' =>'ls',
 		'execargs' => implode("\t", ['-l' , '/home/NotFound/']),
-		'soutpath' => '-',
-		'serrpath' => '-',
+		'soutpath' => '@',
+		'serrpath' => '@',
 	];
 
 	$sfqc = SFQueue::newClient([ 'quename' => 'webque-1' ]);

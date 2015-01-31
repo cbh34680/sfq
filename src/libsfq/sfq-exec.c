@@ -106,7 +106,7 @@ static void output_reopen_4exec(const char* logdir, const struct sfq_value* val,
 	{
 		if (strcmp(soutpath, serrpath) == 0)
 		{
-			if (strcmp(soutpath, "-") != 0)
+			if (strcmp(soutpath, SFQ_DEFAULT_LOG) != 0)
 			{
 /*
 標準出力先と標準エラー出力先が同じファイル名

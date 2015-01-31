@@ -13,8 +13,8 @@ try
 		'payload'  => file_get_contents('/etc/hosts'),
 		'execpath' => 'cat',
 		'execargs' => '-n',
-		'soutpath' => '-',
-		'serrpath' => '-',
+		'soutpath' => '@',
+		'serrpath' => '@',
 	];
 
 	$sfqc = SFQueue::newClient([ 'quename' => 'webque-1' ]);
