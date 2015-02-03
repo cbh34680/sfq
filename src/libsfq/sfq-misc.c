@@ -950,34 +950,6 @@ sfq_bool sfq_mkdir_p(const char *arg, mode_t perm)
 	return SFQ_true;
 }
 
-#if 0
-char* sfq_alloc_concat_n(int n, ...)
-{
-	int i = 0;
-	size_t len = 0;
-	char* ret = NULL;
-
-	va_list ap;
-
-	va_start(ap, n);
-	for (i=0; i<n; i++) { len += strlen(va_arg(ap, const char*)); }
-	va_end(ap);
-
-	ret = malloc(len + 1 /* '\0' */);
-	if (! ret)
-	{
-		return NULL;
-	}
-	ret[0] = '\0';
-
-	va_start(ap, n);
-	for (i=0; i<n; i++) { strcat(ret, va_arg(ap, const char*)); }
-	va_end(ap);
-
-	return ret;
-}
-#endif
-
 char* sfq_alloc_concat_NT(const char* first, ...)
 {
 	size_t len = 0;
@@ -1103,6 +1075,7 @@ int sfq_count_char(char delim, const char* searchstr)
 char** sfq_alloc_split(char delim, const char* orgstr, int* num_ptr)
 {
 	char** ret = NULL;
+	int loop_max = 0;
 	int num = 0;
 	char delimiter_str[] = { delim, '\0' };
 
@@ -1126,19 +1099,20 @@ SFQ_LIB_ENTER
 		SFQ_FAIL(ES_MEMORY, "sfq_stradup(orgstr)");
 	}
 
-	num = sfq_count_char(delim, orgstr);
-	if (num < 0)
+	loop_max = sfq_count_char(delim, orgstr);
+	if (loop_max < 0)
 	{
 		SFQ_FAIL(EA_ASSERT, "sfq_count_char");
 	}
+	loop_max++;
 
-	ret = calloc(sizeof(char*), num + 1);
+	ret = calloc(sizeof(char*), loop_max + 1);
 	if (! ret)
 	{
 		SFQ_FAIL(ES_MEMORY, "calloc");
 	}
 
-	for (i=0, pos=copy; i<num; i++, pos=NULL)
+	for (i=0, pos=copy; i<loop_max; i++, pos=NULL)
 	{
 		char* dupstr = NULL;
 
@@ -1154,7 +1128,7 @@ SFQ_LIB_ENTER
 			SFQ_FAIL(ES_MEMORY, "strdup(token)");
 		}
 
-		ret[i] = dupstr;
+		ret[num++] = dupstr;
 	}
 
 	if (num_ptr)
@@ -1166,7 +1140,7 @@ SFQ_LIB_CHECKPOINT
 
 	if (SFQ_LIB_IS_FAIL())
 	{
-		sfq_free_split(ret);
+		sfq_free_strarr(ret);
 		ret = NULL;
 	}
 
@@ -1175,7 +1149,7 @@ SFQ_LIB_LEAVE
 	return ret;
 }
 
-void sfq_free_split(char** strarr)
+void sfq_free_strarr(char** strarr)
 {
 	if (strarr)
 	{

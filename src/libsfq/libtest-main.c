@@ -2,26 +2,39 @@
 
 static void split_test()
 {
-	char* env_path = getenv("PATH");
+	char* orgstr = "a:b::c";
+	char* copy = NULL;
 	int path_num = 0;
-	char** path_arr = sfq_alloc_split(':', env_path, &path_num);
+	char** strarr = NULL;
 
-	printf("PATH=[%s]\n", env_path);
+	printf("org=[%s]\n", orgstr);
+	printf("count(':')=[%d]\n", sfq_count_char(':', orgstr));
 
-	if (path_arr)
+	puts("===");
+
+	copy = sfq_stradup(orgstr);
+	if (! copy)
+	{
+		puts("copy is null");
+		return;
+	}
+
+	strarr = sfq_alloc_split(':', copy, &path_num);
+
+	if (strarr)
 	{
 		char** pos = NULL;
 
 		printf("num=[%d]\n", path_num);
 
-		pos = path_arr;
+		pos = strarr;
 		while (*pos)
 		{
 			printf("split=[%s]\n", *pos);
 			pos++;
 		}
 
-		sfq_free_split(path_arr);
+		sfq_free_strarr(strarr);
 	}
 }
 
