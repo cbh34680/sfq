@@ -269,10 +269,16 @@ class SFQueueClientRemote extends SFQueueClient
 		$ret = [];
 		$body = null;
 
-		$sep_offset = strpos($arg, self::CRLF . self::CRLF);
+		$SEP_CRLF = self::CRLF . self::CRLF;
+		$SEP_LF = self::LF . self::LF;
+
+		$sep_offset = strpos($arg, $SEP_CRLF);
+		$sep_length = strlen($SEP_CRLF);
+
 		if ($sep_offset === false)
 		{
-			$sep_offset = strpos($arg, self::LF . self::LF);
+			$sep_offset = strpos($arg, $SEP_LF);
+			$sep_length = strlen($SEP_LF);
 		}
 
 		if ($sep_offset === false)
