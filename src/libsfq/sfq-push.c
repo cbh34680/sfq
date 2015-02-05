@@ -10,11 +10,11 @@
 		} \
 	}
 
-int sfq_push(const char* querootdir, const char* quename, struct sfq_value* val)
+static int sfq_push_(struct sfq_queue_object* qo,
+	struct sfq_value* val, short* slotno_ptr, questate_t* questate_ptr)
 {
-SFQ_ENTP_ENTER
+SFQ_LIB_ENTER
 
-	struct sfq_queue_object* qo = NULL;
 	struct sfq_process_info* procs = NULL;
 
 	char* wrkdir = NULL;
@@ -41,9 +41,13 @@ SFQ_ENTP_ENTER
 	sfq_init_ioeb(&ioeb);
 
 /* check argument */
-	if (! val)
+	if (val && slotno_ptr && questate_ptr)
 	{
-		SFQ_FAIL(EA_FUNCARG, "val is null");
+		/* go next */
+	}
+	else
+	{
+		SFQ_FAIL(EA_FUNCARG, "args is null");
 	}
 
 /*
@@ -141,13 +145,6 @@ push 可能条件の判定
 	if (! b)
 	{
 		SFQ_FAIL(EA_COPYVALUE, "sfq_copy_val2ioeb");
-	}
-
-/* open queue-file */
-	qo = sfq_open_queue_rw(querootdir, quename);
-	if (! qo)
-	{
-		SFQ_FAIL(EA_OPENQUEUE, "sfq_open_queue_rw");
 	}
 
 /* read file-header */
@@ -402,6 +399,19 @@ id, pushtime, uuid はここで生成する
 		SFQ_FAIL(EA_QFHRW, "sfq_writeqfh");
 	}
 
+	if (slotno != -1)
+	{
+		if (slotno_ptr)
+		{
+			(*slotno_ptr) = (short)slotno;
+		}
+
+		if (questate_ptr)
+		{
+			(*questate_ptr) = questate;
+		}
+	}
+
 SFQ_LIB_CHECKPOINT
 
 	free(wrkdir);
@@ -416,13 +426,47 @@ SFQ_LIB_CHECKPOINT
 	free(procs);
 	procs = NULL;
 
+SFQ_LIB_LEAVE
+
+	return SFQ_LIB_RC();
+}
+
+int sfq_push(const char* querootdir, const char* quename, struct sfq_value* val)
+{
+	struct sfq_queue_object* qo = NULL;
+
+	short slotno = -1;
+	questate_t questate = 0;
+
+	int irc = -1;
+
+SFQ_ENTP_ENTER
+
+/* open queue-file */
+	qo = sfq_open_queue_rw(querootdir, quename);
+	if (! qo)
+	{
+		SFQ_FAIL(EA_OPENQUEUE, "sfq_open_queue_rw");
+	}
+
+	irc = sfq_push_(qo, val, &slotno, &questate);
+	if (irc != SFQ_RC_SUCCESS)
+	{
+		SFQ_FAIL_V(irc, "sfq_push_() return %d", irc);
+	}
+
 	sfq_close_queue(qo);
 	qo = NULL;
 
 	if (slotno != -1)
 	{
-		sfq_go_exec(querootdir, quename, (ushort)slotno, questate);
+		sfq_go_exec(querootdir, quename, slotno, questate);
 	}
+
+SFQ_LIB_CHECKPOINT
+
+	sfq_close_queue(qo);
+	qo = NULL;
 
 SFQ_ENTP_LEAVE
 
