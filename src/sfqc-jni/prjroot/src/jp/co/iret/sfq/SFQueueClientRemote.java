@@ -171,10 +171,12 @@ public class SFQueueClientRemote extends SFQueueClient
 		final byte[] SEP_LF = (LF + LF).getBytes();
 
 		int sep_offset = indexOf_byteArray(arg, SEP_CRLF);
+		int sep_length = SEP_CRLF.length;
 
 		if (sep_offset == -1)
 		{
 			sep_offset = indexOf_byteArray(arg, SEP_LF);
+			sep_length = SEP_LF.length;
 		}
 
 		byte[] baBody = null;
@@ -219,7 +221,7 @@ public class SFQueueClientRemote extends SFQueueClient
 				}
 			}
 
-			baBody = Arrays.copyOfRange(arg, sep_offset + 4, arg.length);
+			baBody = Arrays.copyOfRange(arg, sep_offset + sep_length, arg.length);
 		}
 
 		if (baBody != null)
