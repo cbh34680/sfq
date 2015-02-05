@@ -159,12 +159,26 @@ SFQ_FAIL_CATCH_LABEL__: \
 "fmt, ##__VA_ARGS__" のようにすることで可変長引数部がゼロ個のとき、最後のカンマを除去してくれる
 (GCC独自拡張)
 */
+/*
 #define SFQ_FAIL(fire_rc, fmt, ...) \
 	fire_line__ = __LINE__; \
 	fire_rc__ = SFQ_RC_ ## fire_rc; \
 	fire_errno__  = errno; \
 	snprintf(fire_reason__, sizeof(fire_reason__), fmt, ##__VA_ARGS__); \
 	goto SFQ_FAIL_CATCH_LABEL__;
+*/
+
+
+#define SFQ_FAIL_V(fire_rc, fmt, ...) \
+	fire_line__ = __LINE__; \
+	fire_rc__ = fire_rc; \
+	fire_errno__  = errno; \
+	snprintf(fire_reason__, sizeof(fire_reason__), fmt, ##__VA_ARGS__); \
+	goto SFQ_FAIL_CATCH_LABEL__;
+
+
+#define SFQ_FAIL(fire_rc, fmt, ...) \
+	SFQ_FAIL_V(SFQ_RC_ ## fire_rc, fmt, ##__VA_ARGS__);
 
 
 #define elog_print(format_, ...)	fprintf(stderr, "%s(%d)\t" format_ "\n", __FILE__, __LINE__, ##__VA_ARGS__)
