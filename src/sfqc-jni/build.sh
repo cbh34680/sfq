@@ -19,8 +19,8 @@ Libs: -L\${libdir} -lcap -luuid -lsfq
 Cflags: -I\${includedir}
 EOF
 
-javac -deprecation -encoding UTF-8 -d bin -sourcepath src src/*.java
-javah -cp bin -d src jp.co.iret.sfq.SFQueueClientLocal
+javac -deprecation -encoding UTF-8 -d bin prjroot/src/jp/co/iret/sfq/*.java
+javah -cp bin -d prjroot/src jp.co.iret.sfq.SFQueueClientLocal
 
 #
 pcp=$(readlink -f ../../lib/pkgconfig)
