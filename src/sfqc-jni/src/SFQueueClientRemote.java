@@ -94,11 +94,21 @@ public class SFQueueClientRemote extends SFQueueClient
 			}
 
 			//
-			header_arr.addAll(conn_params.keySet().stream().filter(k -> copyKeys.contains(k))
-				.map(k -> k.replaceAll("_", "-") + ": " + (String)conn_params.get(k)).collect(Collectors.toList()));
+			header_arr.addAll
+			(
+				conn_params.keySet().stream()
+					.filter(e -> copyKeys.contains(e))
+					.map(e -> e.replaceAll("_", "-") + ": " + (String)conn_params.get(e))
+					.collect(Collectors.toList())
+			);
 
-			header_arr.addAll(params.keySet().stream().filter(k -> ! ignoreKeys.contains(k))
-				.map(k -> k.replaceAll("_", "-") + ": " + (String)params.get(k)).collect(Collectors.toList()));
+			header_arr.addAll
+			(
+				params.keySet().stream()
+					.filter(e -> ! ignoreKeys.contains(e))
+					.map(e -> e.replaceAll("_", "-") + ": " + (String)params.get(e))
+					.collect(Collectors.toList())
+			);
 
 			header_arr.forEach(System.out::println);
 
