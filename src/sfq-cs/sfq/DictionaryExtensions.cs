@@ -20,6 +20,18 @@ public static class DictionaryExtensions
         return self.TryGetValue(key, out value) ? value : defaultValue;
     }
 
+    public static String myToString<TValue>(this List<TValue> self)
+    {
+        string ret = "";
+
+        foreach (TValue elem in self)
+        {
+            ret += elem.ToString() + ";";
+        }
+
+        return ret;
+    }
+
     public static String myToString<TKey, TValue>(this Dictionary<TKey, TValue> self)
     {
         string ret = "";
@@ -34,12 +46,12 @@ public static class DictionaryExtensions
 
     private static TRet returnDefault_<TRet>(Object o1, Object o2)
     {
-        if (o1 is int)
+        if (o1 is TRet)
         {
             return (TRet)o1;
         }
 
-        if (o2 is int)
+        if (o2 is TRet)
         {
             return (TRet)o2;
         }

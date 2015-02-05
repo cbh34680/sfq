@@ -79,6 +79,24 @@ namespace sfq
                     header_arr.Add("payload-length: " + body.Length);
                 }
 
+                //
+                header_arr.AddRange
+                (
+                    conn_params.Keys
+                        .Where(e => copyKeys.Contains(e))
+                        .Select(e => e.Replace("_", "-") + ": " + conn_params.s(e))
+                );
+
+                header_arr.AddRange
+                (
+                    param.Keys
+                        .Where(e => !ignoreKeys.Contains(e))
+                        .Select(e => e.Replace("_", "-") + ": " + param.s(e))
+                );
+
+                header_arr.ForEach(Console.WriteLine);
+
+
             }
             catch (SFQueueClientException ex)
             {
