@@ -101,7 +101,7 @@ namespace sfq
                         .Select(e => e.Replace("_", "-") + ": " + param.s(e))
                 );
 
-                header_arr.ForEach(Console.WriteLine);
+                //header_arr.ForEach(Console.WriteLine);
 
                 byte[] respAll = null;
 
