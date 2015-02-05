@@ -19,15 +19,18 @@ Libs: -L\${libdir} -lcap -luuid -lsfq
 Cflags: -I\${includedir}
 EOF
 
-javac -deprecation -encoding UTF-8 -d bin prjroot/src/jp/co/iret/sfq/*.java
-javah -cp bin -d prjroot/src jp.co.iret.sfq.SFQueueClientLocal
+#
+SRCDIR=prjroot/src
+
+javac -deprecation -encoding UTF-8 -d bin ${SRCDIR}/jp/co/iret/sfq/*.java
+javah -cp bin -d ${SRCDIR} jp.co.iret.sfq.SFQueueClientLocal
 
 #
 pcp=$(readlink -f ../../lib/pkgconfig)
 
 copt="$(pkg-config $pcp/libsfq.pc --cflags --libs) -I/usr/java/default/include/ -I/usr/java/default/include/linux/"
 
-gcc -Wall -O2 -fPIC --shared -o libsfqc-jni.so src/SFQueueClientLocal.c $copt
+gcc -Wall -O2 -fPIC --shared -o libsfqc-jni.so ${SRCDIR}/SFQueueClientLocal.c $copt
 
 jar cvfm sfqc-jni.jar manifest.cf -C bin/ .
 
