@@ -219,10 +219,17 @@ namespace sfq
                 baBody = arg.Skip(sep_offset + sep_length).ToArray();
             }
 
-            byte[] largeBytes = new byte[]{ 1,2,3,4,5,6,7,8,9 };  
-            byte[] smallPortion;
-
-            smallPortion = largeBytes.Skip(2).Take(3).ToArray();
+            if (baBody != null)
+            {
+                if (bodyIsText)
+                {
+                    ret["payload"] = Encoding.UTF8.GetString(baBody);
+                }
+                else
+                {
+                    ret["payload"] = baBody;
+                }
+            }
 
             return ret;
         }
@@ -315,12 +322,12 @@ namespace sfq
 
         public override ObjectMap pop(ObjectMap param)
         {
-            return null;
+            return remote_takeout("pop", param);
         }
 
         public override ObjectMap shift(ObjectMap param)
         {
-            return null;
+            return remote_takeout("shift", param);
         }
     }
 }

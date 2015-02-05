@@ -20,13 +20,13 @@ public static class DictionaryExtensions
         return self.TryGetValue(key, out value) ? value : defaultValue;
     }
 
-    public static String myToString<TValue>(this List<TValue> self)
+    public static String myToString<TValue>(this List<TValue> self, String separator=";")
     {
         string ret = "";
 
         foreach (TValue elem in self)
         {
-            ret += elem.ToString() + ";";
+            ret += elem.ToString() + separator;
         }
 
         return ret;
@@ -38,7 +38,7 @@ public static class DictionaryExtensions
 
         foreach (KeyValuePair<TKey, TValue> pair in self)
         {
-            ret += pair.ToString() + "=" + pair.ToString() + ";";
+            ret += pair.Key.ToString() + "=" + pair.Value.ToString() + ";";
         }
 
         return ret;
@@ -69,6 +69,12 @@ public static class DictionaryExtensions
         TKey key, TValue defaultValue = default(TValue))
     {
         return returnDefault_<int>(self.GetOrDefault(key, defaultValue), defaultValue);
+    }
+
+    public static byte[] ba<TKey, TValue>(this Dictionary<TKey, TValue> self,
+        TKey key, TValue defaultValue = default(TValue))
+    {
+        return returnDefault_<byte[]>(self.GetOrDefault(key, defaultValue), defaultValue);
     }
 }
 
