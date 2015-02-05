@@ -110,7 +110,7 @@ public class SFQueueClientRemote extends SFQueueClient
 					.collect(Collectors.toList())
 			);
 
-			header_arr.forEach(System.out::println);
+			//header_arr.forEach(System.out::println);
 
 			//
 			byte[] respAll = null;
