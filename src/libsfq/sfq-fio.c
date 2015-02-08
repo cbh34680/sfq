@@ -566,9 +566,35 @@ SFQ_LIB_LEAVE
 sfq_bool sfq_disable_elm(struct sfq_queue_object* qo, off_t seek_pos, sfq_bool disabled)
 {
 	off_t add_pos = offsetof(struct sfq_e_header, disabled);
-
 	return update_elm_by_offset_(qo->fp, seek_pos + add_pos, &disabled, sizeof(disabled));
 }
+
+#if 1
+sfq_bool sfq_unlink_prevelm(struct sfq_queue_object* qo, off_t seek_pos)
+{
+/* prev_elmpos に 0 を設定し、リンクを切る */
+	off_t updval = 0;
+
+	off_t add_pos = offsetof(struct sfq_e_header, prev_elmpos);
+	return update_elm_by_offset_(qo->fp, seek_pos + add_pos, &updval, sizeof(updval));
+}
+
+sfq_bool sfq_unlink_nextelm(struct sfq_queue_object* qo, off_t seek_pos)
+{
+/* next_elmpos に 0 を設定し、リンクを切る */
+	off_t updval = 0;
+
+	off_t add_pos = offsetof(struct sfq_e_header, next_elmpos);
+	return update_elm_by_offset_(qo->fp, seek_pos + add_pos, &updval, sizeof(updval));
+}
+
+sfq_bool sfq_link_nextelm(struct sfq_queue_object* qo, off_t seek_pos, off_t updval)
+{
+	off_t add_pos = offsetof(struct sfq_e_header, next_elmpos);
+	return update_elm_by_offset_(qo->fp, seek_pos + add_pos, &updval, sizeof(updval));
+}
+
+#else
 
 enum
 {
@@ -629,6 +655,7 @@ sfq_bool sfq_link_nextelm(struct sfq_queue_object* qo, off_t seek_pos, off_t upd
 {
 	return update_elmpos_(qo->fp, seek_pos, UPDATE_NEXT_ELMPOS, updval);
 }
+#endif
 
 sfq_bool sfq_writeqfh(struct sfq_queue_object* qo, struct sfq_file_header* qfh,
 	const struct sfq_process_info* procs, const char* lastoper)
@@ -645,9 +672,6 @@ SFQ_LIB_ENTER
 	if (lastoper)
 	{
 		snprintf(qfh->qh.dval.lastoper, sizeof(qfh->qh.dval.lastoper), "%s", lastoper);
-/*
-#		strncpy(qfh->qh.dval.lastoper, lastoper, sizeof(qfh->qh.dval.lastoper) - 1);
-*/
 	}
 
 	qfh->qh.dval.update_cnt++;
