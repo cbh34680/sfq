@@ -34,6 +34,8 @@ static void to_camelcase(char* p)
 	}
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wvarargs"
 void sfqc_h_printf(sfq_bool http, const char* org_format, ...)
 {
 	va_list arg;
@@ -47,13 +49,11 @@ void sfqc_h_printf(sfq_bool http, const char* org_format, ...)
 		to_camelcase(format);
 	}
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wvarargs"
 	va_start(arg, format);
-#pragma GCC diagnostic pop
 	vprintf(format, arg);
 	va_end(arg);
 }
+#pragma GCC diagnostic pop
 
 static void print_date(const char* key, time_t t)
 {
