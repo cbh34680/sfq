@@ -123,7 +123,7 @@ static void sfq_print_qh_dval_(const struct sfq_qh_dval* p, char c, size_t files
 
 	if (filesize_limit)
 	{
-		double rate = (double)p->elmsize_total_ / (double)filesize_limit * 100.0D;
+		double rate = (double)p->elmsize_total_ / (double)filesize_limit * (double)100.0;
 		fprintf(stderr, "%c * RATE *                    = %.2f%%\n", c, rate);
 	}
 
