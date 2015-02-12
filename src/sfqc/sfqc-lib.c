@@ -47,12 +47,12 @@ void sfqc_h_printf(sfq_bool http, const char* org_format, ...)
 		to_camelcase(format);
 	}
 
-#if __GNUC__ > 4 || __GNUC__ == 4 && __GNUC_MINOR__ > 2
+#if __GNUC__ > 4 || __GNUC__ == 4 && __GNUC_MINOR__ >= 8
  #pragma GCC diagnostic push
  #pragma GCC diagnostic ignored "-Wvarargs"
 #endif
 	va_start(arg, format);
-#if __GNUC__ > 4 || __GNUC__ == 4 && __GNUC_MINOR__ > 2
+#if __GNUC__ > 4 || __GNUC__ == 4 && __GNUC_MINOR__ >= 8
  #pragma GCC diagnostic pop
 #endif
 	vprintf(format, arg);
