@@ -52,7 +52,7 @@ SLDFLAGS  = -Wall -shared
 ELDFLAGS  = -Wall
 
 LIBDIRS   = -L. -L../libsfq -L../../lib
-LIBS      = -lsfqc -lsfq -lpthread -lm -luuid -ljansson -lcap
+LIBS      = -lsfqc -lsfq -lpthread -lm -luuid -ljansson -lcap -lrt
 
 #
 all: $(TARGET)
