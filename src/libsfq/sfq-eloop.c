@@ -137,21 +137,24 @@ elog_print("before loop [questate=%u]", questate);
 		struct sfq_value val;
 		int TO_state = SFQ_TOS_NONE;
 
-		struct timeval tvbuf;
+		struct timespec tspec;
+
 		time_t bttime = 0;
 		char bttime_s[32] = "";
 
 		char uuid_s[36 + 1] = "";
 		int execrc = 0;
 
+		int elapsed_sec = -1;
+
 /* */
 		bzero(&val, sizeof(val));
 
-		if (gettimeofday(&tvbuf, NULL) == 0)
+		if (clock_gettime(CLOCK_REALTIME_COARSE, &tspec) == 0)
 		{
 			struct tm tmbuf;
 
-			if (localtime_r(&tvbuf.tv_sec, &tmbuf))
+			if (localtime_r(&tspec.tv_sec, &tmbuf))
 			{
 				char* fmt = NULL;
 
@@ -160,11 +163,15 @@ elog_print("before loop [questate=%u]", questate);
 				fmt = sfq_concat(bttime_s, " %03d");
 				if (fmt)
 				{
-					snprintf(bttime_s, sizeof(bttime_s), fmt, (tvbuf.tv_usec / 1000));
+/*
+gettimeofday():tv_usec  / 1000    = milli sec
+clock_gettime():tv_nsec / 1000000 = milli sec
+*/
+					snprintf(bttime_s, sizeof(bttime_s), fmt, (tspec.tv_nsec / 1000000));
 				}
 			}
 
-			bttime = tvbuf.tv_sec;
+			bttime = tspec.tv_sec;
 		}
 
 elog_print("loop%zu block-top [time=%zu time_s=%s]", loop, bttime, bttime_s);
@@ -230,7 +237,16 @@ elog_print("loop%zu exec fail unknown-cause [rc=%d]", loop, execrc);
 elog_print("loop%zu shift fail [rc=%d]", loop, shift_rc);
 		}
 
-printf("%s\t%d\t%s\t%zu\t%zu\t%d\n", bttime_s, shift_rc, uuid_s, val.id, val.pushtime, execrc);
+		if (bttime != 0)
+		{
+			if (clock_gettime(CLOCK_REALTIME_COARSE, &tspec) == 0)
+			{
+				elapsed_sec = tspec.tv_sec - bttime;
+			}
+		}
+
+printf("%s\t%d\t%s\t%zu\t%zu\t%d\t%d\n",
+	bttime_s, shift_rc, uuid_s, val.id, val.pushtime, execrc, elapsed_sec);
 
 		sfq_free_value(&val);
 

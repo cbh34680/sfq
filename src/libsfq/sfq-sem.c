@@ -254,7 +254,7 @@ SFQ_LIB_ENTER
 */
 	if (semlock_wait_sec > 0)
 	{
-		irc = clock_gettime(CLOCK_REALTIME, &tspec);
+		irc = clock_gettime(CLOCK_REALTIME_COARSE, &tspec);
 		if (irc == -1)
 		{
 			SFQ_FAIL(ES_CLOCKGET, "clock_gettime");
