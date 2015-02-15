@@ -15,6 +15,8 @@
 
 [github]
 <ul>
+ <li><a href="https://github.com/cbh34680/sfq/blob/master/README.md" target="_blank">README</a>
+ <li><a href="https://github.com/cbh34680/sfq/blob/master/README.ja.md" target="_blank">README (ja)</a>
  <li><a href="https://github.com/cbh34680/sfq" target="_blank">project top</a>
  <li><a href="https://github.com/cbh34680/sfq/tree/master/src/sfqc-php/web-sample"
         target="_blank">this directory</a>
