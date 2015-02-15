@@ -2,6 +2,8 @@ sfq - Simple File-based Queue
 ===
 sfq is a library that provides a file-based queue function in a multi-threaded / multi-process environment.
 
+![how to use](http://sfq.iret.co.jp/sfq-how-to-use.png)
+
 [Development Environment]
 * OS) CentOS 6/7 64bit
 
