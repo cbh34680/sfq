@@ -5,6 +5,7 @@ sfq - Simple File-based Queue
 都合の良いものが見つからなかったので仕方なく作りました。  
   
 主な目的は incrond で起動するプロセスのコントロールなので、ジョブキューとして利用できます。  
+シェルで実行しているコマンドをキューに登録するイメージです。  
 
 
 [Development Environment]
@@ -25,7 +26,9 @@ sfq - Simple File-based Queue
 
 [Run) Queue Type-1]
 
-Queue is static. you can add data (by sfqc-pusht command) and you can get data (by sfqc-shift command)
+通常のファイル・キューです。push して pop/shift します。  
+当初はこの仕組みでデータの登録/取得を行うつもりでしたが、プロセスの生成について考えるのが面倒に  
+なったので、後述の Type-2 の機能を入れました。  
 
 for example
 * 1) sfqc-init ("noname" directory is made in "/var/tmp")
@@ -39,7 +42,8 @@ for example
 
 [Run) Queue Type-2]
 
-Queue is dynamic. you can add data (by command) but data is automatically retrieved
+最初の説明にあるように、実行したい処理をキューに登録(push) すると順次実行されるようになります。  
+"-B n" として渡しているのはジョブキューの数なので、複数プロセスに分割して実行もできます。  
 
 for example
 * 1) rm -rf /var/tmp/noname (delete the queue that was made before)
@@ -49,6 +53,19 @@ for example
 
 [Command Options]
 ...
+
+[ライブラリについて]
+
+当初バッチから利用することを想定していたのでコマンドを作りましたが、ワルノリして php, java から  
+呼び出せるようにしました。  
+
+eclipse でのアプリ開発時にも使えるかと思ったので、リモートのサーバに xinetd 経由で push/pop できる  
+ようにもしていますが、セキュリティとか考慮しないものになっています。
+
+[その他]
+
+コマンドラインオプションもいろいろあるのでそのうち書きますが、興味のある人がいれば直接連絡してください。
+
 
 ## License
 * MIT  
