@@ -119,6 +119,7 @@ struct sfq_queue_init_params
 	size_t payloadsize_limit;
 	ushort procs_num;
 	ushort boota_proc_num;
+	ushort execable_maxla;
 	questate_t questate;
 	const char* queusrnam;
 	const char* quegrpnam;

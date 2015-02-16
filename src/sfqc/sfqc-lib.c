@@ -443,6 +443,29 @@ int sfqc_parse_program_args(int argc, char** argv, const char* optstring,
 				break;
 			}
 
+			case 'E':
+			{
+				/* exec 可能最大ロードアベレージ */
+				char* e = NULL;
+				unsigned long ul = 0;
+
+				ul =strtoul(optarg, &e, 0);
+				if (*e)
+				{
+					snprintf(message, sizeof(message), "'%c': ignore [%s]", opt, e);
+					jumppos = __LINE__;
+					goto EXIT_LABEL;
+				}
+				if (ul >= USHRT_MAX)
+				{
+					snprintf(message, sizeof(message), "'%c': size over (%u)", opt, USHRT_MAX);
+				}
+
+				pgargs->execable_maxla = (ushort)ul;
+
+				break;
+			}
+
 			case 'N': { RESET_STR(optarg, quename);		break; } // QUEUE 名
 			case 'D': { RESET_STR(optarg, querootdir);	break; } // QUEUE ディレクトリ
 			case 'U': { RESET_STR(optarg, usrnam);		break; } // QUEUE ユーザ
