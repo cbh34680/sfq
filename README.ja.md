@@ -7,10 +7,9 @@ sfq - Simple File-based Queue
 主な目的は incrond で起動するプロセスのコントロールなので、ジョブキューとして利用できます。  
 シェルで実行しているコマンドをキューに登録するイメージです。  
   
-  
+[利用例]
 
 ![how to use](http://sfq.iret.co.jp/sfq-how-to-use.png)
-  
 
 [Development Environment]
 * OS) CentOS 6/7 64bit
