@@ -135,7 +135,8 @@ struct unsigned_state_minmax
 {
 	const char* noun;
 	ulong type_max;
-
+	const char* defval_str;
+	ulong (*get_defval_func)();
 	const char* member_name;
 };
 
@@ -143,81 +144,100 @@ static int do_change_unsigned(const char* querootdir, const char* quename, const
 {
 	int irc = 0;
 
-	int i = 0;
-
 	char* message = NULL;
 	int jumppos = -1;
 
 	struct unsigned_state_minmax usm_map[] =
 	{
-		{ "maxla",	USHRT_MAX,	"execable_maxla" },
+		{ "maxla",	USHRT_MAX,	"@",	sfqc_maxla_autodetect,	"execable_maxla" },
+		{ NULL,		0,		NULL,			NULL,	NULL },
 	};
 
-	for (i=0; i<(sizeof(usm_map) / sizeof(usm_map[0])); i++)
-	{
-		struct unsigned_state_minmax* usm_set = &usm_map[i];
+	struct unsigned_state_minmax* usm_set = NULL;
 
-		if (strcmp(cms[0], usm_set->noun) == 0)
+/* */
+	for (usm_set=usm_map; usm_set->noun; usm_set++)
+	{
+		ulong chk_ul = 0;
+
+		ushort us = 0;
+
+		void* addr = NULL;
+		size_t addr_size = 0;
+
+/* */
+		if (strcmp(cms[0], usm_set->noun) != 0)
+		{
+			continue;
+		}
+
+		if (usm_set->defval_str)
+		{
+			if (strcmp(cms[1], usm_set->defval_str) == 0)
+			{
+				assert(usm_set->get_defval_func);
+
+				chk_ul = usm_set->get_defval_func();
+			}
+		}
+
+		if (! chk_ul)
 		{
 			char* e = NULL;
-			ulong chk_ul = 0;
-
-			ushort us = 0;
-
-			void* addr = NULL;
-			size_t addr_size = 0;
 
 			chk_ul = strtoul(cms[1], &e, 0);
 			if (*e)
 			{
 				message = "parse number";
 				jumppos = __LINE__;
+				goto EXIT_LABEL;
 			}
-			else if (chk_ul > usm_set->type_max)
-			{
-				message = "check max value error";
-				jumppos = __LINE__;
-			}
-			else
-			{
-				switch (usm_set->type_max)
-				{
-					case USHRT_MAX:
-					{
-						us = (ushort)chk_ul;
+		}
 
-						addr = &us;
-						addr_size = sizeof(us);
-						break;
-					}
-
-					default:
-					{
-						message = "unknown type";
-						jumppos = __LINE__;
-					}
-				}
-			}
-
-			if (addr && addr_size)
-			{
-				irc = sfq_set_header_by_name(querootdir, quename,
-					usm_set->member_name, addr, addr_size, LOCK_WAIT_SEC);
-
-				if (irc != SFQ_RC_SUCCESS)
-				{
-					message = "sfq_set_header_by_name";
-					jumppos = __LINE__;
-				}
-			}
-			else
-			{
-				message = "unknown type or size";
-				jumppos = __LINE__;
-			}
-
+		if (chk_ul > usm_set->type_max)
+		{
+			message = "check max value error";
+			jumppos = __LINE__;
 			goto EXIT_LABEL;
 		}
+
+		switch (usm_set->type_max)
+		{
+			case USHRT_MAX:
+			{
+				us = (ushort)chk_ul;
+
+				addr = &us;
+				addr_size = sizeof(us);
+				break;
+			}
+
+			default:
+			{
+				message = "unknown type";
+				jumppos = __LINE__;
+				goto EXIT_LABEL;
+			}
+		}
+
+		if (addr && addr_size)
+		{
+			irc = sfq_set_header_by_name(querootdir, quename,
+				usm_set->member_name, addr, addr_size, LOCK_WAIT_SEC);
+
+			if (irc != SFQ_RC_SUCCESS)
+			{
+				message = "sfq_set_header_by_name";
+				jumppos = __LINE__;
+			}
+		}
+		else
+		{
+			message = "unknown type or size";
+			jumppos = __LINE__;
+		}
+
+		goto EXIT_LABEL;
 	}
 
 	puts("unknown parameter");
