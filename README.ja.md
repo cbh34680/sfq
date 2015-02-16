@@ -1,11 +1,11 @@
 sfq - Simple File-based Queue
 ===
-���O�̒ʂ�V���v���ȃL���[�ł��B  
-(�T�����������̂�������Ȃ�����) �풓�v���Z�X��c�a���K�v�Ȃ��A�v���Z�X/�X���b�h��r�����䂵�Ă����  
-�s���̗ǂ����̂�������Ȃ������̂Ŏd���Ȃ����܂����B  
+名前の通りシンプルなキューです。  
+(探し方が悪いのかもしれないけど) 常駐プロセスやＤＢが必要なく、プロセス/スレッドを排他制御してくれる  
+都合の良いものが見つからなかったので仕方なく作りました。  
   
-��ȖړI�� incrond �ŋN������v���Z�X�̃R���g���[���Ȃ̂ŁA�W���u�L���[�Ƃ��ė��p�ł��܂��B  
-�V�F���Ŏ��s���Ă���R�}���h���L���[�ɓo�^����C���[�W�ł��B  
+主な目的は incrond で起動するプロセスのコントロールなので、ジョブキューとして利用できます。  
+シェルで実行しているコマンドをキューに登録するイメージです。  
 
 ![how to use](http://sfq.iret.co.jp/sfq-how-to-use.png)
 
@@ -27,9 +27,9 @@ sfq - Simple File-based Queue
 
 [Run) Queue Type-1]
 
-�ʏ�̃t�@�C���E�L���[�ł��Bpush ���� pop/shift ���܂��B  
-�����͂��̎d�g�݂Ńf�[�^�̓o�^/�擾���s������ł������A�v���Z�X�̐����ɂ��čl����̂��ʓ|��  
-�Ȃ����̂ŁA��q�� Type-2 �̋@�\�����܂����B  
+通常のファイル・キューです。push して pop/shift します。  
+当初はこの仕組みでデータの登録/取得を行うつもりでしたが、プロセスの生成について考えるのが面倒に  
+なったので、後述の Type-2 の機能を入れました。  
 
 for example
 * 1) sfqc-init ("noname" directory is made in "/var/tmp")
@@ -43,8 +43,8 @@ for example
 
 [Run) Queue Type-2]
 
-�ŏ��̐����ɂ���悤�ɁA���s�������������L���[�ɓo�^(push) ����Ə������s�����悤�ɂȂ�܂��B  
-"-B n" �Ƃ��ēn���Ă���̂̓W���u�L���[�̐��Ȃ̂ŁA�����v���Z�X�ɕ������Ď��s���ł��܂��B  
+最初の説明にあるように、実行したい処理をキューに登録(push) すると順次実行されるようになります。  
+"-B n" として渡しているのはジョブキューの数なので、複数プロセスに分割して実行もできます。  
 
 for example
 * 1) rm -rf /var/tmp/noname (delete the queue that was made before)
@@ -55,17 +55,17 @@ for example
 [Command Options]
 ...
 
-[���C�u�����ɂ���]
+[ライブラリについて]
 
-�����o�b�`���痘�p���邱�Ƃ�z�肵�Ă����̂ŃR�}���h�����܂������A�����m������ php, java ����  
-�Ăяo����悤�ɂ��܂����B  
+当初バッチから利用することを想定していたのでコマンドを作りましたが、ワルノリして php, java から  
+呼び出せるようにしました。  
 
-eclipse �ł̃A�v���J�����ɂ��g���邩�Ǝv�����̂ŁA�����[�g�̃T�[�o�� xinetd �o�R�� push/pop �ł���  
-�悤�ɂ����Ă��܂����A�Z�L�����e�B�Ƃ��l�����Ȃ����̂ɂȂ��Ă��܂��B
+eclipse でのアプリ開発時にも使えるかと思ったので、リモートのサーバに xinetd 経由で push/pop できる  
+ようにもしていますが、セキュリティとか考慮しないものになっています。
 
-[���̑�]
+[その他]
 
-�R�}���h���C���I�v�V���������낢�날��̂ł��̂��������܂����A�����̂���l������Β��ژA�����Ă��������B
+コマンドラインオプションもいろいろあるのでそのうち書きますが、興味のある人がいれば直接連絡してください。
 
 
 ## License
