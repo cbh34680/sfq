@@ -1,5 +1,103 @@
 #include "sfq-lib.h"
 
+int sfq_set_header_by_name(const char* querootdir, const char* quename,
+        const char* member_name, const void* data, size_t data_size, int semlock_wait_sec)
+{
+	struct member_size_map
+	{
+		const char* name;
+		size_t data_size;
+	}
+	ms_map[] =
+	{
+		{ "execable_maxla",	sizeof(ushort) },
+		{ NULL,			0 },
+	};
+
+SFQ_LIB_ENTER
+
+	struct sfq_queue_object* qo = NULL;
+
+	struct sfq_file_header qfh;
+	sfq_bool b = SFQ_false;
+
+	struct member_size_map* ms_set = NULL;
+	void* addr = NULL;
+
+/* initialize */
+	bzero(&qfh, sizeof(qfh));
+
+	if (! member_name)
+	{
+		SFQ_FAIL(EA_FUNCARG, "member_name not set");
+	}
+	if (! data)
+	{
+		SFQ_FAIL(EA_FUNCARG, "data not set");
+	}
+	if (! data_size)
+	{
+		SFQ_FAIL(EA_FUNCARG, "data_size not set");
+	}
+
+	for (ms_set=ms_map; ms_set->name; ms_set++)
+	{
+		if (strcmp(member_name, ms_set->name) == 0)
+		{
+			if (ms_set->data_size != data_size)
+			{
+				SFQ_FAIL(EA_FUNCARG, "data_size is not match (%zu:%zu)",
+					ms_set->data_size, data_size);
+			}
+			break;
+		}
+	}
+
+	if (! ms_set->name)
+	{
+		SFQ_FAIL(EA_NOTMEMBER, "member(%s) not exist", member_name);
+	}
+
+	qo = sfq_open_queue_rw_lws(querootdir, quename, semlock_wait_sec);
+	if (! qo)
+	{
+		SFQ_FAIL(EA_OPENQUEUE, "sfq_open_queue_ro_lws");
+	}
+
+	b = sfq_readqfh(qo, &qfh, NULL);
+	if (! b)
+	{
+		SFQ_FAIL(EA_QFHRW, "sfq_readqfh");
+	}
+
+	if (strcmp(ms_set->name, "execable_maxla") == 0)
+	{
+		addr = &qfh.qh.sval.execable_maxla;
+	}
+
+	if (! addr)
+	{
+		SFQ_FAIL(EA_ASSERT, "addr is not set");
+	}
+
+	memcpy(addr, data, data_size);
+
+	b = sfq_writeqfh(qo, &qfh, NULL, "SET");
+	if (! b)
+	{
+		SFQ_FAIL(EA_QFHRW, "sfq_writeqfh");
+	}
+
+SFQ_LIB_CHECKPOINT
+
+SFQ_LIB_LEAVE
+
+	sfq_close_queue(qo);
+	qo = NULL;
+
+	return SFQ_LIB_RC();
+}
+
 int sfq_get_questate(const char* querootdir, const char* quename,
 	questate_t* questate_ptr, int semlock_wait_sec)
 {
@@ -21,7 +119,7 @@ SFQ_LIB_ENTER
 	qo = sfq_open_queue_ro_lws(querootdir, quename, semlock_wait_sec);
 	if (! qo)
 	{
-		SFQ_FAIL(EA_OPENQUEUE, "sfq_open_queue_ro");
+		SFQ_FAIL(EA_OPENQUEUE, "sfq_open_queue_ro_lws");
 	}
 
 	b = sfq_readqfh(qo, &qfh, NULL);
