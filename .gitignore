@@ -2,8 +2,10 @@
 *.txt
 *.bin
 *.dat
+*.err
 .*.swp
 *.log
 *.cgi
 *.class
 noname
+/*.sh
