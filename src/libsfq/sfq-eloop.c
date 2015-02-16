@@ -267,7 +267,8 @@ clock_gettime():tv_nsec / 1000000 = milli sec
 			bttime = tspec.tv_sec;
 		}
 
-elog_print("loop%zu block-top [time=%zu time_s=%s]", loop, bttime, bttime_s);
+elog_print("loop%zu block-top [time=%zu time_s=%s] [elm num=%lu]",
+	loop, bttime, bttime_s, qh.dval.elm_num);
 
 /*
 実行可能ロードアベレージの確認
