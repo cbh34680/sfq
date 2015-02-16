@@ -390,7 +390,7 @@ printf("%s\t%d\t%s\t%zu\t%zu\t%d\t%d\n",
 			SFQ_FAIL(EA_UPDSTATUS, "loop increment");
 		}
 
-elog_print("loop%zu block-bottom [questate=%u]", loop, qh.dval.questate);
+elog_print("loop%zu block-bottom [questate=%u] [elapsed=%d]", loop, qh.dval.questate, elapsed_sec);
 	}
 
 SFQ_LIB_CHECKPOINT
