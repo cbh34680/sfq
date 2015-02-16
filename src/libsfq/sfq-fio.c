@@ -115,22 +115,6 @@ SFQ_LIB_LEAVE
 	return SFQ_LIB_IS_SUCCESS();
 }
 
-
-#ifdef SFQ_SEMUNLOCK_AT_SIGCATCH
-/*
-セマフォのロックを解除するシグナルハンドラ
-*/
-static void unlock_semaphore_sighandler(int signo)
-{
-	signal(signo, SIG_IGN);
-
-	sfq_unlock_semaphore(NULL);
-	raise(signo);
-
-	signal(signo, SIG_DFL);
-}
-#endif
-
 static struct sfq_queue_object* open_queue_(const char* querootdir, const char* quename,
 	sfq_uchar queue_openmode, int semlock_wait_sec)
 {
@@ -143,12 +127,6 @@ SFQ_LIB_ENTER
 	mode_t save_umask = (mode_t)-1;
 	sfq_bool b = SFQ_false;
 	const char* fopen_mode = NULL;
-
-#ifdef SFQ_SEMUNLOCK_AT_SIGCATCH
-	sighandler_t save_handler_SIGINT = NULL;
-	sighandler_t save_handler_SIGTERM = NULL;
-	sighandler_t save_handler_SIGHUP = NULL;
-#endif
 
 	assert(queue_openmode);
 
@@ -167,30 +145,6 @@ SFQ_LIB_ENTER
 	{
 		SFQ_FAIL(EA_LOCKSEMAPHORE, "sfq_lock_semaphore");
 	}
-
-#ifdef SFQ_SEMUNLOCK_AT_SIGCATCH
-/* regist signal handlers */
-	/* SIGINT */
-	save_handler_SIGINT = signal(SIGINT, unlock_semaphore_sighandler);
-	if (save_handler_SIGINT == SIG_ERR)
-	{
-		SFQ_FAIL(ES_SIGNAL, "change SIGINT handler");
-	}
-
-	/* SIGTERM */
-	save_handler_SIGTERM = signal(SIGTERM, unlock_semaphore_sighandler);
-	if (save_handler_SIGTERM == SIG_ERR)
-	{
-		SFQ_FAIL(ES_SIGNAL, "change SIGTERM handler");
-	}
-
-	/* SIGHUP */
-	save_handler_SIGHUP = signal(SIGHUP, unlock_semaphore_sighandler);
-	if (save_handler_SIGHUP == SIG_ERR)
-	{
-		SFQ_FAIL(ES_SIGNAL, "change SIGHUP handler");
-	}
-#endif
 
 /* open queue-file */
 	switch (queue_openmode)
@@ -261,12 +215,6 @@ SFQ_LIB_ENTER
 	qo->save_umask = save_umask;
 	qo->queue_openmode = queue_openmode;
 
-#ifdef SFQ_SEMUNLOCK_AT_SIGCATCH
-	qo->save_handler_SIGINT = save_handler_SIGINT;
-	qo->save_handler_SIGTERM = save_handler_SIGTERM;
-	qo->save_handler_SIGHUP = save_handler_SIGHUP;
-#endif
-
 SFQ_LIB_CHECKPOINT
 
 	if (SFQ_LIB_IS_FAIL())
@@ -276,39 +224,6 @@ SFQ_LIB_CHECKPOINT
 			fclose(fp);
 			fp = NULL;
 		}
-
-#ifdef SFQ_SEMUNLOCK_AT_SIGCATCH
-/* un-regist signal handlers */
-		/* SIGINT */
-		if (save_handler_SIGINT)
-		{
-			if (save_handler_SIGINT != SIG_ERR)
-			{
-				signal(SIGINT, save_handler_SIGINT);
-			}
-			save_handler_SIGINT = NULL;
-		}
-
-		/* SIGTERM */
-		if (save_handler_SIGTERM)
-		{
-			if (save_handler_SIGTERM != SIG_ERR)
-			{
-				signal(SIGTERM, save_handler_SIGTERM);
-			}
-			save_handler_SIGTERM = NULL;
-		}
-
-		/* SIGHUP */
-		if (save_handler_SIGHUP)
-		{
-			if (save_handler_SIGHUP != SIG_ERR)
-			{
-				signal(SIGHUP, save_handler_SIGHUP);
-			}
-			save_handler_SIGHUP = NULL;
-		}
-#endif
 
 		if (om)
 		{
@@ -345,38 +260,6 @@ void sfq_close_queue(struct sfq_queue_object* qo)
 		fclose(qo->fp);
 		qo->fp = NULL;
 	}
-
-#ifdef SFQ_SEMUNLOCK_AT_SIGCATCH
-/* SIGINT */
-	if (qo->save_handler_SIGINT)
-	{
-		if (qo->save_handler_SIGINT != SIG_ERR)
-		{
-			signal(SIGINT, qo->save_handler_SIGINT);
-		}
-		qo->save_handler_SIGINT = NULL;
-	}
-
-/* SIGTERM */
-	if (qo->save_handler_SIGTERM)
-	{
-		if (qo->save_handler_SIGTERM != SIG_ERR)
-		{
-			signal(SIGTERM, qo->save_handler_SIGTERM);
-		}
-		qo->save_handler_SIGTERM = NULL;
-	}
-
-/* SIGHUP */
-	if (qo->save_handler_SIGHUP)
-	{
-		if (qo->save_handler_SIGHUP != SIG_ERR)
-		{
-			signal(SIGHUP, qo->save_handler_SIGHUP);
-		}
-		qo->save_handler_SIGHUP = NULL;
-	}
-#endif
 
 	if (qo->om)
 	{
