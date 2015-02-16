@@ -297,12 +297,12 @@ void sfqc_free_program_args(struct sfqc_program_args* pgargs)
 	bzero(pgargs, sizeof(*pgargs));
 }
 
-int get_ul_bytesize(const char* str, unsigned long* ul_ptr, char** e_ptr)
+int get_ul_bytesize(const char* str, ulong* ul_ptr, char** e_ptr)
 {
 	ulong mul = 0;
 
 	char* e = NULL;
-	unsigned long ul = strtoul(str, &e, 0);
+	ulong ul = strtoul(str, &e, 0);
 
 	if (*e)
 	{
@@ -358,6 +358,57 @@ int get_ul_bytesize(const char* str, unsigned long* ul_ptr, char** e_ptr)
 	return 0;
 }
 
+#define PROCESSER_STR		"processor\t: "
+#define CPU_POWER_RATE		((double)0.8)
+
+ulong sfqc_maxla_autodetect()
+{
+	ulong ret = 0;
+	ulong cpu_num = 0;
+
+	FILE* fp = NULL;
+	char buf[64] = "";
+	size_t cmp_len = strlen(PROCESSER_STR);
+
+	sfq_bool prev_is_lf = SFQ_true;
+
+	fp = fopen("/proc/cpuinfo", "r");
+	if (! fp)
+	{
+		goto EXIT_LABEL;
+	}
+
+	while (fgets(buf, sizeof(buf), fp))
+	{
+		if (prev_is_lf)
+		{
+			if (strncmp(buf, PROCESSER_STR, cmp_len) == 0)
+			{
+				cpu_num++;
+			}
+		}
+
+		prev_is_lf = (buf[strlen(buf) - 1] == '\n');
+	}
+
+	if (! cpu_num)
+	{
+		goto EXIT_LABEL;
+	}
+
+	ret = (ulong)((double)cpu_num * (double)100.0 * CPU_POWER_RATE);
+
+EXIT_LABEL:
+
+	if (fp)
+	{
+		fclose(fp);
+		fp = NULL;
+	}
+
+	return ret;
+}
+
 #define RESET_STR(org_, MEMBER_) \
 	char* c = strdup(org_); \
 	if (! c) { \
@@ -389,7 +440,7 @@ int sfqc_parse_program_args(int argc, char** argv, const char* optstring,
 			case 'S':
 			{
 				/* ファイルサイズの最大 */
-				unsigned long ul = 0;
+				ulong ul = 0;
 				char* e = NULL;
 
 				if (get_ul_bytesize(optarg, &ul, &e) != 0)
@@ -406,7 +457,7 @@ int sfqc_parse_program_args(int argc, char** argv, const char* optstring,
 			case 'L':
 			{
 				/* 要素サイズの最大 */
-				unsigned long ul = 0;
+				ulong ul = 0;
 				char* e = NULL;
 
 				if (get_ul_bytesize(optarg, &ul, &e) != 0)
@@ -424,9 +475,9 @@ int sfqc_parse_program_args(int argc, char** argv, const char* optstring,
 			{
 				/* 最大プロセス数 */
 				char* e = NULL;
-				unsigned long ul = 0;
+				ulong ul = 0;
 
-				ul =strtoul(optarg, &e, 0);
+				ul = strtoul(optarg, &e, 0);
 				if (*e)
 				{
 					snprintf(message, sizeof(message), "'%c': ignore [%s]", opt, e);
@@ -447,15 +498,36 @@ int sfqc_parse_program_args(int argc, char** argv, const char* optstring,
 			{
 				/* exec 可能最大ロードアベレージ */
 				char* e = NULL;
-				unsigned long ul = 0;
+				ulong ul = 0;
 
-				ul =strtoul(optarg, &e, 0);
-				if (*e)
+				if (strcmp(optarg, "@") == 0)
 				{
-					snprintf(message, sizeof(message), "'%c': ignore [%s]", opt, e);
-					jumppos = __LINE__;
-					goto EXIT_LABEL;
+/*
+"/proc/cpuinfo" から CPU 数を取得し、自動算出
+*/
+					ul = sfqc_maxla_autodetect();
+					if (! ul)
+					{
+						snprintf(message, sizeof(message),
+							"'%c': auto-detect fault", opt);
+
+						jumppos = __LINE__;
+						goto EXIT_LABEL;
+					}
 				}
+				else
+				{
+					ul = strtoul(optarg, &e, 0);
+					if (*e)
+					{
+						snprintf(message, sizeof(message),
+							"'%c': ignore [%s]", opt, e);
+
+						jumppos = __LINE__;
+						goto EXIT_LABEL;
+					}
+				}
+
 				if (ul >= USHRT_MAX)
 				{
 					snprintf(message, sizeof(message), "'%c': size over (%u)", opt, USHRT_MAX);
