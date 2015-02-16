@@ -70,6 +70,7 @@ enum
 	SFQ_RC_EA_REGSEMAPHORE,
 	SFQ_RC_EA_ISNOTDIR,
 	SFQ_RC_EA_ISINPATH,
+	SFQ_RC_EA_NOTMEMBER,
 
 	SFQ_RC_SYSERR_MIN		= 71,
 	SFQ_RC_ES_MEMORY,
@@ -203,6 +204,9 @@ int sfq_get_questate(const char* querootdir, const char* quename,
 
 int sfq_set_questate(const char* querootdir, const char* quename,
 	questate_t questate, int semlock_wait_sec);
+
+int sfq_set_header_by_name(const char* querootdir, const char* quename,
+	const char* member_name, const void* data, size_t data_size, int semlock_wait_sec);
 
 size_t sfq_payload_len(const struct sfq_value* val);
 

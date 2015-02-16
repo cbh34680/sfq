@@ -1,5 +1,42 @@
 #include "sfq-lib.h"
 
+static sfq_bool read_qh(const struct sfq_eloop_params* elop, struct sfq_q_header* qh_ptr)
+{
+SFQ_LIB_ENTER
+
+	struct sfq_queue_object* qo = NULL;
+	sfq_bool b = SFQ_false;
+	struct sfq_file_header qfh;
+
+/* initialize */
+	bzero(&qfh, sizeof(qfh));
+
+/* open queue-file */
+	qo = sfq_open_queue_ro(elop->om_querootdir, elop->om_quename);
+	if (! qo)
+	{
+		SFQ_FAIL(EA_OPENQUEUE, "sfq_open_queue_ro");
+	}
+
+/* read file-header */
+	b = sfq_readqfh(qo, &qfh, NULL);
+	if (! b)
+	{
+		SFQ_FAIL(EA_QFHRW, "sfq_readqfh");
+	}
+
+	(*qh_ptr) = qfh.qh;
+
+SFQ_LIB_CHECKPOINT
+
+SFQ_LIB_LEAVE
+
+	sfq_close_queue(qo);
+	qo = NULL;
+
+	return SFQ_LIB_IS_SUCCESS();
+}
+
 static sfq_bool update_procstate(const struct sfq_eloop_params* elop,
 	sfq_uchar procstate, int TO_state, struct sfq_q_header* qh_ptr)
 {
@@ -99,6 +136,49 @@ SFQ_LIB_LEAVE
 	return SFQ_LIB_IS_SUCCESS();
 }
 
+sfq_bool need_sleep(ushort execable_maxla)
+{
+	sfq_bool b = SFQ_false;
+
+	FILE* fp_proc = fopen("/proc/loadavg", "r");
+	if (fp_proc)
+	{
+		float la1, la5, la10;
+		int pc1, pc2;
+		pid_t prev_pid;
+		int set_num = 0;
+
+		set_num = fscanf(fp_proc, "%f %f %f %d/%d %d",
+			&la1, &la5, &la10, &pc1, &pc2, &prev_pid);
+
+		fclose(fp_proc);
+		fp_proc = NULL;
+
+		if (set_num == 6)
+		{
+elog_print("load average 1) %.2f/ 5) %.2f/ 10) %.2f", la1, la5, la10);
+
+			float ea_mla = (float)execable_maxla / (float)100.0;
+
+			if (la1 > ea_mla)
+			{
+				b = SFQ_true;
+			}
+		}
+	}
+
+	return b;
+}
+
+volatile sfq_bool GLOBAL_eloop_sig_catch = SFQ_false;
+
+static void eloop_sig_handler(int signo)
+{
+	signal(signo, SIG_IGN);
+
+	GLOBAL_eloop_sig_catch = SFQ_true;
+}
+
 static void foreach_element(const struct sfq_eloop_params* elop)
 {
 SFQ_LIB_ENTER
@@ -112,6 +192,8 @@ SFQ_LIB_ENTER
 	pid_t pid = getpid();
 	pid_t ppid = getppid();
 
+	sighandler_t save_sig_handler = SIG_ERR;
+
 /* */
 	bzero(&qh, sizeof(qh));
 
@@ -123,6 +205,14 @@ elog_print("# root    = %s", elop->om_querootdir);
 elog_print("# queue   = %s", elop->om_quename);
 elog_print("# execlog = %s", elop->om_queexeclogdir);
 elog_print("#");
+
+elog_print("set signal handler");
+
+	save_sig_handler = signal(SIGTERM, eloop_sig_handler);
+	if (save_sig_handler == SIG_ERR)
+	{
+		SFQ_FAIL(ES_SIGNAL, "set eloop_sig_handler");
+	}
 
 elog_print("before update_procstate");
 
@@ -186,37 +276,32 @@ elog_print("loop%zu block-top [time=%zu time_s=%s]", loop, bttime, bttime_s);
 		{
 elog_print("loop%zu check load-average", loop);
 
-			FILE* fp_proc = fopen("/proc/loadavg", "r");
-			if (fp_proc)
+			if (need_sleep(qh.sval.execable_maxla))
 			{
-				float la1, la5, la10;
-				int pc1, pc2;
-				pid_t prev_pid;
-				int set_num = 0;
+				uint rest_sec = 0;
 
-				set_num = fscanf(fp_proc, "%f %f %f %d/%d %d",
-					&la1, &la5, &la10, &pc1, &pc2, &prev_pid);
+elog_print("loop%zu load average exceeds limit, sleep ...", loop);
+				rest_sec = sleep(10);
 
-				fclose(fp_proc);
-				fp_proc = NULL;
-
-				if (set_num == 6)
+				if (rest_sec != 0)
 				{
-elog_print("loop%zu load average 1) %.2f/ 5) %.2f/ 10) %.2f", loop, la1, la5, la10);
-
-					float ea_mla = (float)qh.sval.execable_maxla / (float)100.0;
-
-					if (la1 > ea_mla)
-					{
-elog_print("loop%zu load average exceeds limit(%.2f), sleep ...", loop, ea_mla);
-						sleep(10);
-elog_print("loop%zu wake, go next loop", loop);
-
-						goto NEXT_LOOP_LABEL;
-					}
-elog_print("loop%zu ok, go next-step", loop);
+/*
+シグナルによる sleep() の中断
+*/
+elog_print("loop%zu catch signal, break", loop);
+					break;
 				}
 
+				b = read_qh(elop, &qh);
+				if (! b)
+				{
+					SFQ_FAIL(EA_QFHRW, "read_qh");
+				}
+
+elog_print("loop%zu wake, go next loop", loop);
+
+				continue;
+elog_print("loop%zu ok, go next-step", loop);
 			}
 		}
 		else
@@ -238,7 +323,6 @@ elog_print("loop%zu no more element, break", loop);
 
 		if (shift_rc == SFQ_RC_SUCCESS)
 		{
-/* */
 			uuid_unparse(val.uuid, uuid_s);
 
 elog_print("loop%zu shift success [id=%zu pushtime=%zu uuid=%s]",
@@ -298,8 +382,6 @@ printf("%s\t%d\t%s\t%zu\t%zu\t%d\t%d\n",
 
 		sfq_free_value(&val);
 
-NEXT_LOOP_LABEL:
-
 /* update to_*** */
 		b = update_procstate(elop, SFQ_PIS_TAKEOUT, TO_state, &qh);
 
@@ -313,7 +395,7 @@ elog_print("loop%zu block-bottom [questate=%u]", loop, qh.dval.questate);
 
 SFQ_LIB_CHECKPOINT
 
-elog_print("after loop [loop times=%zu]", loop);
+elog_print("after loop [loop times=%zu] [sig catch=%s]", loop, GLOBAL_eloop_sig_catch ? "t" : "f");
 
 /*
 ここでの update_procstate() の失敗は無視するしかないが
@@ -322,6 +404,13 @@ elog_print("after loop [loop times=%zu]", loop);
 	update_procstate(elop, SFQ_PIS_DONE, 0, NULL);
 
 elog_print("after update_procstate");
+
+	if (save_sig_handler != SIG_ERR)
+	{
+elog_print("restore signal handler");
+		signal(SIGTERM, save_sig_handler);
+	}
+
 elog_print("--");
 
 SFQ_LIB_LEAVE

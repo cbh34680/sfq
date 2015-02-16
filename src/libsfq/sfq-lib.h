@@ -2,13 +2,6 @@
 #define SFQ_LIB_H_INCLUDE_ONCE_
 
 /*
-シグナルハンドラによるセマフォの開放
-
---> DLL のアンロードにより実行
-*/
-//#define SFQ_SEMUNLOCK_AT_SIGCATCH
-
-/*
 #pragma GCC diagnostic ignored "-Wunused-label"
 */
 
@@ -26,10 +19,6 @@
 #include <fcntl.h>           /* For O_* constants */
 #include <math.h>
 #include <stddef.h>
-
-#ifdef SFQ_SEMUNLOCK_AT_SIGCATCH
-	#include <signal.h>
-#endif
 
 #ifdef WIN32
 	#include "win32-dummy-build.h"
@@ -394,22 +383,11 @@ struct sfq_queue_object
 	FILE* fp;
 
 	mode_t save_umask;
-
-#ifdef SFQ_SEMUNLOCK_AT_SIGCATCH
-	sighandler_t save_handler_SIGINT;
-	sighandler_t save_handler_SIGTERM;
-	sighandler_t save_handler_SIGHUP;
-#endif
 };
 
 struct sfq_ioelm_buff
 {
 	struct sfq_e_header eh;
-/*
-#	const char* execusrnam;
-#	const char* execgrpnam;
-*/
-
 	const sfq_byte* payload;
 	const char* eworkdir;
 	const char* execpath;
