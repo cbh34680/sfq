@@ -127,5 +127,7 @@ int sfqc_xinetd_readdata(struct sfqc_xinetd_data* xd);
 
 void sfqc_take_success(uint printmethod, const struct sfq_value* val);
 
+ulong sfqc_maxla_autodetect();
+
 #endif
 
