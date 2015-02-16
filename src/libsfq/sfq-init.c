@@ -202,6 +202,7 @@ root の場合、"-U" か "-G" の指定があるときのみ通過させる
 	qfh.qh.sval.filesize_limit = qip->filesize_limit;
 	qfh.qh.sval.payloadsize_limit = qip->payloadsize_limit;
 	qfh.qh.sval.procs_num = qip->procs_num;
+	qfh.qh.sval.execable_maxla = qip->execable_maxla;
 
 /*
 各ポジションの初期化

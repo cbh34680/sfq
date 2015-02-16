@@ -20,7 +20,7 @@ SFQC_MAIN_ENTER
 	bzero(&qip, sizeof(qip));
 
 /* */
-	irc = sfqc_parse_program_args(argc, argv, "D:N:U:G:S:L:B:oe", SFQ_false, &pgargs);
+	irc = sfqc_parse_program_args(argc, argv, "D:N:U:G:S:L:B:E:oe", SFQ_false, &pgargs);
 	if (irc != 0)
 	{
 		message = "parse_program_args: parse error";
@@ -65,6 +65,7 @@ SFQC_MAIN_ENTER
 	qip.payloadsize_limit = pgargs.payloadsize_limit;
 	qip.procs_num = procs_num;
 	qip.boota_proc_num = pgargs.boota_proc_num;
+	qip.execable_maxla = pgargs.execable_maxla;
 	qip.questate = questate;
 	qip.queusrnam = pgargs.usrnam;
 	qip.quegrpnam = pgargs.grpnam;

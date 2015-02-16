@@ -159,6 +159,7 @@ void sfq_print_q_header(const struct sfq_q_header* p)
 	fprintf(stderr, "# q_header.filesize_limit     = %zu\n", p->sval.filesize_limit);
 	fprintf(stderr, "# q_header.payloadsize_limit  = %zu\n", p->sval.payloadsize_limit);
 	fprintf(stderr, "# q_header.procs_num          = %u\n",  p->sval.procs_num);
+	fprintf(stderr, "# q_header.execable_maxla     = %u\n",  p->sval.execable_maxla);
 	fprintf(stderr, "#\n");
 
 /*
