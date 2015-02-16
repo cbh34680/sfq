@@ -56,7 +56,7 @@ static int get_off_on(const char* cms[2], questate_t* bit_ptr)
 }
 
 static int do_change_questate(const char* querootdir, const char* quename,
-	questate_t modify_bit, int bit_on)
+	int bit_on, questate_t modify_bit)
 {
 	int irc = 0;
 
