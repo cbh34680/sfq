@@ -1,7 +1,7 @@
 #include "sfq-lib.h"
 
 static sfq_bool update_procstate(const struct sfq_eloop_params* elop,
-	sfq_uchar procstate, int TO_state, questate_t* questate_ptr)
+	sfq_uchar procstate, int TO_state, struct sfq_q_header* qh_ptr)
 {
 SFQ_LIB_ENTER
 
@@ -81,9 +81,9 @@ SFQ_LIB_ENTER
 	}
 
 /* */
-	if (questate_ptr)
+	if (qh_ptr)
 	{
-		(*questate_ptr) = qfh.qh.dval.questate;
+		(*qh_ptr) = qfh.qh;
 	}
 
 SFQ_LIB_CHECKPOINT
@@ -107,10 +107,13 @@ SFQ_LIB_ENTER
 	int shift_rc = SFQ_RC_SUCCESS;
 	ulong loop = 0;
 
-	questate_t questate = 0;
+	struct sfq_q_header qh;
 
 	pid_t pid = getpid();
 	pid_t ppid = getppid();
+
+/* */
+	bzero(&qh, sizeof(qh));
 
 elog_print("#");
 elog_print("# ppid    = %d", ppid);
@@ -124,15 +127,15 @@ elog_print("#");
 elog_print("before update_procstate");
 
 	/* 状態を LOOPSTART に変更 */
-	b = update_procstate(elop, SFQ_PIS_LOOPSTART, 0, &questate);
+	b = update_procstate(elop, SFQ_PIS_LOOPSTART, 0, &qh);
 	if (! b)
 	{
 		SFQ_FAIL(EA_UPDSTATUS, "loop start");
 	}
 
-elog_print("before loop [questate=%u]", questate);
+elog_print("before loop [questate=%u]", qh.dval.questate);
 
-	for (loop=1; (shift_rc == SFQ_RC_SUCCESS) && (questate & SFQ_QST_EXEC_ON); loop++)
+	for (loop=1; (shift_rc == SFQ_RC_SUCCESS) && (qh.dval.questate & SFQ_QST_EXEC_ON); loop++)
 	{
 		struct sfq_value val;
 		int TO_state = SFQ_TOS_NONE;
@@ -175,6 +178,51 @@ clock_gettime():tv_nsec / 1000000 = milli sec
 		}
 
 elog_print("loop%zu block-top [time=%zu time_s=%s]", loop, bttime, bttime_s);
+
+/*
+実行可能ロードアベレージの確認
+*/
+		if (qh.sval.execable_maxla)
+		{
+elog_print("loop%zu check load-average", loop);
+
+			FILE* fp_proc = fopen("/proc/loadavg", "r");
+			if (fp_proc)
+			{
+				float la1, la5, la10;
+				int pc1, pc2;
+				pid_t prev_pid;
+				int set_num = 0;
+
+				set_num = fscanf(fp_proc, "%f %f %f %d/%d %d",
+					&la1, &la5, &la10, &pc1, &pc2, &prev_pid);
+
+				fclose(fp_proc);
+				fp_proc = NULL;
+
+				if (set_num == 6)
+				{
+elog_print("loop%zu load average 1) %.2f/ 5) %.2f/ 10) %.2f", loop, la1, la5, la10);
+
+					float ea_mla = (float)qh.sval.execable_maxla / (float)100.0;
+
+					if (la1 > ea_mla)
+					{
+elog_print("loop%zu load average exceeds limit(%.2f), sleep ...", loop, ea_mla);
+						sleep(10);
+elog_print("loop%zu wake, go next loop", loop);
+
+						goto NEXT_LOOP_LABEL;
+					}
+elog_print("loop%zu ok, go next-step", loop);
+				}
+
+			}
+		}
+		else
+		{
+elog_print("loop%zu no check load-average", loop);
+		}
 
 elog_print("loop%zu attempt to shift", loop);
 
@@ -250,15 +298,17 @@ printf("%s\t%d\t%s\t%zu\t%zu\t%d\t%d\n",
 
 		sfq_free_value(&val);
 
+NEXT_LOOP_LABEL:
+
 /* update to_*** */
-		b = update_procstate(elop, SFQ_PIS_TAKEOUT, TO_state, &questate);
+		b = update_procstate(elop, SFQ_PIS_TAKEOUT, TO_state, &qh);
 
 		if (! b)
 		{
 			SFQ_FAIL(EA_UPDSTATUS, "loop increment");
 		}
 
-elog_print("loop%zu block-bottom [questate=%u]", loop, questate);
+elog_print("loop%zu block-bottom [questate=%u]", loop, qh.dval.questate);
 	}
 
 SFQ_LIB_CHECKPOINT

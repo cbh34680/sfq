@@ -287,7 +287,8 @@ struct sfq_qh_sval
 	time_t createtime;		/* 8 */
 
 	ushort procs_num;		/* 2 ... (P) USHRT_MAX _SC_CHILD_MAX */
-	sfq_byte filler[6];		/* 6 */
+	ushort execable_maxla;		/* 2 */
+	sfq_byte filler[4];		/* 4 */
 };
 
 /* C) 72 動的属性 */

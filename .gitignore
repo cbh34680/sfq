@@ -1,6 +1,7 @@
 *.o
 *.txt
 *.bin
+*.err
 *.dat
 *.err
 .*.swp
