@@ -182,7 +182,10 @@ int sfq_push(const char* querootdir, const char* quename, struct sfq_value* val)
 int sfq_pop(const char* querootdir, const char* quename, struct sfq_value* val);
 int sfq_shift(const char* querootdir, const char* quename, struct sfq_value* val);
 int sfq_info(const char* querootdir, const char* quename, int semlock_wait_sec);
+
 int sfq_clear(const char* querootdir, const char* quename);
+int sfq_reset_procs(const char* querootdir, const char* quename);
+
 int sfq_alloc_print_value(const struct sfq_value* bin, struct sfq_value* str);
 void sfq_free_value(struct sfq_value* p);
 
