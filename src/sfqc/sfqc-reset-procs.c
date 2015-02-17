@@ -3,9 +3,8 @@
 int main(int argc, char** argv)
 {
 	int irc = 0;
-
 	char* message = NULL;
-	int jumppos = -1;
+	int jumppos = 0;
 
 /* */
 	struct sfqc_program_args pgargs;
@@ -23,10 +22,10 @@ SFQC_MAIN_ENTER
 		goto EXIT_LABEL;
 	}
 
-	irc = sfq_info(pgargs.querootdir, pgargs.quename, SFQC_LOCK_WAIT_SEC);
+	irc = sfq_reset_procs(pgargs.querootdir, pgargs.quename);
 	if (irc != SFQ_RC_SUCCESS)
 	{
-		message = "sfq_info";
+		message = "sfq_reset_procs";
 		jumppos = __LINE__;
 		goto EXIT_LABEL;
 	}

@@ -3,7 +3,7 @@ BASEI  = include/sfq.h
 BASEL  = lib/libsfq.so lib/libsfqc.so
 BASEX  = bin/sfqc-init bin/sfqc-info bin/sfqc-list bin/sfqc-pusht bin/sfqc-pushb 
 BASEX += bin/sfqc-pop bin/sfqc-shift bin/sfqc-clear bin/sfqc-sets bin/sfqc-disable
-BASEX += bin/sfqc-pushx bin/sfqc-popx bin/sfqc-shiftx
+BASEX += bin/sfqc-pushx bin/sfqc-popx bin/sfqc-shiftx bin/sfqc-reset-procs
 
 EXTNL = lib/sfqc-jni.jar lib/libsfqc-jni.so
 
@@ -58,6 +58,9 @@ bin/sfqc-disable: src/sfqc/sfqc-disable
 
 bin/sfqc-clear: src/sfqc/sfqc-clear
 	cd src/sfqc/; make $(MAKEOPT); cp -p sfqc-clear ../../bin/sfqc-clear
+
+bin/sfqc-reset-procs: src/sfqc/sfqc-reset-procs
+	cd src/sfqc/; make $(MAKEOPT); cp -p sfqc-reset-procs ../../bin/sfqc-reset-procs
 
 bin/sfqc-sets: src/sfqc/sfqc-sets
 	cd src/sfqc/; make $(MAKEOPT); cp -p sfqc-sets ../../bin/sfqc-sets
