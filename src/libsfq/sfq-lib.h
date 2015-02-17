@@ -72,6 +72,8 @@
 
 #define SFQ_PLUSINTSTR_WIDTH(var)	( ((var) == 0) ? 1 : (((int)log10( (var) )) + 1) )
 
+#define SFQ_DEFAULT_ELOOP_SLEEP_SEC	(10)
+
 /* --------------------------------------------------------------
  *
  * uid = 0 は root になって uid_t の初期値には使えないから
@@ -276,8 +278,9 @@ struct sfq_qh_sval
 	time_t createtime;		/* 8 */
 
 	ushort procs_num;		/* 2 ... (P) USHRT_MAX _SC_CHILD_MAX */
-	ushort execable_maxla;		/* 2 */
-	sfq_byte filler[4];		/* 4 */
+	ushort execable_maxla;		/* 2 ... (E) USHRT_MAX */
+	ushort execloop_sleep;		/* 1 ... --- UCHAR_MAX */
+	sfq_byte filler[3];		/* 3 */
 };
 
 /* C) 72 動的属性 */

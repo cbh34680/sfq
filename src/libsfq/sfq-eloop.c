@@ -314,9 +314,15 @@ elog_print("loop%zu check load-average", loop);
 			if (need_sleep(qh.sval.execable_maxla))
 			{
 				uint rest_sec = 0;
+				uint sleep_sec = SFQ_DEFAULT_ELOOP_SLEEP_SEC;
 
-elog_print("loop%zu load average exceeds limit, sleep ...", loop);
-				rest_sec = sleep(10);
+				if (qh.sval.execloop_sleep)
+				{
+					sleep_sec = (uint)qh.sval.execloop_sleep;
+				}
+
+elog_print("loop%zu load average exceeds limit, sleep (%u sec) ...", loop, sleep_sec);
+				rest_sec = sleep(sleep_sec);
 
 				if (rest_sec != 0)
 				{

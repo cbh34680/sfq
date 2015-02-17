@@ -131,15 +131,6 @@ EXIT_LABEL:
 	return irc;
 }
 
-struct unsigned_state_minmax
-{
-	const char* noun;
-	ulong type_max;
-	const char* defval_str;
-	ulong (*get_defval_func)();
-	const char* member_name;
-};
-
 static int do_change_unsigned(const char* querootdir, const char* quename, const char* cms[2])
 {
 	int irc = 0;
@@ -147,10 +138,20 @@ static int do_change_unsigned(const char* querootdir, const char* quename, const
 	char* message = NULL;
 	int jumppos = -1;
 
-	struct unsigned_state_minmax usm_map[] =
+	struct unsigned_state_minmax
 	{
+		const char* noun;
+		ulong type_max;
+		const char* defval_str;
+		ulong (*get_defval_func)();
+		const char* member_name;
+	}
+	usm_map[] =
+	{
+		{ "pslimit",	ULONG_MAX,	NULL,	NULL,			"payloadsize_limit" },
 		{ "maxla",	USHRT_MAX,	"@",	sfqc_maxla_autodetect,	"execable_maxla" },
-		{ NULL,		0,		NULL,			NULL,	NULL },
+		{ "esleep",	UCHAR_MAX,	NULL,	NULL,			"execloop_sleep" },
+		{ NULL,		0,		NULL,	NULL,			NULL },
 	};
 
 	struct unsigned_state_minmax* usm_set = NULL;
@@ -160,7 +161,9 @@ static int do_change_unsigned(const char* querootdir, const char* quename, const
 	{
 		ulong chk_ul = 0;
 
+		sfq_uchar uc = 0;
 		ushort us = 0;
+		ulong ul = 0;
 
 		void* addr = NULL;
 		size_t addr_size = 0;
@@ -203,12 +206,30 @@ static int do_change_unsigned(const char* querootdir, const char* quename, const
 
 		switch (usm_set->type_max)
 		{
+			case UCHAR_MAX:
+			{
+				uc = (sfq_uchar)chk_ul;
+
+				addr = &uc;
+				addr_size = sizeof(uc);
+				break;
+			}
+
 			case USHRT_MAX:
 			{
 				us = (ushort)chk_ul;
 
 				addr = &us;
 				addr_size = sizeof(us);
+				break;
+			}
+
+			case ULONG_MAX:
+			{
+				ul = chk_ul;
+
+				addr = &ul;
+				addr_size = sizeof(ul);
 				break;
 			}
 
