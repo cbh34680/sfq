@@ -13,8 +13,6 @@ struct noun_bit_set
 	questate_t bit;
 };
 
-#define LOCK_WAIT_SEC		(3)
-
 static int get_off_on(const char* cms[2], questate_t* bit_ptr)
 {
 	struct noun_bit_set nb_map[] =
@@ -65,7 +63,7 @@ static int do_change_questate(const char* querootdir, const char* quename,
 
 	questate_t questate = 0;
 
-	irc = sfq_get_questate(querootdir, quename, &questate, LOCK_WAIT_SEC);
+	irc = sfq_get_questate(querootdir, quename, &questate, SFQC_LOCK_WAIT_SEC);
 	if (irc != SFQ_RC_SUCCESS)
 	{
 		if ((modify_bit & SFQ_QST_DEV_SEMUNLOCK_ON) && (irc == SFQ_RC_EA_OPENQUEUE))
@@ -113,13 +111,15 @@ static int do_change_questate(const char* querootdir, const char* quename,
 
 	questate ^= modify_bit;
 
-	irc = sfq_set_questate(querootdir, quename, questate, LOCK_WAIT_SEC);
+	irc = sfq_set_questate(querootdir, quename, questate, SFQC_LOCK_WAIT_SEC);
 	if (irc != SFQ_RC_SUCCESS)
 	{
 		message = "sfq_set_questate";
 		jumppos = __LINE__;
 		goto EXIT_LABEL;
 	}
+
+	fprintf(stderr, "status changed\n");
 
 EXIT_LABEL:
 
@@ -223,13 +223,15 @@ static int do_change_unsigned(const char* querootdir, const char* quename, const
 		if (addr && addr_size)
 		{
 			irc = sfq_set_header_by_name(querootdir, quename,
-				usm_set->member_name, addr, addr_size, LOCK_WAIT_SEC);
+				usm_set->member_name, addr, addr_size, SFQC_LOCK_WAIT_SEC);
 
 			if (irc != SFQ_RC_SUCCESS)
 			{
 				message = "sfq_set_header_by_name";
 				jumppos = __LINE__;
 			}
+
+			fprintf(stderr, "config changed\n");
 		}
 		else
 		{
@@ -308,8 +310,6 @@ SFQC_MAIN_ENTER
 			goto EXIT_LABEL;
 		}
 	}
-
-	fprintf(stderr, "status changed\n");
 
 EXIT_LABEL:
 

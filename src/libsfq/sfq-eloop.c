@@ -1,6 +1,6 @@
 #include "sfq-lib.h"
 
-static sfq_bool read_qh(const struct sfq_eloop_params* elop, struct sfq_q_header* qh_ptr)
+static sfq_bool read_qh(const char* querootdir, const char* quename, struct sfq_q_header* qh_ptr)
 {
 SFQ_LIB_ENTER
 
@@ -12,7 +12,7 @@ SFQ_LIB_ENTER
 	bzero(&qfh, sizeof(qfh));
 
 /* open queue-file */
-	qo = sfq_open_queue_ro(elop->om_querootdir, elop->om_quename);
+	qo = sfq_open_queue_ro(querootdir, quename);
 	if (! qo)
 	{
 		SFQ_FAIL(EA_OPENQUEUE, "sfq_open_queue_ro");
@@ -37,44 +37,12 @@ SFQ_LIB_LEAVE
 	return SFQ_LIB_IS_SUCCESS();
 }
 
-static sfq_bool update_procstate(const struct sfq_eloop_params* elop,
-	sfq_uchar procstate, int TO_state, struct sfq_q_header* qh_ptr)
+static void update_proc_slot(struct sfq_process_info* proc, sfq_uchar procstate, int TO_state)
 {
-SFQ_LIB_ENTER
-
-	struct sfq_queue_object* qo = NULL;
-	struct sfq_process_info* procs = NULL;
-	struct sfq_process_info* proc = NULL;
-	sfq_bool b = SFQ_false;
-	struct sfq_file_header qfh;
-
-/* initialize */
-	bzero(&qfh, sizeof(qfh));
-
-/* open queue-file */
-	qo = sfq_open_queue_rw(elop->om_querootdir, elop->om_quename);
-	if (! qo)
-	{
-		SFQ_FAIL(EA_OPENQUEUE, "sfq_open_queue_rw");
-	}
-
-/* read file-header */
-	b = sfq_readqfh(qo, &qfh, &procs);
-	if (! b)
-	{
-		SFQ_FAIL(EA_QFHRW, "sfq_readqfh");
-	}
-
-	if (qfh.qh.sval.procs_num <= elop->slotno)
-	{
-		SFQ_FAIL(EA_FUNCARG, "qfh.qh.sval.procs_num <= elop->slotno");
-	}
-
-/* update process info */
-	proc = &procs[elop->slotno];
+	assert(proc);
 
 	proc->procstate = procstate;
-	proc->updtime = qo->opentime;
+	proc->updtime = time(NULL);
 
 	switch (procstate)
 	{
@@ -105,6 +73,70 @@ SFQ_LIB_ENTER
 			proc->ppid = 0;
 			proc->pid = 0;
 			break;
+		}
+	}
+}
+
+static sfq_bool update_proc_state(const char* querootdir, const char* quename, int i_slotno,
+	sfq_uchar procstate, int TO_state, struct sfq_q_header* qh_ptr)
+{
+SFQ_LIB_ENTER
+
+	struct sfq_queue_object* qo = NULL;
+	struct sfq_process_info* procs = NULL;
+	sfq_bool b = SFQ_false;
+	struct sfq_file_header qfh;
+
+/* initialize */
+	bzero(&qfh, sizeof(qfh));
+
+/* open queue-file */
+	qo = sfq_open_queue_rw(querootdir, quename);
+	if (! qo)
+	{
+		SFQ_FAIL(EA_OPENQUEUE, "sfq_open_queue_rw");
+	}
+
+/* read file-header */
+	b = sfq_readqfh(qo, &qfh, &procs);
+	if (! b)
+	{
+		SFQ_FAIL(EA_QFHRW, "sfq_readqfh");
+	}
+
+/* update process info */
+	if (i_slotno >= 0)
+	{
+		assert(i_slotno <= USHRT_MAX);
+
+		ushort slotno = (ushort)i_slotno;
+
+		if (qfh.qh.sval.procs_num <= slotno)
+		{
+			SFQ_FAIL(EA_FUNCARG, "qfh.qh.sval.procs_num <= slotno");
+		}
+
+		update_proc_slot(&procs[slotno], procstate, TO_state);
+	}
+	else
+	{
+/*
+SFQ_PIS_LOCK 以外の全てを書き換える
+
+--> sfqc-reset-procs 用
+*/
+		ushort slotno = 0;
+
+		for (slotno=0; slotno<qfh.qh.sval.procs_num; slotno++)
+		{
+			struct sfq_process_info* proc = &procs[slotno];
+
+			if (proc->procstate == SFQ_PIS_LOCK)
+			{
+				continue;
+			}
+
+			update_proc_slot(&procs[slotno], procstate, TO_state);
 		}
 	}
 
@@ -214,10 +246,12 @@ elog_print("set signal handler");
 		SFQ_FAIL(ES_SIGNAL, "set eloop_sig_handler");
 	}
 
-elog_print("before update_procstate");
+elog_print("before update_proc_state");
 
 	/* 状態を LOOPSTART に変更 */
-	b = update_procstate(elop, SFQ_PIS_LOOPSTART, 0, &qh);
+	b = update_proc_state(elop->om_querootdir, elop->om_quename, elop->slotno,
+		SFQ_PIS_LOOPSTART, 0, &qh);
+
 	if (! b)
 	{
 		SFQ_FAIL(EA_UPDSTATUS, "loop start");
@@ -293,7 +327,7 @@ elog_print("loop%zu catch signal, break", loop);
 					break;
 				}
 
-				b = read_qh(elop, &qh);
+				b = read_qh(elop->om_querootdir, elop->om_quename, &qh);
 				if (! b)
 				{
 					SFQ_FAIL(EA_QFHRW, "read_qh");
@@ -384,7 +418,8 @@ printf("%s\t%d\t%s\t%zu\t%zu\t%d\t%d\n",
 		sfq_free_value(&val);
 
 /* update to_*** */
-		b = update_procstate(elop, SFQ_PIS_TAKEOUT, TO_state, &qh);
+		b = update_proc_state(elop->om_querootdir, elop->om_quename, elop->slotno,
+			SFQ_PIS_TAKEOUT, TO_state, &qh);
 
 		if (! b)
 		{
@@ -399,12 +434,13 @@ SFQ_LIB_CHECKPOINT
 elog_print("after loop [loop times=%zu] [sig catch=%s]", loop, GLOBAL_eloop_sig_catch ? "t" : "f");
 
 /*
-ここでの update_procstate() の失敗は無視するしかないが
+ここでの update_proc_state() の失敗は無視するしかないが
 スロットが埋まったままになってしまうので、解除手段の検討が必要かも
 */
-	update_procstate(elop, SFQ_PIS_DONE, 0, NULL);
+	update_proc_state(elop->om_querootdir, elop->om_quename, elop->slotno,
+		SFQ_PIS_DONE, 0, NULL);
 
-elog_print("after update_procstate");
+elog_print("after update_proc_state");
 
 	if (save_sig_handler != SIG_ERR)
 	{
@@ -415,6 +451,27 @@ elog_print("restore signal handler");
 elog_print("--");
 
 SFQ_LIB_LEAVE
+}
+
+int sfq_reset_procs(const char* querootdir, const char* quename)
+{
+SFQ_LIB_ENTER
+
+	sfq_bool b = SFQ_false;
+
+/* */
+	b = update_proc_state(querootdir, quename, -1, SFQ_PIS_DONE, 0, NULL);
+
+	if (! b)
+	{
+		SFQ_FAIL(EA_UPDSTATUS, "update_proc_state");
+	}
+
+SFQ_LIB_CHECKPOINT
+
+SFQ_LIB_LEAVE
+
+	return SFQ_LIB_RC();
 }
 
 sfq_bool sfq_go_exec(const char* querootdir, const char* quename,
