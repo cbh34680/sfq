@@ -168,9 +168,13 @@ questate は go_exec() に渡すので、ここで保存しておく
 /* check payload-size limit */
 	if (qfh.qh.sval.payloadsize_limit)
 	{
-		if (val->payload_size > qfh.qh.sval.payloadsize_limit)
+/*
+# bug
+#		if (val->payload_size > qfh.qh.sval.payloadsize_limit)
+*/
+		if (ioeb.eh.payload_size > qfh.qh.sval.payloadsize_limit)
 		{
-			SFQ_FAIL(EA_OVERLIMIT, "val->payload_size > qfh.qh.sval.payloadsize_limit");
+			SFQ_FAIL(EA_OVERLIMIT, "ioeb.eh.payload_size > qfh.qh.sval.payloadsize_limit");
 		}
 	}
 

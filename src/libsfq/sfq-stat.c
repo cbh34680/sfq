@@ -10,7 +10,9 @@ int sfq_set_header_by_name(const char* querootdir, const char* quename,
 	}
 	ms_map[] =
 	{
+		{ "payloadsize_limit",	sizeof(ulong) },
 		{ "execable_maxla",	sizeof(ushort) },
+		{ "execloop_sleep",	sizeof(sfq_uchar) },
 		{ NULL,			0 },
 	};
 
@@ -70,9 +72,17 @@ SFQ_LIB_ENTER
 		SFQ_FAIL(EA_QFHRW, "sfq_readqfh");
 	}
 
-	if (strcmp(ms_set->name, "execable_maxla") == 0)
+	if (strcmp(ms_set->name, "payloadsize_limit") == 0)
+	{
+		addr = &qfh.qh.sval.payloadsize_limit;
+	}
+	else if (strcmp(ms_set->name, "execable_maxla") == 0)
 	{
 		addr = &qfh.qh.sval.execable_maxla;
+	}
+	else if (strcmp(ms_set->name, "execloop_sleep") == 0)
+	{
+		addr = &qfh.qh.sval.execloop_sleep;
 	}
 
 	if (! addr)
