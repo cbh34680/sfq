@@ -7,15 +7,14 @@ void release_heap()
 	sfqc_free_program_args(&pgargs);
 }
 
-struct noun_bit_set
-{
-	const char* noun;
-	questate_t bit;
-};
-
 static int get_off_on(const char* cms[2], questate_t* bit_ptr)
 {
-	struct noun_bit_set nb_map[] =
+	struct noun_bit_set
+	{
+		const char* noun;
+		questate_t bit;
+	}
+	nb_map[] =
 	{
 		{ "stdout",	SFQ_QST_STDOUT_ON },
 		{ "stderr",	SFQ_QST_STDERR_ON },
@@ -53,7 +52,7 @@ static int get_off_on(const char* cms[2], questate_t* bit_ptr)
 	return -1;
 }
 
-static int do_change_questate(const char* querootdir, const char* quename,
+static int change_questate(const char* querootdir, const char* quename,
 	int bit_on, questate_t modify_bit)
 {
 	int irc = 0;
@@ -119,7 +118,7 @@ static int do_change_questate(const char* querootdir, const char* quename,
 		goto EXIT_LABEL;
 	}
 
-	fprintf(stderr, "status changed\n");
+	puts("q-status changed");
 
 EXIT_LABEL:
 
@@ -131,7 +130,7 @@ EXIT_LABEL:
 	return irc;
 }
 
-static int do_change_unsigned(const char* querootdir, const char* quename, const char* cms[2])
+static int change_unsigned(const char* querootdir, const char* quename, const char* cms[2])
 {
 	int irc = 0;
 
@@ -252,7 +251,7 @@ static int do_change_unsigned(const char* querootdir, const char* quename, const
 				jumppos = __LINE__;
 			}
 
-			fprintf(stderr, "config changed\n");
+			puts("config changed");
 		}
 		else
 		{
@@ -275,6 +274,76 @@ EXIT_LABEL:
 	return irc;
 }
 
+static int change_procstate(const char* querootdir, const char* quename, const char* cms[3])
+{
+	int irc = 0;
+
+	char* message = NULL;
+	int jumppos = -1;
+
+	char* e = NULL;
+
+	ulong ul = 0;
+	ushort us = 0;
+
+/* */
+	ul = strtoul(cms[1], &e, 0);
+	if (*e)
+	{
+		message = "param[1] parse(to number) error";
+		jumppos = __LINE__;
+		goto EXIT_LABEL;
+	}
+
+	if (ul > USHRT_MAX)
+	{
+		message = "param[1] over limit(ushort)";
+		jumppos = __LINE__;
+		goto EXIT_LABEL;
+	}
+	us = (ushort)ul;
+
+	if (strcmp(cms[2], "lock") == 0)
+	{
+		irc = sfq_lock_proc(querootdir, quename, us);
+
+		if (irc != SFQ_RC_SUCCESS)
+		{
+			message = "process lock error";
+			jumppos = __LINE__;
+			goto EXIT_LABEL;
+		}
+	}
+	else if (strcmp(cms[2], "unlock") == 0)
+	{
+		irc = sfq_unlock_proc(querootdir, quename, us);
+
+		if (irc != SFQ_RC_SUCCESS)
+		{
+			message = "process un-lock error";
+			jumppos = __LINE__;
+			goto EXIT_LABEL;
+		}
+	}
+	else
+	{
+		message = "param[2] parse error";
+		jumppos = __LINE__;
+		goto EXIT_LABEL;
+	}
+
+	puts("p-status changed");
+
+EXIT_LABEL:
+
+	if (message)
+	{
+		fprintf(stderr, "%s(%d): %s\n", __FILE__, jumppos, message);
+	}
+
+	return irc;
+}
+
 int main(int argc, char** argv)
 {
 	int irc = 0;
@@ -282,10 +351,6 @@ int main(int argc, char** argv)
 	char* message = NULL;
 	int jumppos = -1;
 
-	questate_t modify_bit = 0;
-	int bit_on = 0;
-
-/* */
 	struct sfqc_program_args pgargs;
 
 SFQC_MAIN_ENTER
@@ -303,33 +368,60 @@ SFQC_MAIN_ENTER
 		goto EXIT_LABEL;
 	}
 
-	if (pgargs.command_num != 2)
+	if (pgargs.command_num == 2)
 	{
-		message = "specify the command (noun verb)";
-		jumppos = __LINE__;
-		goto EXIT_LABEL;
-	}
+		questate_t modify_bit = 0;
+		int bit_on = -1;
 
-	bit_on = get_off_on(pgargs.commands, &modify_bit);
-	if (bit_on == -1)
-	{
-		irc = do_change_unsigned(pgargs.querootdir, pgargs.quename, pgargs.commands);
-		if (irc != 0)
+		bit_on = get_off_on(pgargs.commands, &modify_bit);
+		if (bit_on >= 0)
 		{
-			message = "unknown command";
-			jumppos = __LINE__;
-			goto EXIT_LABEL;
+/*
+questate の変更
+*/
+			irc = change_questate(pgargs.querootdir, pgargs.quename, bit_on, modify_bit);
+			if (irc != 0)
+			{
+				message = "change_questate";
+				jumppos = __LINE__;
+				goto EXIT_LABEL;
+			}
+		}
+		else
+		{
+/*
+sfq_qh_sval の変更
+*/
+			irc = change_unsigned(pgargs.querootdir, pgargs.quename, pgargs.commands);
+			if (irc != 0)
+			{
+				message = "change_unsigned";
+				jumppos = __LINE__;
+				goto EXIT_LABEL;
+			}
+		}
+	}
+	else if (pgargs.command_num == 3)
+	{
+/*
+procs の変更
+*/
+		if (strcmp(pgargs.commands[0], "proc") == 0)
+		{
+			irc = change_procstate(pgargs.querootdir, pgargs.quename, pgargs.commands);
+			if (irc != 0)
+			{
+				message = "change_procstate";
+				jumppos = __LINE__;
+				goto EXIT_LABEL;
+			}
 		}
 	}
 	else
 	{
-		irc = do_change_questate(pgargs.querootdir, pgargs.quename, bit_on, modify_bit);
-		if (irc != 0)
-		{
-			message = "specify the command (noun verb)";
-			jumppos = __LINE__;
-			goto EXIT_LABEL;
-		}
+		message = "un-expected command parameters";
+		jumppos = __LINE__;
+		goto EXIT_LABEL;
 	}
 
 EXIT_LABEL:

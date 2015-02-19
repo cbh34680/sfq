@@ -41,15 +41,20 @@ void sfq_print_procs(const struct sfq_process_info* procs, size_t procs_num)
 	{
 		const struct sfq_process_info* proc = &procs[i];
 
+#ifndef SFQ_DEBUG_BUILD
 		if (proc->procstate == SFQ_PIS_LOCK)
 		{
 			continue;
 		}
+#endif
 
 		fprintf(stderr, "- [process-%d]\n", i);
 		fprintf(stderr, "- ppid                        = %u\n",  proc->ppid);
 		fprintf(stderr, "- pid                         = %u\n",  proc->pid);
-		fprintf(stderr, "- procstate                   = %u\n",  proc->procstate);
+
+		fprintf(stderr, "- procstate                   = %u%s\n",
+			proc->procstate, (proc->procstate == SFQ_PIS_LOCK) ? " (locked)" : "");
+
 		fprintf(stderr, "- updtime                     = %zu\n", proc->updtime);
 		fprintf(stderr, "- start_cnt                   = %zu\n", proc->start_cnt);
 		fprintf(stderr, "- loop_cnt                    = %zu\n", proc->loop_cnt);

@@ -194,12 +194,12 @@ id, pushtime, uuid はここで生成する
 	/* shift 位置 == push 位置 の場合 ... 全て shift している */
 
 		assert(qfh.qh.dval.elm_num == 0);
-
+/*
 		if (qfh.qh.dval.elm_num != 0)
 		{
 			SFQ_FAIL(EA_ASSERT, "qfh.qh.dval.elm_num != 0");
 		}
-
+*/
 		// GO NEXT
 	}
 	else if (qfh.qh.dval.elm_next_shift_pos < qfh.qh.dval.elm_next_push_pos)
@@ -213,12 +213,12 @@ id, pushtime, uuid はここで生成する
 	/* push 位置 < shift 位置 の場合 ... 循環済 */
 
 		assert(qfh.qh.dval.elm_num);
-
+/*
 		if (qfh.qh.dval.elm_num == 0)
 		{
 			SFQ_FAIL(EA_ASSERT, "qfh.qh.dval.elm_num == 0");
 		}
-
+*/
 		IfPush_next_elmpos = qfh.qh.dval.elm_next_push_pos + ioeb.eh.elmsize_;
 		IfPush_elm_end_pos = IfPush_next_elmpos - 1;
 
