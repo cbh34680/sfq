@@ -71,6 +71,8 @@ enum
 	SFQ_RC_EA_ISNOTDIR,
 	SFQ_RC_EA_ISINPATH,
 	SFQ_RC_EA_NOTMEMBER,
+	SFQ_RC_EA_PROCRUNNING,
+	SFQ_RC_EA_UPDPLOCSLOT,
 
 	SFQ_RC_SYSERR_MIN		= 71,
 	SFQ_RC_ES_MEMORY,
@@ -182,9 +184,11 @@ int sfq_push(const char* querootdir, const char* quename, struct sfq_value* val)
 int sfq_pop(const char* querootdir, const char* quename, struct sfq_value* val);
 int sfq_shift(const char* querootdir, const char* quename, struct sfq_value* val);
 int sfq_info(const char* querootdir, const char* quename, int semlock_wait_sec);
-
 int sfq_clear(const char* querootdir, const char* quename);
+
 int sfq_reset_procs(const char* querootdir, const char* quename);
+int sfq_lock_proc(const char* querootdir, const char* quename, ushort slotno);
+int sfq_unlock_proc(const char* querootdir, const char* quename, ushort slotno);
 
 int sfq_alloc_print_value(const struct sfq_value* bin, struct sfq_value* str);
 void sfq_free_value(struct sfq_value* p);

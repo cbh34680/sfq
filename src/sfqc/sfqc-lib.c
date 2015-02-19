@@ -484,7 +484,7 @@ int sfqc_parse_program_args(int argc, char** argv, const char* optstring,
 					jumppos = __LINE__;
 					goto EXIT_LABEL;
 				}
-				if (ul >= USHRT_MAX)
+				if (ul > USHRT_MAX)
 				{
 					snprintf(message, sizeof(message), "'%c': size over (%u)", opt, USHRT_MAX);
 				}
@@ -528,7 +528,7 @@ int sfqc_parse_program_args(int argc, char** argv, const char* optstring,
 					}
 				}
 
-				if (ul >= USHRT_MAX)
+				if (ul > USHRT_MAX)
 				{
 					snprintf(message, sizeof(message), "'%c': size over (%u)", opt, USHRT_MAX);
 				}
