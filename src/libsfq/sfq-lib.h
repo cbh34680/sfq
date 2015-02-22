@@ -280,7 +280,7 @@ struct sfq_qh_sval
 	ushort procs_num;		/* 2 ... (P) USHRT_MAX _SC_CHILD_MAX */
 	ushort execable_maxla;		/* 2 ... (E) USHRT_MAX */
 	ushort execloop_sleep;		/* 1 ... --- UCHAR_MAX */
-	sfq_byte filler[3];		/* 3 */
+	sfq_byte filler[2];		/* 3 */
 };
 
 /* C) 72 動的属性 */
