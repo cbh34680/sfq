@@ -8,5 +8,6 @@
 *.log
 *.cgi
 *.class
+core.*
 noname
 /*.sh

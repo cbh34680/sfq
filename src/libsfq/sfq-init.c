@@ -1,5 +1,12 @@
 #include "sfq-lib.h"
 
+size_t sfq_get_smallest_elmsize()
+{
+	size_t elmsize = sizeof(struct sfq_e_header) + 1u;
+
+	return elmsize + SFQ_ALIGN_MARGIN(elmsize);
+}
+
 int sfq_init(const char* querootdir, const char* quename, const struct sfq_queue_init_params* qip)
 {
 SFQ_ENTP_ENTER
@@ -8,8 +15,6 @@ SFQ_ENTP_ENTER
 	struct sfq_process_info* procs = NULL;
 
 	ushort qfh_size = 0;
-	size_t eh_size = 0;
-	size_t pi_size = 0;
 	size_t procs_size = 0;
 	size_t elmseg_start_pos = 0;
 	sfq_bool b = SFQ_false;
@@ -25,8 +30,6 @@ SFQ_ENTP_ENTER
 
 /* initialize */
 	qfh_size = sizeof(qfh);
-	eh_size = sizeof(struct sfq_e_header);
-	pi_size = sizeof(struct sfq_process_info);
 
 	bzero(&qcp, sizeof(qcp));
 	bzero(&qfh, qfh_size);
@@ -135,7 +138,7 @@ root の場合、"-U" か "-G" の指定があるときのみ通過させる
 		}
 
 /* calc procs-start offset */
-		procs_size = pi_size * qip->procs_num;
+		procs_size = sizeof(struct sfq_process_info) * qip->procs_num;
 
 		procs = alloca(procs_size);
 		if (! procs)
@@ -151,13 +154,20 @@ root の場合、"-U" か "-G" の指定があるときのみ通過させる
 /* set element-start offset */
 	elmseg_start_pos = qfh_size + procs_size;
 
-/* check size */
-	if (qip->filesize_limit < (elmseg_start_pos + eh_size + 1))
-	{
-	/* 最小ファイルサイズは sfq_file_header + pid_table + sfq_e_header + payload(1 byte) */
+/*
+最小ファイルサイズは sfq_file_header + pid_table + sfq_e_header + payload(1 byte) + margin
+*/
+/*
+	size_t smallest_elmsize = sizeof(struct sfq_e_header) + 1;
+	size_t smallest_margin = SFQ_ALIGN_MARGIN(smallest_elmsize);
+	smallest_elmsize += smallest_margin;
+*/
+	size_t smallest_size = elmseg_start_pos + sfq_get_smallest_elmsize();
 
-		SFQ_FAIL(EA_FSIZESMALL, "specified filesize-limit too small (limit=%zu)",
-			qip->filesize_limit);
+	if (qip->filesize_limit < smallest_size)
+	{
+		SFQ_FAIL(EA_FSIZESMALL, "filesize-limit too small (specified=%zu) (minimum=%zu)",
+			qip->filesize_limit, smallest_size);
 	}
 
 /* open queue-file */

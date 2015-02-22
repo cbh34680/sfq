@@ -56,6 +56,7 @@ sfq_bool print_element(struct sfq_map_callback_param* param)
 			printf("%-13s: %zu\n", "payload-size",	pval.payload_size);
 			printf("%-13s: %d\n",  "disabled",	pval.disabled);
 			printf("%-13s: %zu\n", "elmsize_",	pval.elmsize_);
+			printf("%-13s: %zu\n", "* lastaddr *",	param->elm_pos + pval.elmsize_);
 			printf("%-13s: %s\n",  "payload",	(char*)pval.payload);
 		}
 		else
