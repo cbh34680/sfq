@@ -198,7 +198,8 @@ SFQ_LIB_ENTER
 /* check data version */
 		if (qfs.qfh_size != sizeof(struct sfq_file_header))
 		{
-			SFQ_FAIL(EA_ILLEGALVER, "sfq_file_header size not match");
+			SFQ_FAIL(EA_ILLEGALVER, "sfq_file_header size not match %zu:%zu",
+				qfs.qfh_size, sizeof(struct sfq_file_header));
 		}
 	}
 
