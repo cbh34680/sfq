@@ -107,5 +107,9 @@ clean:
 	cd src/sfqc/; make clean
 	cd src/libsfq/; make clean
 
+rebuild:
+	make clean
+	make
+
 #
 
