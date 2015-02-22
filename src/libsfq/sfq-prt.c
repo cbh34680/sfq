@@ -25,7 +25,7 @@ void sfq_print_qo(const struct sfq_queue_object* qo)
 
 void sfq_print_procs(const struct sfq_process_info* procs, size_t procs_num)
 {
-	int i = 0;
+	size_t i = 0;
 
 	if (! procs)
 	{
@@ -64,7 +64,7 @@ void sfq_print_procs(const struct sfq_process_info* procs, size_t procs_num)
 		fprintf(stderr, "- tos_cantexec                = %zu\n", proc->tos_cantexec);
 		fprintf(stderr, "- tos_fault                   = %zu\n", proc->tos_fault);
 
-		if ((i + 1) < procs_num)
+		if ((i + 1u) < procs_num)
 		{
 			fprintf(stderr, "-\n");
 		}

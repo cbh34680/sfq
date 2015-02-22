@@ -45,11 +45,11 @@ TARGET    = $(TARGETL) $(TARGETE)
 INCDIRS   = -I. -I../inc -I../../include
 INCFILES  = ../inc/sfq.h sfqc-lib.h base64.h
 
-CFLAGS    = -Wall -O2 -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 $(CFLAGSEXT)
+CFLAGS    = -Wextra -O2 -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 $(CFLAGSEXT)
 SCFLAGS   = $(CFLAGS) -fPIC
 
-SLDFLAGS  = -Wall -shared
-ELDFLAGS  = -Wall
+SLDFLAGS  = -Wextra -shared
+ELDFLAGS  = -Wextra
 
 LIBDIRS   = -L. -L../libsfq -L../../lib
 LIBS      = -lsfqc -lsfq -lpthread -lm -luuid -ljansson -lcap -lrt

@@ -14,13 +14,15 @@ SFQC_MAIN_ENTER
 	bzero(&pgargs, sizeof(pgargs));
 
 /* */
-	irc = sfqc_parse_program_args(argc, argv, "D:N:", SFQ_false, &pgargs);
+	irc = sfqc_parse_program_args(argc, argv, "D:N:q", SFQ_false, &pgargs);
 	if (irc != 0)
 	{
 		message = "parse_program_args: parse error";
 		jumppos = __LINE__;
 		goto EXIT_LABEL;
 	}
+
+	sfq_set_print(pgargs.quiet ? SFQ_false : SFQ_true);
 
 	irc = sfq_reset_procs(pgargs.querootdir, pgargs.quename);
 	if (irc != SFQ_RC_SUCCESS)

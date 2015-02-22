@@ -112,7 +112,7 @@ SFQ_LIB_ENTER
 /*
 shift 位置 < push 位置 の場合 ... 通常
 */
-				if (ul < qfh.qh.dval.elm_next_push_pos)
+				if ((off_t)ul < qfh.qh.dval.elm_next_push_pos)
 				{
 					SFQ_FAIL(EA_CHANGESIZE, "element is at the end of the file/1");
 				}

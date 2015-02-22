@@ -578,7 +578,7 @@ SFQ_LIB_ENTER
 		procs_size = (pi_size * qfh->qh.sval.procs_num);
 
 		siosize = pwrite(fileno(qo->fp), procs, procs_size, qfh->qh.sval.procseg_start_pos);
-		if (siosize != procs_size)
+		if (siosize != (ssize_t)procs_size)
 		{
 			SFQ_FAIL(ES_FILE, "FILE-WRITE(procs)");
 		}
@@ -632,7 +632,7 @@ SFQ_LIB_ENTER
 			siosize = pread(fileno(qo->fp), procs, procs_size,
 				qfh->qh.sval.procseg_start_pos);
 
-			if (siosize != procs_size)
+			if (siosize != (ssize_t)procs_size)
 			{
 				SFQ_FAIL(ES_FILE, "FILE-READ(procs)");
 			}
