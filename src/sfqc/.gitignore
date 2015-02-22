@@ -25,6 +25,7 @@
 /sfqc-popx
 /sfqc-shiftx
 /sfqc-disable
+/sfqc-reset-procs
 /?.c
 /?.php
 /vchk
