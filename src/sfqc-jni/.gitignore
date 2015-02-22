@@ -1,4 +1,5 @@
 /bin
 /.metadata
 /.recommenders
+/*.so
 /sfqc-jni.jar
