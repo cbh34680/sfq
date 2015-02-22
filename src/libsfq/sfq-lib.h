@@ -265,7 +265,7 @@ struct sfq_process_info
 	ulong tos_cantexec;		/* 8 */
 	ulong tos_fault;		/* 8 */
 
-	sfq_byte reserve[8];		/* 16 */
+	sfq_byte reserve[8];		/* 8 */
 };
 
 /* B) 80 静的属性 */
@@ -281,10 +281,10 @@ struct sfq_qh_sval
 
 	ushort procs_num;		/* 2 ... (P) USHRT_MAX _SC_CHILD_MAX */
 	ushort execable_maxla;		/* 2 ... (E) USHRT_MAX */
-	ushort execloop_sleep;		/* 1 ... --- UCHAR_MAX */
-	sfq_byte filler1[3];		/* 3 */
+	ushort execloop_sleep;		/* 2 ... --- UCHAR_MAX */
+	sfq_byte filler1[2];		/* 2 */
 
-	sfq_byte reserve[16];		/* 16 */
+	sfq_byte reserve[24];		/* 24 */
 };
 
 /* C) 80 動的属性 */
