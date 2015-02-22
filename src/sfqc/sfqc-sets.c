@@ -30,7 +30,7 @@ static int get_off_on(const char* cms[2], questate_t* bit_ptr)
 
 	int i = 0;
 
-	for (i=0; i<(sizeof(nb_map) / sizeof(nb_map[0])); i++)
+	for (i=0; i<(int)(sizeof(nb_map) / sizeof(nb_map[0])); i++)
 	{
 		struct noun_bit_set* nb_set = &nb_map[i];
 
@@ -38,7 +38,7 @@ static int get_off_on(const char* cms[2], questate_t* bit_ptr)
 		{
 			int j = 0;
 
-			for (j=0; j<(sizeof(off_on) / sizeof(off_on[0])); j++)
+			for (j=0; j<(int)(sizeof(off_on) / sizeof(off_on[0])); j++)
 			{
 				if (strcmp(cms[1], off_on[j]) == 0)
 				{
@@ -148,6 +148,7 @@ static int change_unsigned(const char* querootdir, const char* quename, const ch
 	usm_map[] =
 	{
 		{ "pslimit",	ULONG_MAX,	NULL,	NULL,			"payloadsize_limit" },
+		{ "fslimit",	ULONG_MAX,	NULL,	NULL,			"filesize_limit" },
 		{ "maxla",	USHRT_MAX,	"@",	sfqc_maxla_autodetect,	"execable_maxla" },
 		{ "esleep",	UCHAR_MAX,	NULL,	NULL,			"execloop_sleep" },
 		{ NULL,		0,		NULL,	NULL,			NULL },
@@ -360,13 +361,15 @@ SFQC_MAIN_ENTER
 	atexit(release_heap);
 
 /* */
-	irc = sfqc_parse_program_args(argc, argv, "D:N:", SFQ_true, &pgargs);
+	irc = sfqc_parse_program_args(argc, argv, "D:N:q", SFQ_true, &pgargs);
 	if (irc != 0)
 	{
 		message = "parse_program_args: parse error";
 		jumppos = __LINE__;
 		goto EXIT_LABEL;
 	}
+
+	sfq_set_print(pgargs.quiet ? SFQ_false : SFQ_true);
 
 	if (pgargs.command_num == 2)
 	{

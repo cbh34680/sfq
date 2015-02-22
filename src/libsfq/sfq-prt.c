@@ -25,7 +25,7 @@ void sfq_print_qo(const struct sfq_queue_object* qo)
 
 void sfq_print_procs(const struct sfq_process_info* procs, size_t procs_num)
 {
-	int i = 0;
+	size_t i = 0;
 
 	if (! procs)
 	{
@@ -64,7 +64,7 @@ void sfq_print_procs(const struct sfq_process_info* procs, size_t procs_num)
 		fprintf(stderr, "- tos_cantexec                = %zu\n", proc->tos_cantexec);
 		fprintf(stderr, "- tos_fault                   = %zu\n", proc->tos_fault);
 
-		if ((i + 1) < procs_num)
+		if ((i + 1u) < procs_num)
 		{
 			fprintf(stderr, "-\n");
 		}
@@ -112,7 +112,7 @@ void sfq_print_sizes(void)
 	fprintf(stderr, "\n");
 }
 
-static void sfq_print_qh_dval_(const struct sfq_qh_dval* p, char c, size_t filesize_limit)
+static void sfq_print_qh_dval_(const struct sfq_qh_dval* p, char c, size_t elmseg_limit)
 {
 	fprintf(stderr, "%c [print_q_header:dynv]\n", c);
 	fprintf(stderr, "%c q_header.elm_next_pop_pos   = %zu\n",  c, p->elm_next_pop_pos);
@@ -126,9 +126,9 @@ static void sfq_print_qh_dval_(const struct sfq_qh_dval* p, char c, size_t files
 	fprintf(stderr, "%c q_header.lastoper           = %s\n",   c, p->lastoper);
 	fprintf(stderr, "%c q_header.elmsize_total_     = %zu\n",  c, p->elmsize_total_);
 
-	if (filesize_limit)
+	if (elmseg_limit)
 	{
-		double rate = (double)p->elmsize_total_ / (double)filesize_limit * (double)100.0;
+		double rate = (double)p->elmsize_total_ / (double)elmseg_limit * (double)100.0;
 		fprintf(stderr, "%c * RATE *                    = %.2f%%\n", c, rate);
 	}
 
@@ -171,7 +171,7 @@ void sfq_print_q_header(const struct sfq_q_header* p)
 /*
 	sfq_print_qh_dval(&p->dval);
 */
-	sfq_print_qh_dval_(&p->dval, '#', p->sval.filesize_limit);
+	sfq_print_qh_dval_(&p->dval, '#', p->sval.filesize_limit - p->sval.elmseg_start_pos);
 }
 
 void sfq_print_qh_dval(const struct sfq_qh_dval* p)

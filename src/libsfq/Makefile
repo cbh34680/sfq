@@ -1,3 +1,10 @@
+#
+# I.J.K
+#
+# I: ソース互換を失う場合に番号を増分する。その際、J.Kは0にリセットする。
+# J: バイナリ互換を失う場合に番号を増分する。その際、Kは0にリセットする。
+# K: バイナリ互換のある場合に番号を増分する。
+#
 
 CC         = gcc
 
@@ -7,16 +14,20 @@ OBJSL     += sfq-trc.o
 OBJSE      = libtest-main.o
 OBJS       = $(OBJSL) $(OBJSE)
 
-TARGET     = libsfq.so libtest-main
+SOLOADNAME = libsfq.so
+SOLINKNAME = $(SOLOADNAME).0
+SOREALNAME = $(SOLINKNAME).17.1
+
+TARGET     = $(SOLOADNAME) libtest-main
 
 INCDIRS    = -I. -I../inc
 INCFILES   = sfq-lib.h ../inc/sfq.h
 CFLAGSEXT  = -O2
 
 # -Wl,--stack,10485760
-CFLAGS    = -Wall -fPIC -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 $(CFLAGSEXT)
-SLDFLAGS  = -Wall -shared
-ELDFLAGS  = -Wall
+CFLAGS    = -Wextra -fPIC -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 $(CFLAGSEXT)
+SLDFLAGS  = -Wextra -shared -Wl,-soname,$(SOLINKNAME)
+ELDFLAGS  = -Wextra
 
 LIBDIRS   = -L.
 LIBS      = -lsfq -lpthread -lm -luuid -ljansson -lcap -lrt
@@ -24,7 +35,15 @@ LIBS      = -lsfq -lpthread -lm -luuid -ljansson -lcap -lrt
 #
 all: $(TARGET)
 
-libsfq.so: $(OBJSL)
+$(SOLOADNAME): $(SOLINKNAME)
+	rm -f $@
+	ln -s $< $@
+
+$(SOLINKNAME): $(SOREALNAME)
+	rm -f $@
+	ln -s $< $@
+
+$(SOREALNAME): $(OBJSL)
 	$(CC) $(SLDFLAGS) -o $@ $(OBJSL)
 
 libtest-main: $(OBJSE)
@@ -36,7 +55,7 @@ libtest-main: $(OBJSE)
 $(OBJS): $(INCFILES) Makefile
 
 clean:
-	rm -f $(TARGET)
+	rm -f $(TARGET) $(SOLINKNAME) $(SOREALNAME)
 	rm -f *.o *.s *.i
 
 debug:

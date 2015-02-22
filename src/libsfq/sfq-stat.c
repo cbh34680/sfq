@@ -11,6 +11,7 @@ int sfq_set_header_by_name(const char* querootdir, const char* quename,
 	ms_map[] =
 	{
 		{ "payloadsize_limit",	sizeof(ulong) },
+		{ "filesize_limit",	sizeof(ulong) },
 		{ "execable_maxla",	sizeof(ushort) },
 		{ "execloop_sleep",	sizeof(sfq_uchar) },
 		{ NULL,			0 },
@@ -74,7 +75,67 @@ SFQ_LIB_ENTER
 
 	if (strcmp(ms_set->name, "payloadsize_limit") == 0)
 	{
+		ulong ul = *((ulong*)data);
+
+		if (ul == qfh.qh.sval.payloadsize_limit)
+		{
+			SFQ_FAIL(EA_FUNCARG, "no change");
+		}
+
 		addr = &qfh.qh.sval.payloadsize_limit;
+	}
+	else if (strcmp(ms_set->name, "filesize_limit") == 0)
+	{
+		ulong ul = *((ulong*)data);
+
+		if (ul == qfh.qh.sval.filesize_limit)
+		{
+			SFQ_FAIL(EA_FUNCARG, "no change");
+		}
+		else if (ul > qfh.qh.sval.filesize_limit)
+		{
+		}
+		else /* ul < filesize_limit */
+		{
+/*
+現在のサイズより小さくなる場合
+*/
+			if (qfh.qh.dval.elm_next_push_pos == qfh.qh.dval.elm_next_shift_pos)
+			{
+/*
+要素 0
+*/
+				assert(qfh.qh.dval.elm_num == 0);
+			}
+			else if (qfh.qh.dval.elm_next_shift_pos < qfh.qh.dval.elm_next_push_pos)
+			{
+/*
+shift 位置 < push 位置 の場合 ... 通常
+*/
+				if ((off_t)ul < qfh.qh.dval.elm_next_push_pos)
+				{
+					SFQ_FAIL(EA_CHANGESIZE, "element is at the end of the file/1");
+				}
+			}
+			else
+			{
+/*
+push 位置 < shift 位置 の場合 ... 循環済
+*/
+				SFQ_FAIL(EA_CHANGESIZE, "element is at the end of the file/2");
+			}
+
+			size_t smallest_size = qfh.qh.sval.elmseg_start_pos + sfq_get_smallest_elmsize();
+
+			if (ul < smallest_size)
+			{
+				SFQ_FAIL(EA_FSIZESMALL, "filesize-limit too small (specified=%zu) (minimum=%zu)",
+					ul, smallest_size);
+			}
+		}
+
+		qfh.qh.sval.elmseg_end_pos = ul - 1u;
+		addr = &qfh.qh.sval.filesize_limit;
 	}
 	else if (strcmp(ms_set->name, "execable_maxla") == 0)
 	{

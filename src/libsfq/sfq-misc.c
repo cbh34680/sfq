@@ -12,7 +12,7 @@ char* sfq_safe_strcpy(char* dst, const char* org)
 }
 #endif
 
-static sfq_bool g_printOnOff = SFQ_true;
+static sfq_bool g_printOnOff = SFQ_false;
 
 void sfq_set_print(sfq_bool printOnOff)
 {
@@ -277,7 +277,7 @@ void sfq_init_ioeb(struct sfq_ioelm_buff* ioeb)
 		if (len_) \
 		{ \
 			size_t siz_ = len_ + 1; \
-			if (siz_ >= maxsiz_) \
+			if (siz_ >= (size_t)maxsiz_) \
 			{ \
 				SFQ_FAIL(EA_OVERLIMIT, "siz_ >= maxsiz_"); \
 			} \

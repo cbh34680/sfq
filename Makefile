@@ -1,6 +1,9 @@
 
 BASEI  = include/sfq.h
-BASEL  = lib/libsfq.so lib/libsfqc.so
+
+BASEL  = lib/libsfq.so lib/libsfq.so.0 lib/libsfq.so.0.17.1
+BASEL += lib/libsfqc.so
+
 BASEX  = bin/sfqc-init bin/sfqc-info bin/sfqc-list bin/sfqc-pusht bin/sfqc-pushb 
 BASEX += bin/sfqc-pop bin/sfqc-shift bin/sfqc-clear bin/sfqc-sets bin/sfqc-disable
 BASEX += bin/sfqc-pushx bin/sfqc-popx bin/sfqc-shiftx bin/sfqc-reset-procs
@@ -21,9 +24,19 @@ include/sfq.h: src/inc/sfq.h
 	cp -p $^ include
 
 lib/libsfq.so: src/libsfq/libsfq.so
-	cp -p $^ $@
+	rm -f $@
+	cp -P -p $^ $@
+
+lib/libsfq.so.0: src/libsfq/libsfq.so.0
+	rm -f $@
+	cp -P -p $^ $@
+
+lib/libsfq.so.0.17.1: src/libsfq/libsfq.so.0.17.1
+	rm -f $@
+	cp -P -p $^ $@
 
 lib/libsfqc.so: src/sfqc/libsfqc.so
+	rm -f $@
 	cp -p $^ $@
 
 #
