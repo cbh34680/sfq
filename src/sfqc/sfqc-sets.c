@@ -148,6 +148,7 @@ static int change_unsigned(const char* querootdir, const char* quename, const ch
 	usm_map[] =
 	{
 		{ "pslimit",	ULONG_MAX,	NULL,	NULL,			"payloadsize_limit" },
+		{ "fslimit",	ULONG_MAX,	NULL,	NULL,			"filesize_limit" },
 		{ "maxla",	USHRT_MAX,	"@",	sfqc_maxla_autodetect,	"execable_maxla" },
 		{ "esleep",	UCHAR_MAX,	NULL,	NULL,			"execloop_sleep" },
 		{ NULL,		0,		NULL,	NULL,			NULL },

@@ -454,6 +454,7 @@ void sfq_free_ioelm_buff(struct sfq_ioelm_buff* ioeb);
 void sfq_free_open_names(struct sfq_open_names* om);
 void sfq_reopen_4proc(const char* logdir, ushort slotno, questate_t questate, mode_t file_perm);
 
+size_t sfq_get_smallest_elmsize();
 void sfq_init_ioeb(struct sfq_ioelm_buff* ioeb);
 
 sfq_bool sfq_lock_semaphore(const char* semname, int semlock_wait_sec);
