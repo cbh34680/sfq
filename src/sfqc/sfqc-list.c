@@ -108,13 +108,15 @@ SFQC_MAIN_ENTER
 	bzero(&ped, sizeof(ped));
 
 /* */
-	irc = sfqc_parse_program_args(argc, argv, "D:N:v:r123456789", SFQ_false, &pgargs);
+	irc = sfqc_parse_program_args(argc, argv, "D:N:v:qr123456789", SFQ_false, &pgargs);
 	if (irc != 0)
 	{
 		message = "parse_program_args: parse error";
 		jumppos = __LINE__;
 		goto EXIT_LABEL;
 	}
+
+	sfq_set_print(pgargs.quiet ? SFQ_false : SFQ_true);
 
 	if (pgargs.textdata)
 	{

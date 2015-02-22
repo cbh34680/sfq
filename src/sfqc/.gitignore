@@ -2,6 +2,7 @@
 /*.so
 /*.o
 /*.out
+/*.so.*
 /*.err
 /targetver.h
 /ReadMe.txt

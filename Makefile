@@ -1,14 +1,12 @@
 
 BASEI  = include/sfq.h
 
-BASEL  = lib/libsfq.so lib/libsfq.so.0 lib/libsfq.so.0.17.1
-BASEL += lib/libsfqc.so
+BASEL  = lib/libsfq.so lib/libsfq.so.0 lib/libsfq.so.0.17.2
+BASEL += lib/libsfqc.so lib/libsfqc.so.0 lib/libsfqc.so.0.17.2
 
 BASEX  = bin/sfqc-init bin/sfqc-info bin/sfqc-list bin/sfqc-pusht bin/sfqc-pushb 
 BASEX += bin/sfqc-pop bin/sfqc-shift bin/sfqc-clear bin/sfqc-sets bin/sfqc-disable
 BASEX += bin/sfqc-pushx bin/sfqc-popx bin/sfqc-shiftx bin/sfqc-reset-procs
-
-EXTNL = lib/sfqc-jni.jar lib/libsfqc-jni.so
 
 TARGET_BASE = $(BASEI) $(BASEL) $(BASEX)
 TARGET_EXTN = $(EXTNL)
@@ -17,12 +15,10 @@ TARGET_EXTN = $(EXTNL)
 all: $(TARGET_BASE)
 
 
-ext: $(TARGET_EXTN)
-
-
 include/sfq.h: src/inc/sfq.h
 	cp -p $^ include
 
+#
 lib/libsfq.so: src/libsfq/libsfq.so
 	rm -f $@
 	cp -P -p $^ $@
@@ -31,22 +27,22 @@ lib/libsfq.so.0: src/libsfq/libsfq.so.0
 	rm -f $@
 	cp -P -p $^ $@
 
-lib/libsfq.so.0.17.1: src/libsfq/libsfq.so.0.17.1
+lib/libsfq.so.0.17.2: src/libsfq/libsfq.so.0.17.2
 	rm -f $@
 	cp -P -p $^ $@
 
+#
 lib/libsfqc.so: src/sfqc/libsfqc.so
 	rm -f $@
-	cp -p $^ $@
+	cp -P -p $^ $@
 
-#
-# ext
-#
-lib/sfqc-jni.jar: src/sfqc-jni/sfqc-jni.jar
-	cp -p $^ $@
+lib/libsfqc.so.0: src/sfqc/libsfqc.so.0
+	rm -f $@
+	cp -P -p $^ $@
 
-lib/libsfqc-jni.so: src/sfqc-jni/libsfqc-jni.so
-	cp -p $^ $@
+lib/libsfqc.so.0.17.2: src/sfqc/libsfqc.so.0.17.2
+	rm -f $@
+	cp -P -p $^ $@
 
 #
 # bin

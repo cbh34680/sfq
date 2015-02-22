@@ -43,7 +43,7 @@
 #endif
 
 #define SFQC_LOCK_WAIT_SEC		(3)
-#define SFQC_RESERVE_SLOT_MIN		(4)
+#define SFQC_RESERVE_SLOT_MIN		(8)
 
 #define SFQC_CRLF			"\r\n"
 #define SFQC_LF				"\n"

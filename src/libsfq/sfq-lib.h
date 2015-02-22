@@ -247,14 +247,14 @@ enum
  *
  */
 
-/* A) 72 プロセス情報 */
+/* A) 80 プロセス情報 */
 struct sfq_process_info
 {
 	pid_t ppid;			/* 4 */
 	pid_t pid;			/* 4 */
 
 	sfq_uchar procstate;		/* 1 */
-	sfq_byte filler[7];		/* 7 */
+	sfq_byte filler1[7];		/* 7 */
 
 	time_t updtime;			/* 8 */
 	ulong start_cnt;		/* 8 */
@@ -264,9 +264,11 @@ struct sfq_process_info
 	ulong tos_appexit_non0;		/* 8 */
 	ulong tos_cantexec;		/* 8 */
 	ulong tos_fault;		/* 8 */
+
+	sfq_byte reserve[8];		/* 16 */
 };
 
-/* B) 56 静的属性 */
+/* B) 80 静的属性 */
 struct sfq_qh_sval
 {
 	off_t procseg_start_pos;	/* 8 */
@@ -280,10 +282,12 @@ struct sfq_qh_sval
 	ushort procs_num;		/* 2 ... (P) USHRT_MAX _SC_CHILD_MAX */
 	ushort execable_maxla;		/* 2 ... (E) USHRT_MAX */
 	ushort execloop_sleep;		/* 1 ... --- UCHAR_MAX */
-	sfq_byte filler[3];		/* 3 */
+	sfq_byte filler1[3];		/* 3 */
+
+	sfq_byte reserve[16];		/* 16 */
 };
 
-/* C) 72 動的属性 */
+/* C) 80 動的属性 */
 struct sfq_qh_dval
 {
 	off_t elm_next_pop_pos;		/* 8 */
@@ -298,27 +302,31 @@ struct sfq_qh_dval
 
 	char lastoper[4];		/* 4 */
 	questate_t questate;		/* 2 */
-	sfq_byte filler[2];		/* 2 */
+	sfq_byte filler1[2];		/* 2 */
 
 	size_t elmsize_total_;		/* 8 ... for debug */
+
+	sfq_byte reserve[8];		/* 8 */
 };
 
-/* D) 128 静的 + 動的属性 (56 + 72) */
+/* D) 160 静的 + 動的属性 (80 + 80) */
 struct sfq_q_header
 {
 	struct sfq_qh_sval sval;
 	struct sfq_qh_dval dval;
 };
 
-/* E) 8 ファイル先頭マーク */
+/* E) 16 ファイル先頭マーク */
 struct sfq_file_stamp
 {
 	char magicstr[4];		/* 4 = "sfq\0" */
 	sfq_byte filler[2];		/* 2 */
 	ushort qfh_size;		/* 2 */
+
+	sfq_byte reserve[8];		/* 8 */
 };
 
-/* F) 280 ファイルヘッダ (8 + 128 + 72 + 72) */
+/* F) 336 ファイルヘッダ (16 + 160 + 80 + 80) */
 struct sfq_file_header
 {
 	struct sfq_file_stamp qfs;	/* qfs の位置は変更 NG */
@@ -328,7 +336,7 @@ struct sfq_file_header
 	struct sfq_qh_dval last_qhd2;
 };
 
-/* G) 88 要素ヘッダ */
+/* G) 96 要素ヘッダ */
 struct sfq_e_header
 {
 /* file offset */
@@ -357,6 +365,8 @@ struct sfq_e_header
 	size_t payload_size;		/* 8 */
 
 	size_t elmsize_;		/* 8 ... for debug, set by sfq_copy_val2ioeb() */
+
+	sfq_byte reserve[8];		/* 8 */
 };
 
 /* --------------------------------------------------------------
