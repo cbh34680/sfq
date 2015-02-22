@@ -16,7 +16,7 @@ OBJS       = $(OBJSL) $(OBJSE)
 
 SOLOADNAME = libsfq.so
 SOLINKNAME = $(SOLOADNAME).0
-SOREALNAME = $(SOLINKNAME).17.1
+SOREALNAME = $(SOLINKNAME).17.2
 
 TARGET     = $(SOLOADNAME) libtest-main
 
@@ -56,7 +56,7 @@ $(OBJS): $(INCFILES) Makefile
 
 clean:
 	rm -f $(TARGET) $(SOLINKNAME) $(SOREALNAME)
-	rm -f *.o *.s *.i
+	rm -f *.o *.s *.i *.so.* *.so
 
 debug:
 	make clean

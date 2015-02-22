@@ -33,13 +33,15 @@ OBJSE    += sfqc-pushx.o sfqc-popx.o sfqc-shiftx.o
 OBJS      = $(OBJSL) $(OBJSE)
 
 #
-TARGETL   = libsfqc.so
+SOLOADNAME = libsfqc.so
+SOLINKNAME = $(SOLOADNAME).0
+SOREALNAME = $(SOLINKNAME).17.2
 
 TARGETE   = sfqc-init sfqc-info sfqc-list sfqc-pusht sfqc-pushb sfqc-pop
 TARGETE  += sfqc-shift sfqc-clear sfqc-reset-procs sfqc-sets sfqc-disable
 TARGETE  += sfqc-pushx sfqc-popx sfqc-shiftx
 
-TARGET    = $(TARGETL) $(TARGETE)
+TARGET    = $(SOLOADNAME) $(TARGETE)
 
 #
 INCDIRS   = -I. -I../inc -I../../include
@@ -48,7 +50,7 @@ INCFILES  = ../inc/sfq.h sfqc-lib.h base64.h
 CFLAGS    = -Wextra -O2 -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 $(CFLAGSEXT)
 SCFLAGS   = $(CFLAGS) -fPIC
 
-SLDFLAGS  = -Wextra -shared
+SLDFLAGS  = -Wextra -shared -Wl,-soname,$(SOLINKNAME)
 ELDFLAGS  = -Wextra
 
 LIBDIRS   = -L. -L../libsfq -L../../lib
@@ -57,7 +59,15 @@ LIBS      = -lsfqc -lsfq -lpthread -lm -luuid -ljansson -lcap -lrt
 #
 all: $(TARGET)
 
-libsfqc.so: $(OBJSL)
+$(SOLOADNAME): $(SOLINKNAME)
+	rm -f $@
+	ln -s $< $@
+
+$(SOLINKNAME): $(SOREALNAME)
+	rm -f $@
+	ln -s $< $@
+
+$(SOREALNAME): $(OBJSL)
 	$(CC) $(SLDFLAGS) -o $@ $^
 
 sfqc-xinetd.o: sfqc-xinetd.c
@@ -133,7 +143,8 @@ $(OBJS): $(INCFILES) Makefile
 	$(CC) $(CFLAGS) $(INCDIRS) -c $<
 
 clean:
-	rm -f $(TARGET) $(OBJS)
+	rm -f $(TARGET) $(SOLINKNAME) $(SOREALNAME) $(OBJS)
+	rm -f *.o *.so.* *.so
 
 debug:
 	make clean
