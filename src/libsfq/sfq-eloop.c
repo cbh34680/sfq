@@ -213,7 +213,7 @@ SFQ_LIB_LEAVE
 	return SFQ_LIB_IS_SUCCESS();
 }
 
-sfq_bool need_sleep(ushort execable_maxla)
+static sfq_bool need_sleep(ushort execable_maxla)
 {
 	sfq_bool b = SFQ_false;
 
@@ -247,7 +247,7 @@ elog_print("load average 1) %.2f/ 5) %.2f/ 10) %.2f", la1, la5, la10);
 	return b;
 }
 
-volatile sfq_bool GLOBAL_eloop_sig_catch = SFQ_false;
+static volatile sfq_bool GLOBAL_eloop_sig_catch = SFQ_false;
 
 static void eloop_sig_handler(int signo)
 {

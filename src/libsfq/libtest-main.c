@@ -2,7 +2,7 @@
 
 static void split_test()
 {
-	char* orgstr = "a:b::c";
+	const char* orgstr = "a:b::c";
 	char* copy = NULL;
 	int path_num = 0;
 	char** strarr = NULL;

@@ -18,16 +18,20 @@ SOLOADNAME = libsfq.so
 SOLINKNAME = $(SOLOADNAME).0
 SOREALNAME = $(SOLINKNAME).17.2
 
-TARGET     = $(SOLOADNAME) libtest-main
+#TARGET     = $(SOLOADNAME) libtest-main
+TARGET     = $(SOLOADNAME)
 
 INCDIRS    = -I. -I../inc
 INCFILES   = sfq-lib.h ../inc/sfq.h
 CFLAGSEXT  = -O2
 
 # -Wl,--stack,10485760
-CFLAGS    = -Wextra -fPIC -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 $(CFLAGSEXT)
-SLDFLAGS  = -Wextra -shared -Wl,-soname,$(SOLINKNAME)
-ELDFLAGS  = -Wextra
+CWOPTS    = -Wall -Wextra -Wstrict-aliasing=2 -Wcast-align -Wwrite-strings -Wpointer-arith
+CWOPTS   += -Wswitch-enum -Wfloat-equal
+
+CFLAGS    = $(CWOPTS) -fvisibility=hidden -fPIC -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 $(CFLAGSEXT)
+SLDFLAGS  = $(CWOPTS) -shared -Wl,-soname,$(SOLINKNAME)
+ELDFLAGS  = $(CWOPTS)
 
 LIBDIRS   = -L.
 LIBS      = -lsfq -lpthread -lm -luuid -ljansson -lcap -lrt
@@ -61,6 +65,10 @@ clean:
 debug:
 	make clean
 	make "CFLAGSEXT=-g -O0 -DSFQ_DEBUG_BUILD"
+
+rebuild:
+	make clean
+	make
 
 #
 # [注意]

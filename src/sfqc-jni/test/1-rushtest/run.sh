@@ -3,7 +3,7 @@
 unalias -a
 cd $(dirname $(readlink -f "$0"))
 
-trap "pkil -f java" EXIT
+trap "pkill -f java" EXIT
 
 export LD_LIBRARY_PATH="../..:${LD_LIBRARY_PATH}"
 

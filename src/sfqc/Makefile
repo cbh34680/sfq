@@ -47,11 +47,15 @@ TARGET    = $(SOLOADNAME) $(TARGETE)
 INCDIRS   = -I. -I../inc -I../../include
 INCFILES  = ../inc/sfq.h sfqc-lib.h base64.h
 
-CFLAGS    = -Wextra -O2 -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 $(CFLAGSEXT)
-SCFLAGS   = $(CFLAGS) -fPIC
+CWOPTS    = -Wall -Wextra -Wstrict-aliasing=2 -Wcast-align -Wwrite-strings -Wpointer-arith
+CWOPTS    = -Wswitch-enum -Wfloat-equal
 
-SLDFLAGS  = -Wextra -shared -Wl,-soname,$(SOLINKNAME)
-ELDFLAGS  = -Wextra
+CFLAGS    = $(CWOPTS) -O2 -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 $(CFLAGSEXT)
+
+SLDFLAGS  = $(CWOPTS) -shared -Wl,-soname,$(SOLINKNAME)
+ELDFLAGS  = $(CWOPTS)
+
+SCFLAGS   = $(CFLAGS) -fPIC
 
 LIBDIRS   = -L. -L../libsfq -L../../lib
 LIBS      = -lsfqc -lsfq -lpthread -lm -luuid -ljansson -lcap -lrt
@@ -149,6 +153,10 @@ clean:
 debug:
 	make clean
 	make "CFLAGSEXT=-g -O0 -DSFQ_DEBUG_BUILD"
+
+rebuild:
+	make clean
+	make
 
 #
 

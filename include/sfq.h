@@ -168,60 +168,62 @@ typedef sfq_bool (*sfq_map_callback)(struct sfq_map_callback_param* param);
 # typedef sfq_bool (*sfq_map_callback)(ulong order, off_t elm_pos, const struct sfq_value* val, void* userdata);
 */
 
-void sfq_set_print(sfq_bool printOnOff);
-sfq_bool sfq_get_print();
-void sfq_rtrim(char* str, const char* cmask);
+#define SFQ_EXPORT __attribute__ ((visibility ("default")))
 
-int sfq_map_ro(const char* querootdir, const char* quename,
+SFQ_EXPORT void sfq_set_print(sfq_bool printOnOff);
+SFQ_EXPORT sfq_bool sfq_get_print();
+SFQ_EXPORT void sfq_rtrim(char* str, const char* cmask);
+
+SFQ_EXPORT int sfq_map_ro(const char* querootdir, const char* quename,
 	sfq_map_callback callback, sfq_bool reverse, void* userdata);
-int sfq_map_rw(const char* querootdir, const char* quename,
+SFQ_EXPORT int sfq_map_rw(const char* querootdir, const char* quename,
 	sfq_map_callback callback, sfq_bool reverse, void* userdata);
 
-int sfq_init(const char* querootdir, const char* quename,
+SFQ_EXPORT int sfq_init(const char* querootdir, const char* quename,
 	const struct sfq_queue_init_params* qip);
 
-int sfq_push(const char* querootdir, const char* quename, struct sfq_value* val);
+SFQ_EXPORT int sfq_push(const char* querootdir, const char* quename, struct sfq_value* val);
 
-int sfq_pop(const char* querootdir, const char* quename, struct sfq_value* val);
-int sfq_shift(const char* querootdir, const char* quename, struct sfq_value* val);
-int sfq_info(const char* querootdir, const char* quename, int semlock_wait_sec);
-int sfq_clear(const char* querootdir, const char* quename);
+SFQ_EXPORT int sfq_pop(const char* querootdir, const char* quename, struct sfq_value* val);
+SFQ_EXPORT int sfq_shift(const char* querootdir, const char* quename, struct sfq_value* val);
+SFQ_EXPORT int sfq_info(const char* querootdir, const char* quename, int semlock_wait_sec);
+SFQ_EXPORT int sfq_clear(const char* querootdir, const char* quename);
 
-int sfq_reset_procs(const char* querootdir, const char* quename);
-int sfq_lock_proc(const char* querootdir, const char* quename, ushort slotno);
-int sfq_unlock_proc(const char* querootdir, const char* quename, ushort slotno);
+SFQ_EXPORT int sfq_reset_procs(const char* querootdir, const char* quename);
+SFQ_EXPORT int sfq_lock_proc(const char* querootdir, const char* quename, ushort slotno);
+SFQ_EXPORT int sfq_unlock_proc(const char* querootdir, const char* quename, ushort slotno);
 
-int sfq_alloc_print_value(const struct sfq_value* bin, struct sfq_value* str);
-void sfq_free_value(struct sfq_value* p);
+SFQ_EXPORT int sfq_alloc_print_value(const struct sfq_value* bin, struct sfq_value* str);
+SFQ_EXPORT void sfq_free_value(struct sfq_value* p);
 
 /* short-cut */
-int sfq_push_text(const char* querootdir, const char* quename,
+SFQ_EXPORT int sfq_push_text(const char* querootdir, const char* quename,
 	const char* eworkdir, const char* execpath, const char* execargs,
 	const char* metatext, const char* soutpath, const char* serrpath,
 	uuid_t uuid,
 	const char* textdata);
 
-int sfq_push_binary(const char* querootdir, const char* quename,
+SFQ_EXPORT int sfq_push_binary(const char* querootdir, const char* quename,
 	const char* eworkdir, const char* execpath, const char* execargs,
 	const char* metatext, const char* soutpath, const char* serrpath,
 	uuid_t uuid,
 	const sfq_byte* payload, size_t payload_size);
 
-int sfq_get_questate(const char* querootdir, const char* quename,
+SFQ_EXPORT int sfq_get_questate(const char* querootdir, const char* quename,
 	questate_t* questate_ptr, int semlock_wait_sec);
 
-int sfq_set_questate(const char* querootdir, const char* quename,
+SFQ_EXPORT int sfq_set_questate(const char* querootdir, const char* quename,
 	questate_t questate, int semlock_wait_sec);
 
-int sfq_set_header_by_name(const char* querootdir, const char* quename,
+SFQ_EXPORT int sfq_set_header_by_name(const char* querootdir, const char* quename,
 	const char* member_name, const void* data, size_t data_size, int semlock_wait_sec);
 
-size_t sfq_payload_len(const struct sfq_value* val);
+SFQ_EXPORT size_t sfq_payload_len(const struct sfq_value* val);
 
 /*
 #char* sfq_alloc_concat_n(int n, ...);
 */
-char* sfq_alloc_concat_NT(const char* first, ...);
+SFQ_EXPORT char* sfq_alloc_concat_NT(const char* first, ...);
 
 #define sfq_alloc_concat(...)	sfq_alloc_concat_NT(__VA_ARGS__, NULL);
 
