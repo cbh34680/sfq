@@ -73,6 +73,7 @@
 #define SFQ_PLUSINTSTR_WIDTH(var)	( ((var) == 0) ? 1 : (((int)log10( (var) )) + 1) )
 
 #define SFQ_DEFAULT_ELOOP_SLEEP_SEC	(10)
+#define SFQ_PROCLOG_SWITCH_SIZE		(10 * 1024 * 1024)
 
 /* --------------------------------------------------------------
  *

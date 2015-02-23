@@ -401,6 +401,47 @@ static sfq_bool output_reopen_4proc(FILE* fp, const char* logdir, ushort slotno,
 
 		firstOpen = (stat(wpath, &stbuf) == 0) ? SFQ_false : SFQ_true;
 
+		if (! firstOpen)
+		{
+/*
+ファイルが一定サイズ (10MB) を超えたら切替
+*/
+			if (stbuf.st_size > SFQ_PROCLOG_SWITCH_SIZE)
+			{
+				size_t bpath_size = 0;
+				char* bpath = NULL;
+
+				char timestr[16] = { '\0' };
+
+				time_t now = time(NULL);
+				struct tm tmp;
+
+				localtime_r(&now, &tmp);
+				strftime(timestr, sizeof(timestr), "%s", &tmp);
+
+				bpath_size = wpath_size + strlen(timestr) + 1 /* "-" */;
+				bpath = alloca(bpath_size);
+
+				if (bpath)
+				{
+					int irc = -1;
+
+					snprintf(bpath, bpath_size, "%s/%u-%s.%s",
+						logdir, slotno, timestr, ext);
+
+					irc = rename(wpath, bpath);
+
+					if (irc == 0)
+					{
+/*
+リネームしたので初回フラグ ON
+*/
+						firstOpen = SFQ_true;
+					}
+				}
+			}
+		}
+
 		if (freopen(wpath, "at", fp))
 		{
 			if (firstOpen)
