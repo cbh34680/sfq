@@ -1012,41 +1012,46 @@ static sfq_bool is_in(char c, const char* pos)
 	return ret;
 }
 
-void sfq_rtrim(char* str, const char* cmask)
+size_t sfq_rtrim(char* str, const char* cmask)
 {
+	size_t nchange = 0;
 	char* pos = NULL;
 
-	if (! str)
+	if (str)
 	{
-		return;
+		pos = &str[strlen(str)];
+
+		do
+		{
+			pos--;
+
+			if (cmask && cmask[0])
+			{
+				if (is_in(*pos, cmask))
+				{
+					(*pos) = '\0';
+					nchange++;
+
+					continue;
+				}
+			}
+			else
+			{
+				if (isspace(*pos))
+				{
+					(*pos) = '\0';
+					nchange++;
+
+					continue;
+				}
+			}
+
+			break;
+		}
+		while (pos != str);
 	}
 
-	pos = &str[strlen(str)];
-
-	do
-	{
-		pos--;
-
-		if (cmask && cmask[0])
-		{
-			if (is_in(*pos, cmask))
-			{
-				(*pos) = '\0';
-				continue;
-			}
-		}
-		else
-		{
-			if (isspace(*pos))
-			{
-				(*pos) = '\0';
-				continue;
-			}
-		}
-
-		break;
-	}
-	while (pos != str);
+	return nchange;
 }
 
 int sfq_count_char(char delim, const char* searchstr)

@@ -198,7 +198,7 @@ SFQ_LIB_ENTER
 /* check data version */
 		if (qfs.qfh_size != sizeof(struct sfq_file_header))
 		{
-			SFQ_FAIL(EA_ILLEGALVER, "sfq_file_header size not match %zu:%zu",
+			SFQ_FAIL(EA_ILLEGALVER, "sfq_file_header size not match [%u] [%zu]",
 				qfs.qfh_size, sizeof(struct sfq_file_header));
 		}
 	}
@@ -870,8 +870,9 @@ void sfq_qh_init_pos(struct sfq_q_header* p)
 		return;
 	}
 
-	p->dval.elm_next_pop_pos = p->dval.elm_next_shift_pos =
-	p->dval.elm_num = p->dval.elmsize_total_ = 0;
+	p->dval.elm_next_pop_pos = p->dval.elm_next_shift_pos = 0;
+	p->dval.elm_num = 0;
+	p->dval.elmsize_total_ = 0;
 
 	p->dval.elm_next_push_pos = p->sval.elmseg_start_pos;
 }

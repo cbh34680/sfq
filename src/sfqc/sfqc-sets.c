@@ -57,7 +57,7 @@ static int change_questate(const char* querootdir, const char* quename,
 {
 	int irc = 0;
 
-	char* message = NULL;
+	const char* message = NULL;
 	int jumppos = -1;
 
 	questate_t questate = 0;
@@ -134,7 +134,7 @@ static int change_unsigned(const char* querootdir, const char* quename, const ch
 {
 	int irc = 0;
 
-	char* message = NULL;
+	const char* message = NULL;
 	int jumppos = -1;
 
 	struct unsigned_state_minmax
@@ -279,7 +279,7 @@ static int change_procstate(const char* querootdir, const char* quename, const c
 {
 	int irc = 0;
 
-	char* message = NULL;
+	const char* message = NULL;
 	int jumppos = -1;
 
 	char* e = NULL;
@@ -349,7 +349,7 @@ int main(int argc, char** argv)
 {
 	int irc = 0;
 
-	char* message = NULL;
+	const char* message = NULL;
 	int jumppos = -1;
 
 	struct sfqc_program_args pgargs;

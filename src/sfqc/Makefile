@@ -26,7 +26,7 @@ CC        = gcc
 #
 OBJSL     = sfqc-xinetd.o sfqc-push.o sfqc-lib.o sfqc-take.o base64.o
 
-OBJSE     = sfqc-init.o sfqc-info.o sfqc-list.o sfqc-pusht.o sfqc-pushb.o
+OBJSE     = sfqc-init.o sfqc-info.o sfqc-list.o sfqc-pusht.o sfqc-pushb.o sfqc-delegate.o
 OBJSE    += sfqc-pop.o sfqc-shift.o sfqc-clear.o sfqc-reset-procs.o sfqc-sets.o sfqc-disable.o
 OBJSE    += sfqc-pushx.o sfqc-popx.o sfqc-shiftx.o
 
@@ -37,7 +37,7 @@ SOLOADNAME = libsfqc.so
 SOLINKNAME = $(SOLOADNAME).0
 SOREALNAME = $(SOLINKNAME).17.2
 
-TARGETE   = sfqc-init sfqc-info sfqc-list sfqc-pusht sfqc-pushb sfqc-pop
+TARGETE   = sfqc-init sfqc-info sfqc-list sfqc-pusht sfqc-pushb sfqc-pop sfqc-delegate
 TARGETE  += sfqc-shift sfqc-clear sfqc-reset-procs sfqc-sets sfqc-disable
 TARGETE  += sfqc-pushx sfqc-popx sfqc-shiftx
 
@@ -47,11 +47,15 @@ TARGET    = $(SOLOADNAME) $(TARGETE)
 INCDIRS   = -I. -I../inc -I../../include
 INCFILES  = ../inc/sfq.h sfqc-lib.h base64.h
 
-CFLAGS    = -Wextra -O2 -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 $(CFLAGSEXT)
-SCFLAGS   = $(CFLAGS) -fPIC
+CWOPTS    = -Wall -Wextra -Wstrict-aliasing=2 -Wcast-align -Wwrite-strings -Wpointer-arith
+CWOPTS   += -Wswitch-enum -Wfloat-equal
 
-SLDFLAGS  = -Wextra -shared -Wl,-soname,$(SOLINKNAME)
-ELDFLAGS  = -Wextra
+CFLAGS    = $(CWOPTS) -O2 -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 $(CFLAGSEXT)
+
+SLDFLAGS  = $(CWOPTS) -shared -Wl,-soname,$(SOLINKNAME)
+ELDFLAGS  = $(CWOPTS)
+
+SCFLAGS   = $(CFLAGS) -fPIC
 
 LIBDIRS   = -L. -L../libsfq -L../../lib
 LIBS      = -lsfqc -lsfq -lpthread -lm -luuid -ljansson -lcap -lrt
@@ -120,6 +124,9 @@ sfqc-sets: sfqc-sets.o
 sfqc-disable: sfqc-disable.o
 	$(CC) $(ELDFLAGS) $(LIBDIRS) -o $@ $< $(LIBS)
 
+sfqc-delegate: sfqc-delegate.o
+	$(CC) $(ELDFLAGS) $(LIBDIRS) -o $@ $< $(LIBS)
+
 #
 sfqc-pusht: sfqc-pusht.o
 	$(CC) $(ELDFLAGS) $(LIBDIRS) -o $@ $< $(LIBS)
@@ -149,6 +156,10 @@ clean:
 debug:
 	make clean
 	make "CFLAGSEXT=-g -O0 -DSFQ_DEBUG_BUILD"
+
+rebuild:
+	make clean
+	make
 
 #
 

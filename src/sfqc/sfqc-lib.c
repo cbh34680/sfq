@@ -294,6 +294,9 @@ void sfqc_free_program_args(struct sfqc_program_args* pgargs)
 	free((char*)pgargs->serrpath);
 	free((char*)pgargs->printmethod);
 
+	free((char*)pgargs->d_execpath);
+	free((char*)pgargs->d_execargs);
+
 	bzero(pgargs, sizeof(*pgargs));
 }
 
@@ -549,6 +552,8 @@ int sfqc_parse_program_args(int argc, char** argv, const char* optstring,
 			case 'm': { RESET_STR(optarg, metatext);	break; } // メタ情報
 			case 'p': { RESET_STR(optarg, printmethod);	break; } // pop, shift の出力方法
 
+			case 'X': { RESET_STR(optarg, d_execpath);	break; } // 代理実行パス
+
 			// exec() 引数
 			case 'a':
 			{
@@ -574,6 +579,35 @@ int sfqc_parse_program_args(int argc, char** argv, const char* optstring,
 
 				free((char*)pgargs->execargs);
 				pgargs->execargs = c;
+
+				break;
+			}
+
+			// 代理実行引数
+			case 'A':
+			{
+				char* c = NULL;
+
+				if (pgargs->d_execargs)
+				{
+					c = sfq_alloc_concat(pgargs->d_execargs, "\t", optarg);
+				}
+				else
+				{
+					c = strdup(optarg);
+				}
+
+				if (! c)
+				{
+					snprintf(message, sizeof(message), "'%c': mem alloc", opt);
+
+					jumppos = __LINE__;
+					goto EXIT_LABEL;
+				}
+
+
+				free((char*)pgargs->d_execargs);
+				pgargs->d_execargs = c;
 
 				break;
 			}

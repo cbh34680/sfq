@@ -27,6 +27,7 @@
 /sfqc-shiftx
 /sfqc-disable
 /sfqc-reset-procs
+/sfqc-delegate
 /?.c
 /?.php
 /vchk

@@ -2,7 +2,7 @@
 
 struct sfqc_program_args pgargs;
 
-void release_heap()
+static void release_heap()
 {
 	sfqc_free_program_args(&pgargs);
 }
@@ -10,7 +10,7 @@ void release_heap()
 int main(int argc, char** argv)
 {
 	int irc = SFQ_RC_UNKNOWN;
-	char* message = NULL;
+	const char* message = NULL;
 	int jumppos = 0;
 
 	sfq_byte* mem = NULL;

@@ -48,7 +48,7 @@ void sfq_print_procs(const struct sfq_process_info* procs, size_t procs_num)
 		}
 #endif
 
-		fprintf(stderr, "- [process-%d]\n", i);
+		fprintf(stderr, "- [process-%zu]\n", i);
 		fprintf(stderr, "- ppid                        = %u\n",  proc->ppid);
 		fprintf(stderr, "- pid                         = %u\n",  proc->pid);
 

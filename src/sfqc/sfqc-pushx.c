@@ -1,6 +1,6 @@
 #include "sfqc-lib.h"
 
-struct sfqc_xinetd_data xd;
+static struct sfqc_xinetd_data xd;
 
 static void release_heap()
 {
@@ -13,7 +13,7 @@ static void release_heap()
 int main(int argc, char** argv)
 {
 	int irc = SFQ_RC_UNKNOWN;
-	char* message = NULL;
+	const char* message = NULL;
 	int jumppos = 0;
 
 	uuid_t uuid;

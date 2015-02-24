@@ -17,8 +17,6 @@ void localvars_create_(void)
 }
 */
 
-void __attribute__((destructor))  localvars_destroy_(void);
-
 /* */
 struct sem_name_obj_set
 {
@@ -110,8 +108,8 @@ static void unregister_all_()
 {
 	pthread_mutex_destroy(&GLOBAL_snos_arr_mutex);
 
-	int i = 0;
-	int loop_num = 0;
+	size_t i = 0;
+	size_t loop_num = 0;
 
 	pthread_mutex_lock(&GLOBAL_snos_arr_mutex);
 
@@ -151,8 +149,8 @@ static sem_t* unregister_(const char* semname)
 {
 	sem_t* semobj = SEM_FAILED;
 
-	int i = 0;
-	int loop_num = 0;
+	size_t i = 0;
+	size_t loop_num = 0;
 
 	pthread_mutex_lock(&GLOBAL_snos_arr_mutex);
 
@@ -212,7 +210,7 @@ static sem_t* unregister_(const char* semname)
 /*
  * DLL アンロード時の処理
  */
-void localvars_destroy_(void)
+static void __attribute__((destructor)) localvars_destroy_(void)
 {
 /*
 全てのセマフォをアンロック
