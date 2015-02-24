@@ -170,7 +170,7 @@ static char* create_json_string(const struct sfq_value* val,
 {
 	int irc = 1;
 
-	char* message = NULL;
+	const char* message = NULL;
 	int jumppos = 0;
 
 	json_t* json = NULL;

@@ -172,7 +172,7 @@ typedef sfq_bool (*sfq_map_callback)(struct sfq_map_callback_param* param);
 
 SFQ_EXPORT void sfq_set_print(sfq_bool printOnOff);
 SFQ_EXPORT sfq_bool sfq_get_print();
-SFQ_EXPORT void sfq_rtrim(char* str, const char* cmask);
+SFQ_EXPORT size_t sfq_rtrim(char* str, const char* cmask);
 
 SFQ_EXPORT int sfq_map_ro(const char* querootdir, const char* quename,
 	sfq_map_callback callback, sfq_bool reverse, void* userdata);
@@ -195,6 +195,8 @@ SFQ_EXPORT int sfq_unlock_proc(const char* querootdir, const char* quename, usho
 
 SFQ_EXPORT int sfq_alloc_print_value(const struct sfq_value* bin, struct sfq_value* str);
 SFQ_EXPORT void sfq_free_value(struct sfq_value* p);
+
+SFQ_EXPORT void sfq_execapp(const char* execpath, const char* execargs);
 
 /* short-cut */
 SFQ_EXPORT int sfq_push_text(const char* querootdir, const char* quename,

@@ -61,6 +61,9 @@ struct sfqc_program_args
 	const char* usrnam;		/* U */
 	const char* grpnam;		/* G */
 
+	const char* d_execpath;		/* X */
+	const char* d_execargs;		/* A */
+
 	const char* eworkdir;		/* w */
 	const char* execpath;		/* x */
 	const char* execargs;		/* a */

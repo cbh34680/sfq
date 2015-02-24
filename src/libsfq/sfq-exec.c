@@ -20,7 +20,7 @@ static size_t atomic_write(int fd, char *buf, int count)
 #define WRITE			(1)
 #define EXECARG_DELIM		'\t'
 
-static void execapp(const char* execpath, char* execargs)
+void sfq_execapp(const char* execpath, const char* arg_execargs)
 {
 SFQ_LIB_ENTER
 
@@ -28,16 +28,24 @@ SFQ_LIB_ENTER
 	char** argv = NULL;
 	size_t argv_size = 0;
 
+	char* execargs = NULL;
 	int valnum = 0;
 
-	if (execargs)
+	if (arg_execargs)
 	{
 /*
-(カンマ区切りの) 引数の数を数える
+(タブ区切りの) 引数の数を数える
 
---> カンマの数 + 1 = 値の数
+--> タブの数 + 1 = 値の数 (最大数)
 */
-		valnum = 1 + sfq_count_char(EXECARG_DELIM, execargs);
+		valnum = 1 + sfq_count_char(EXECARG_DELIM, arg_execargs);
+
+		execargs = sfq_stradup(arg_execargs);
+
+		if (! execargs)
+		{
+			SFQ_FAIL(ES_MEMORY, "stradup");
+		}
 	}
 
 /*
@@ -393,7 +401,7 @@ elog_print("\t\tmetatext = %s", val->metatext);
 	sfq_free_value(val);
 
 /* */
-	execapp(execpath, execargs);
+	sfq_execapp(execpath, execargs);
 
 /*
 exec() が成功すればここには来ない

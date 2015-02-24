@@ -94,7 +94,7 @@ sfq_bool print_element(struct sfq_map_callback_param* param)
 int main(int argc, char** argv)
 {
 	int irc = 0;
-	char* message = NULL;
+	const char* message = NULL;
 	int jumppos = 0;
 
 /* */

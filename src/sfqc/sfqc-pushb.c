@@ -14,7 +14,7 @@ static void release_heap()
 int main(int argc, char** argv)
 {
 	int irc = SFQ_RC_UNKNOWN;
-	char* message = NULL;
+	const char* message = NULL;
 	int jumppos = 0;
 	size_t memsize = 0;
 
