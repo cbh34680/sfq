@@ -65,7 +65,9 @@ SFQC_MAIN_ENTER
 	qip.payloadsize_limit = pgargs.payloadsize_limit;
 	qip.procs_num = procs_num;
 	qip.boota_proc_num = pgargs.boota_proc_num;
+#if 0
 	qip.execable_maxla = pgargs.execable_maxla;
+#endif
 	qip.questate = questate;
 	qip.queusrnam = pgargs.usrnam;
 	qip.quegrpnam = pgargs.grpnam;

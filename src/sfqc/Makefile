@@ -26,7 +26,7 @@ CC        = gcc
 #
 OBJSL     = sfqc-xinetd.o sfqc-push.o sfqc-lib.o sfqc-take.o base64.o
 
-OBJSE     = sfqc-init.o sfqc-info.o sfqc-list.o sfqc-pusht.o sfqc-pushb.o sfqc-delegate.o
+OBJSE     = sfqc-init.o sfqc-info.o sfqc-list.o sfqc-pusht.o sfqc-pushb.o sfqc-read.o
 OBJSE    += sfqc-pop.o sfqc-shift.o sfqc-clear.o sfqc-reset-procs.o sfqc-sets.o sfqc-disable.o
 OBJSE    += sfqc-pushx.o sfqc-popx.o sfqc-shiftx.o
 
@@ -37,7 +37,7 @@ SOLOADNAME = libsfqc.so
 SOLINKNAME = $(SOLOADNAME).0
 SOREALNAME = $(SOLINKNAME).17.2
 
-TARGETE   = sfqc-init sfqc-info sfqc-list sfqc-pusht sfqc-pushb sfqc-pop sfqc-delegate
+TARGETE   = sfqc-init sfqc-info sfqc-list sfqc-pusht sfqc-pushb sfqc-pop sfqc-read
 TARGETE  += sfqc-shift sfqc-clear sfqc-reset-procs sfqc-sets sfqc-disable
 TARGETE  += sfqc-pushx sfqc-popx sfqc-shiftx
 
@@ -124,7 +124,7 @@ sfqc-sets: sfqc-sets.o
 sfqc-disable: sfqc-disable.o
 	$(CC) $(ELDFLAGS) $(LIBDIRS) -o $@ $< $(LIBS)
 
-sfqc-delegate: sfqc-delegate.o
+sfqc-read: sfqc-read.o
 	$(CC) $(ELDFLAGS) $(LIBDIRS) -o $@ $< $(LIBS)
 
 #

@@ -11,15 +11,14 @@
 #include <assert.h>
 #include <stdarg.h>
 
-#ifdef WIN32
-	#include "win32-dummy-build.h"
-#else
-	#include <inttypes.h>
-	#include <dirent.h>
-	#include <unistd.h>
-	#include <alloca.h>
-	#include <regex.h>
-#endif
+#include <inttypes.h>
+#include <dirent.h>
+#include <unistd.h>
+#include <alloca.h>
+#include <regex.h>
+
+#include <signal.h>
+#include <wait.h>
 
 #include "sfq.h"
 
@@ -57,12 +56,16 @@ struct sfqc_program_args
 	size_t filesize_limit;		/* S */
 	size_t payloadsize_limit;	/* L */
 	ushort boota_proc_num;		/* B */
+#if 0
 	ushort execable_maxla;		/* E */
+#endif
 	const char* usrnam;		/* U */
 	const char* grpnam;		/* G */
 
 	const char* d_execpath;		/* X */
 	const char* d_execargs;		/* A */
+	const char* d_serrpath;		/* E */
+	const char* d_eworkdir;		/* W */
 
 	const char* eworkdir;		/* w */
 	const char* execpath;		/* x */
@@ -76,7 +79,7 @@ struct sfqc_program_args
 
 	sfq_bool quiet;			/* q */
 	sfq_bool reverse;		/* r */
-	sfq_uchar num1char;		/* -0 to -9 */
+	sfq_uchar num1char;		/* -1 to -9 */
 
 	const char** commands;
 	int command_num;
