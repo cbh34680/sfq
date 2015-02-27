@@ -9,14 +9,6 @@ static size_t GLOBAL_snos_enable_num = 0;
 
 static pthread_mutex_t GLOBAL_snos_arr_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-/*
-void __attribute__((constructor)) localvars_create_(void);
-
-void localvars_create_(void)
-{
-}
-*/
-
 /* */
 struct sem_name_obj_set
 {

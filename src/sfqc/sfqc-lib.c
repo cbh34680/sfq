@@ -296,6 +296,8 @@ void sfqc_free_program_args(struct sfqc_program_args* pgargs)
 
 	free((char*)pgargs->d_execpath);
 	free((char*)pgargs->d_execargs);
+	free((char*)pgargs->d_serrpath);
+	free((char*)pgargs->d_eworkdir);
 
 	bzero(pgargs, sizeof(*pgargs));
 }
@@ -497,6 +499,7 @@ int sfqc_parse_program_args(int argc, char** argv, const char* optstring,
 				break;
 			}
 
+#if 0
 			case 'E':
 			{
 				/* exec 可能最大ロードアベレージ */
@@ -540,6 +543,7 @@ int sfqc_parse_program_args(int argc, char** argv, const char* optstring,
 
 				break;
 			}
+#endif
 
 			case 'N': { RESET_STR(optarg, quename);		break; } // QUEUE 名
 			case 'D': { RESET_STR(optarg, querootdir);	break; } // QUEUE ディレクトリ
@@ -551,8 +555,6 @@ int sfqc_parse_program_args(int argc, char** argv, const char* optstring,
 			case 'f': { RESET_STR(optarg, inputfile);	break; } // データ# ファイル名
 			case 'm': { RESET_STR(optarg, metatext);	break; } // メタ情報
 			case 'p': { RESET_STR(optarg, printmethod);	break; } // pop, shift の出力方法
-
-			case 'X': { RESET_STR(optarg, d_execpath);	break; } // 代理実行パス
 
 			// exec() 引数
 			case 'a':
@@ -583,7 +585,7 @@ int sfqc_parse_program_args(int argc, char** argv, const char* optstring,
 				break;
 			}
 
-			// 代理実行引数
+			// 代理 実行引数
 			case 'A':
 			{
 				char* c = NULL;
@@ -612,6 +614,10 @@ int sfqc_parse_program_args(int argc, char** argv, const char* optstring,
 				break;
 			}
 
+			case 'E': { RESET_STR(optarg, d_serrpath);	break; } // 代理 標準エラー
+			case 'X': { RESET_STR(optarg, d_execpath);	break; } // 代理 実行パス
+			case 'W': { RESET_STR(optarg, d_eworkdir);	break; } // 代理 作業ディレクトリ
+
 			// 標準出力のリダイレクト先
 			case 'o': { RESET_STR(optarg ? optarg : SFQ_DEFAULT_LOG, soutpath); break; }
 
@@ -630,7 +636,6 @@ int sfqc_parse_program_args(int argc, char** argv, const char* optstring,
 				break;
 			}
 
-			case '0':
 			case '1':
 			case '2':
 			case '3':

@@ -23,7 +23,7 @@ static void uuid2subdir(const uuid_t uuid, char* subdir, size_t subdir_size)
 
 void sfq_write_execrc(const char* logdir, const uuid_t uuid, int rc)
 {
-	const char* rcfn = "rc.txt";
+	const char* const rcfn = "rc.txt";
 	char* rcfpath = NULL;
 	size_t rcfpath_size = 0;
 
@@ -104,7 +104,7 @@ static const char* mkdir_and_alloc_wpath_4exec(const char* logdir, const uuid_t 
 
 	if (outdir)
 	{
-		const char* basename = "std";
+		const char* const basename = "std";
 
 		/* "dir/0.{out,err}\0" */
 		size_t wpath_size =
@@ -120,7 +120,7 @@ static const char* mkdir_and_alloc_wpath_4exec(const char* logdir, const uuid_t 
 		wpath = malloc(wpath_size);
 		if (wpath)
 		{
-			const char* idfn = "id.txt";
+			const char* const idfn = "id.txt";
 			char* idfpath = NULL;
 			size_t idfpath_size = 0;
 

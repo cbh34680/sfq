@@ -11,7 +11,6 @@
 #include <string.h>
 #include <ctype.h>
 #include <limits.h>
-#include <sys/stat.h>        /* For mode constants */
 #include <assert.h>
 #include <stdarg.h>
 
@@ -20,31 +19,26 @@
 #include <math.h>
 #include <stddef.h>
 
-#ifdef WIN32
-	#include "win32-dummy-build.h"
-#else
-	#include <inttypes.h>
-	#include <dirent.h>
-	#include <unistd.h>
-	#include <alloca.h>
+#include <inttypes.h>
+#include <dirent.h>
+#include <unistd.h>
+#include <alloca.h>
 
-	#include <semaphore.h>
-	#include <pthread.h>
+#include <semaphore.h>
+#include <pthread.h>
 
-	#ifdef __APPLE__
-		#include <sys/wait.h>
-	#else
-		#include <wait.h>
-		#include <sys/capability.h>
-	#endif
+#include <signal.h>
+#include <wait.h>
 
-	#include <libgen.h>
+#include <sys/stat.h>        /* For mode constants */
+#include <sys/capability.h>
 
-	#include <pwd.h>
-	#include <grp.h>
-	#include <sys/capability.h>
-	#include <sys/syscall.h>     /* for SYS_gettid */
-#endif
+#include <libgen.h>
+
+#include <pwd.h>
+#include <grp.h>
+#include <sys/capability.h>
+#include <sys/syscall.h>     /* for SYS_gettid */
 
 #include "sfq.h"
 
