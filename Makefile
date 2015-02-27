@@ -7,6 +7,7 @@ BASEL += lib/libsfqc.so lib/libsfqc.so.0 lib/libsfqc.so.0.17.2
 BASEX  = bin/sfqc-init bin/sfqc-info bin/sfqc-list bin/sfqc-pusht bin/sfqc-pushb 
 BASEX += bin/sfqc-pop bin/sfqc-shift bin/sfqc-clear bin/sfqc-sets bin/sfqc-disable
 BASEX += bin/sfqc-pushx bin/sfqc-popx bin/sfqc-shiftx bin/sfqc-reset-procs
+BASEX += bin/sfqc-read
 
 TARGET_BASE = $(BASEI) $(BASEL) $(BASEX)
 TARGET_EXTN = $(EXTNL)
@@ -96,6 +97,9 @@ bin/sfqc-popx: src/sfqc/sfqc-popx
 
 bin/sfqc-shiftx: src/sfqc/sfqc-shiftx
 	cd src/sfqc/; make $(MAKEOPT); cp -p sfqc-shiftx ../../bin/sfqc-shiftx
+
+bin/sfqc-read: src/sfqc/sfqc-read
+	cd src/sfqc/; make $(MAKEOPT); cp -p sfqc-read ../../bin/sfqc-read
 
 #
 debug:
