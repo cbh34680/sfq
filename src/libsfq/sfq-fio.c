@@ -70,6 +70,60 @@ static sfq_bool seek_set_write_(FILE* fp, off_t set_pos, const void* mem, size_t
 	return SFQ_true;
 }
 
+static ssize_t f_pread(FILE* fp, void* buf, size_t count, off_t offset)
+{
+	off_t back = ftello(fp);
+
+	if (back == (off_t)-1)
+	{
+		return -1;
+	}
+
+	if (fseeko(fp, offset, SEEK_SET) == -1)
+	{
+		return -1;
+	}
+
+	if (fread(buf, count, 1, fp) != 1)
+	{
+		return -1;
+	}
+
+	if (fseeko(fp, back, SEEK_SET) == -1)
+	{
+		return -1;
+	}
+
+	return (ssize_t)count;
+}
+
+static ssize_t f_pwrite(FILE* fp, const void* buf, size_t count, off_t offset)
+{
+	off_t back = ftello(fp);
+
+	if (back == (off_t)-1)
+	{
+		return -1;
+	}
+
+	if (fseeko(fp, offset, SEEK_SET) == -1)
+	{
+		return -1;
+	}
+
+	if (fwrite(buf, count, 1, fp) != 1)
+	{
+		return -1;
+	}
+
+	if (fseeko(fp, back, SEEK_SET) == -1)
+	{
+		return -1;
+	}
+
+	return (ssize_t)count;
+}
+
 static sfq_bool mkdir_withUGW(const char* dir, const struct sfq_queue_create_params* qcp)
 {
 	int irc = -1;
@@ -183,7 +237,7 @@ SFQ_LIB_ENTER
 
 		bzero(&qfs, sizeof(qfs));
 
-		siosize = pread(fileno(fp), &qfs, sizeof(qfs), 0);
+		siosize = f_pread(fp, &qfs, sizeof(qfs), 0);
 		if (siosize == -1)
 		{
 			SFQ_FAIL(ES_FILE, "FILE-READ(qfs)");
@@ -434,7 +488,7 @@ SFQ_LIB_ENTER
 	}
 
 
-	siosize = pwrite(fileno(fp), data, datasize, pos);
+	siosize = f_pwrite(fp, data, datasize, pos);
 	if (siosize == -1)
 	{
 		SFQ_FAIL(ES_FILE, "pwrite(eh)");
@@ -562,7 +616,7 @@ SFQ_LIB_ENTER
 	qfh->qh.dval.updatetime = qo->opentime;
 
 /* */
-	siosize = pwrite(fileno(qo->fp), qfh, sizeof(*qfh), 0);
+	siosize = f_pwrite(qo->fp, qfh, sizeof(*qfh), 0);
 	if (siosize != sizeof(*qfh))
 	{
 		SFQ_FAIL(EA_QFHRW, "write(qfh)");
@@ -578,7 +632,7 @@ SFQ_LIB_ENTER
 		pi_size = sizeof(struct sfq_process_info);
 		procs_size = (pi_size * qfh->qh.sval.procs_num);
 
-		siosize = pwrite(fileno(qo->fp), procs, procs_size, qfh->qh.sval.procseg_start_pos);
+		siosize = f_pwrite(qo->fp, procs, procs_size, qfh->qh.sval.procseg_start_pos);
 		if (siosize != (ssize_t)procs_size)
 		{
 			SFQ_FAIL(ES_FILE, "FILE-WRITE(procs)");
@@ -609,7 +663,7 @@ SFQ_LIB_ENTER
 	bzero(qfh, sizeof(*qfh));
 
 /* read file-header */
-	siosize = pread(fileno(qo->fp), qfh, sizeof(*qfh), 0);
+	siosize = f_pread(qo->fp, qfh, sizeof(*qfh), 0);
 	if (siosize != sizeof(*qfh))
 	{
 		SFQ_FAIL(EA_SEEKSETIO, "FILE-READ(qfh)");
@@ -630,7 +684,7 @@ SFQ_LIB_ENTER
 				SFQ_FAIL(ES_MEMORY, "ALLOC(procs)");
 			}
 
-			siosize = pread(fileno(qo->fp), procs, procs_size,
+			siosize = f_pread(qo->fp, procs, procs_size,
 				qfh->qh.sval.procseg_start_pos);
 
 			if (siosize != (ssize_t)procs_size)
