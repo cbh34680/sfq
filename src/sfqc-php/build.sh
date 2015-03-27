@@ -15,7 +15,7 @@ Name: sfq
 Description: Library for manipulating queue data
 Version: 0.11
 Libs: -L\${libdir} -lcap -luuid -lsfq
-Cflags: -I\${includedir}
+Cflags: -I\${includedir} -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64
 EOF
 
 pcp=$(readlink -f ../../lib/pkgconfig)
