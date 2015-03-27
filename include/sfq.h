@@ -1,11 +1,13 @@
 #ifndef SFMQ_INCLUDE_H_ONCE__
 #define SFMQ_INCLUDE_H_ONCE__
 
+/* ulong, ushort ... */
+#include <sys/types.h>
+
 /* time_t */
 #include <time.h>
 
-/* ulong, ushort ... */
-#include <sys/types.h>
+#include <string.h>
 
 #ifdef WIN32
 	/* for msvc compile (compile only not link) */
@@ -232,53 +234,22 @@ SFQ_EXPORT char* sfq_alloc_concat_NT(const char* first, ...);
 #define sfq_alloc_concat(...)	sfq_alloc_concat_NT(__VA_ARGS__, NULL);
 
 /* stack allocate and string copy */
-#ifdef __GNUC__
-	#define sfq_stradup(org) \
-		({ \
-			char* dst = NULL; \
-			if (org) { \
-				dst = alloca(strlen( (org) ) + 1); \
-				if (dst) { \
-					strcpy(dst, org); \
-				} \
-			} \
-			dst; \
-		})
 
+#define sfq_stradup	strdupa
 
-	#define sfq_strandup(org, copylen) \
-		({ \
-			char* dst = NULL; \
-			if ( (org) && (copylen) ) { \
-				dst = alloca( (copylen) + 1); \
-				if (dst) { \
-					strncpy(dst, (org), (copylen)); \
-					dst[ (copylen) ] = '\0'; \
-				} \
-			} \
-			dst; \
-		})
+#define sfq_strandup	strndupa
 
-
-	#define sfq_concat(...) \
-		({ \
-			char* dst = NULL; \
-			char* tmp_ = sfq_alloc_concat_NT(__VA_ARGS__, NULL); \
-			if (tmp_) { \
-				dst = sfq_stradup(tmp_); \
-				free(tmp_); \
-				tmp_ = NULL; \
-			} \
-			dst; \
-		})
-
-#else
-	#define sfq_stradup(org) \
-		sfq_safe_strcpy( alloca( strlen( (org) ) + 1 ), (org) )
-
-	extern char* sfq_safe_strcpy(char* dst, const char* org);
-
-#endif
+#define sfq_concat(...) \
+	({ \
+		char* dst = NULL; \
+		char* tmp_ = sfq_alloc_concat_NT(__VA_ARGS__, NULL); \
+		if (tmp_) { \
+			dst = sfq_stradup(tmp_); \
+			free(tmp_); \
+			tmp_ = NULL; \
+		} \
+		dst; \
+	})
 
 #ifdef __cplusplus
 }
