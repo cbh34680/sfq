@@ -507,7 +507,6 @@ sfq_bool sfq_disable_elm(struct sfq_queue_object* qo, off_t seek_pos, sfq_bool d
 	return update_elm_by_offset_(qo->fp, seek_pos + add_pos, &disabled, sizeof(disabled));
 }
 
-#if 1
 sfq_bool sfq_unlink_prevelm(struct sfq_queue_object* qo, off_t seek_pos)
 {
 /* prev_elmpos に 0 を設定し、リンクを切る */
@@ -531,69 +530,6 @@ sfq_bool sfq_link_nextelm(struct sfq_queue_object* qo, off_t seek_pos, off_t upd
 	off_t add_pos = offsetof(struct sfq_e_header, next_elmpos);
 	return update_elm_by_offset_(qo->fp, seek_pos + add_pos, &updval, sizeof(updval));
 }
-
-#else
-
-enum
-{
-	UPDATE_PREV_ELMPOS = 1,
-	UPDATE_NEXT_ELMPOS = 2,
-};
-
-static sfq_bool update_elmpos_(FILE* fp, off_t seek_pos, int type, off_t updval)
-{
-	sfq_bool ret = SFQ_false;
-
-	off_t add_pos = 0;
-
-SFQ_LIB_ENTER
-
-	switch (type)
-	{
-		case UPDATE_PREV_ELMPOS:
-		{
-			add_pos = offsetof(struct sfq_e_header, prev_elmpos);
-			break;
-		}
-		case UPDATE_NEXT_ELMPOS:
-		{
-			add_pos = offsetof(struct sfq_e_header, next_elmpos);
-			break;
-		}
-		default:
-		{
-			SFQ_FAIL(EA_ASSERT, "%d: un-expected type", type);
-		}
-	}
-
-	ret = update_elm_by_offset_(fp, seek_pos + add_pos, &updval, sizeof(updval));
-
-SFQ_LIB_CHECKPOINT
-
-SFQ_LIB_LEAVE
-
-	return ret;
-}
-
-sfq_bool sfq_unlink_prevelm(struct sfq_queue_object* qo, off_t seek_pos)
-{
-/* prev_elmpos に 0 を設定し、リンクを切る */
-
-	return update_elmpos_(qo->fp, seek_pos, UPDATE_PREV_ELMPOS, 0);
-}
-
-sfq_bool sfq_unlink_nextelm(struct sfq_queue_object* qo, off_t seek_pos)
-{
-/* next_elmpos に 0 を設定し、リンクを切る */
-
-	return update_elmpos_(qo->fp, seek_pos, UPDATE_NEXT_ELMPOS, 0);
-}
-
-sfq_bool sfq_link_nextelm(struct sfq_queue_object* qo, off_t seek_pos, off_t updval)
-{
-	return update_elmpos_(qo->fp, seek_pos, UPDATE_NEXT_ELMPOS, updval);
-}
-#endif
 
 sfq_bool sfq_writeqfh(struct sfq_queue_object* qo, struct sfq_file_header* qfh,
 	const struct sfq_process_info* procs, const char* lastoper)
