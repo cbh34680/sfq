@@ -1,17 +1,5 @@
 #include "sfq-lib.h"
 
-#ifndef __GNUC__
-char* sfq_safe_strcpy(char* dst, const char* org)
-{
-	if (dst && org)
-	{
-		return strcpy(dst, org);
-	}
-
-	return NULL;
-}
-#endif
-
 static sfq_bool g_printOnOff = SFQ_true;
 
 void sfq_set_print(sfq_bool printOnOff)
@@ -36,7 +24,6 @@ sfq_bool sfq_caps_isset(cap_value_t cap)
 {
 	sfq_bool ret = SFQ_false;
 
-#ifdef __GNUC__
 	cap_t cap_p = NULL;
 
 	cap_p = cap_get_pid(getpid());
@@ -53,7 +40,6 @@ sfq_bool sfq_caps_isset(cap_value_t cap)
 
 		cap_free(cap_p);
 	}
-#endif
 
 	return ret;
 }
