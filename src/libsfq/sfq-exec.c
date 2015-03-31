@@ -424,6 +424,11 @@ int sfq_execwait(const struct sfq_eloop_params* elop, struct sfq_value* val)
 {
 	pid_t pid = (pid_t)-1;
 
+/*
+stdout への二重出力を回避
+*/
+	fflush(stdout);
+
 	pid = fork();
 
 	if (pid == 0)

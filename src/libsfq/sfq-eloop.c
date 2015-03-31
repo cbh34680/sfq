@@ -563,6 +563,11 @@ sfq_bool sfq_go_exec(const char* querootdir, const char* quename, ushort slotno,
 	pid_t pid = (pid_t)-1;
 
 /*
+stdout への二重出力を回避
+*/
+	fflush(stdout);
+
+/*
 子プロセスを wait() しない
 */
 	signal(SIGCHLD, SIG_IGN);

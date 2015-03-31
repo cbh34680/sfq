@@ -510,8 +510,13 @@ void sfq_reopen_4proc(const char* logdir, ushort slotno,
 重複して出力されてしまう
 
 原因は不明
+
+--> fork() 時に stdout のバッファもコピーされてしまうため、だと思う
+--> fork() 前に fflush(stdout) するように変更
 */
-	setvbuf(stdout, NULL, _IONBF, 0);
-	setvbuf(stderr, NULL, _IONBF, 0);
+/*
+#	setvbuf(stdout, NULL, _IONBF, 0);
+#	setvbuf(stderr, NULL, _IONBF, 0);
+*/
 }
 
