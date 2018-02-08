@@ -7,9 +7,6 @@ static struct sem_name_obj_set* GLOBAL_snos_arr = NULL;
 static size_t GLOBAL_snos_arr_num = 0;
 static size_t GLOBAL_snos_enable_num = 0;
 
-/* 2018.02.08 */
-#define DO_SEM_UNLINK		(1)
-
 static pthread_mutex_t GLOBAL_snos_arr_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* */
@@ -123,10 +120,6 @@ static void unregister_all_()
 				sem_post(snos->semobj);
 				sem_close(snos->semobj);
 				snos->semobj = SEM_FAILED;
-
-#if defined(DO_SEM_UNLINK)
-				sem_unlink(snos->semname);
-#endif
 
 				free((char*)snos->semname);
 				snos->semname = NULL;
@@ -306,10 +299,6 @@ SFQ_LIB_CHECKPOINT
 
 			sem_close(semobj);
 			semobj = SEM_FAILED;
-
-#if defined(DO_SEM_UNLINK)
-			sem_unlink(semname);
-#endif
 		}
 	}
 
@@ -332,10 +321,6 @@ static void unlock_semaphore_(const char* semname)
 			sem_close(semobj);
 
 			semobj = SEM_FAILED;
-
-#if defined(DO_SEM_UNLINK)
-			sem_unlink(semname);
-#endif
 		}
 	}
 	else
